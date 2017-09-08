@@ -1,0 +1,8 @@
+Material 0.0 0.0 0.0;
+Shape Capsule 0.4 0.5 0.0 0.0 0.0 0.0 0.0 0.0 1.0;
+Shape Box 0.5 0.5 0.5 10.1 10.0 0.0 0.0 0.0 0.0 1.0;
+Mass 50.0;
+MassSpaceInertia 0.0 0.0 0.0;
+AngularVelocity 0.0 0.0 0.0;
+AngularDamping 0.0;
+End;

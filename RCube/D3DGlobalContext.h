@@ -1,0 +1,358 @@
+#pragma once
+#include "stdafx.h"
+#ifndef _D3DGLOBALCONTEXT_H_
+#define _D3DGLOBALCONTEXT_H_
+
+#include <d3d11.h>
+#include <d2d1.h>
+#include <DWrite.h>
+#include "DirectXMath.h"
+#include "InputClass.h"
+#include <vector>
+//#include "KFResourceManager.h"
+
+using namespace DirectX;
+
+// Константный слот  0 - матрицы World, View, Projection, Ortho, Camera Position для кадра
+// Константный слот  1 - свет LightClass
+// Константный слот 13 - цвет шрифта для рисования
+// Константный слот 12 - FXAA фильтрация
+
+// Используется для передачи IDXGIAdapter1,ID3D11Device и т.д. из D3D во все классы для отрисовки
+// смотри D3DGlobalContext.h
+	struct D3DGlobalContext 
+	{
+					HWND  hwnd;
+		  IDXGIAdapter1*  Adapter;
+		   ID3D11Device*  D11_device;
+	ID3D11DeviceContext*  D11_deviceContext;
+		 IDXGISwapChain*  D11_swapChain;
+		  ID3D10Device1*  D10_device;
+		ID3D11Texture2D*  BackBuffer2DT;	// Собственно BackBuffer
+ ID3D11RenderTargetView*  BackBuffer_RTV;	// RenderTargetView из backBuffer
+ID3D11ShaderResourceView* BackBuffer_SRV;	// ShaderResourceView из backBuffer
+ID3D11UnorderedAccessView* BackBuffer_UAV;	// UnorderedAccessView из backBuffer. Невозможно создать при использовании MSAA ( нужно создавать для ResolveSubresources )
+// Fonts
+		 ID3D11Texture2D* sharedTex11;
+ID3D11ShaderResourceView* sharedTex11_SRV;
+		 ID3D11Texture2D* sharedTex11_MAPED;
+		 IDXGIKeyedMutex* keyedMutex11;
+		 IDXGIKeyedMutex* keyedMutex10;
+	   ID2D1RenderTarget* D2DRenderTarget;
+			ID2D1Factory* D2DFactory;
+					UINT  sharedTex11_Width;
+					UINT  sharedTex11_Height;
+
+
+
+		 IDWriteFactory* DWriteFactory;
+#if defined( DEBUG ) || defined( _DEBUG )
+			ID3D11Debug* DebugDevice;
+#endif
+					 int ScreenWidth;
+					 int ScreenHeight;
+					 int WindowsPosX;
+					 int WindowsPosY;
+				   float ScreenRatio; // ScreenWidth / ScreenHeight
+				   float NearPlane;
+				   float FarPlane;
+				XMMATRIX WorldMatrix;
+			    XMMATRIX ViewMatrix;
+			    XMMATRIX OrthoMatrix;
+				XMMATRIX ProjectionMatrix;
+				XMMATRIX ViewProjection;
+				XMFLOAT3 CameraPosition;
+//				XMVECTOR CameraLookAt;
+// Включаем MSAA
+					bool EnableMSAA;
+// Желаемый: 2x 4x 8x Quality Support
+					UINT MSAAQualityCount;
+// ответное значение для 2x 4x 8x
+					UINT MSAAQualityChoosen;
+	  ID3D11BlendState * m_alphaEnableBlendingState ;
+	   ID3D11BlendState* m_alphaDisableBlendingState;
+ID3D11DepthStencilView * m_depthStencilView;
+// Для Clustering
+		ID3D11Texture2D* m_depthStencilBuffer;
+  ID3D11RasterizerState* m_rasterState;
+ID3D11DepthStencilState* m_depthStencilState;
+ 	   ID3D11BlendState* mGeometryBlendState;
+// Для системы частиц, чтобы был эффект кристаликов
+	   ID3D11BlendState* m_alphaParticleBlendingState;
+// Для рисования текстурой с текстом на текстуре
+	   ID3D11BlendState* m_alpha_TOnT_BlendingState;
+//  ++++++++++++++++++   Для Shadows   +++++++++++++++++++++++++
+					 bool ShadowsOn;
+					 bool SoftShadowsOn;
+					float PCF_Amount;
+					float PCF_Step;
+					float ShadowCLAMP;
+					float Shadow_Divider;
+
+	  ID3D11SamplerState* CLight_DiffuseSampler;
+	  ID3D11SamplerState* CLight_SampleTypeClamp;
+	  ID3D11SamplerState* CLight_cmpSampler;
+
+   ID3D11RasterizerState* mRasterizerState;
+//  ------------------   Для Shadows   -------------------------
+
+// ++++    FXAA сглаживание  и те  ++++
+ 				     bool EnableFXAA;
+		    ID3D11Buffer* g_pcbFXAA;
+	     ID3D11Texture2D* BackBuffer_ProxyTexture;			// Временная текстура для рисования всего что нужно
+ID3D11ShaderResourceView* BackBuffer_ProxyTextureSRV;		// Например , StringsList сюда рисуется и скролится
+  ID3D11RenderTargetView* BackBuffer_ProxyTextureRTV;
+	     ID3D11Texture2D* BackBuffer_CopyResolveTexture;
+ID3D11ShaderResourceView* BackBuffer_CopyResolveTextureSRV;
+ID3D11UnorderedAccessView*BackBuffer_CopyResolveTextureUAV; // Невозможно создать при использовании MSAA ( нужно создавать для ResolveSubresources .  ЧТО МЫ И СДЕЛАЛИ)
+//	  ID3D11SamplerState* g_pSamPointMirror;     // Sampler for rotation texture
+//	  ID3D11SamplerState* g_pSamLinearWrap;      // Sampler for diffuse texture
+//	  ID3D11SamplerState* g_pSamPointCmpClamp;   // Comparison sampler for shadowmap
+	  ID3D11SamplerState* g_pSamBilinear;        // Sampler for FXAA input texture
+// Для скриншотов
+	     ID3D11Texture2D* ScreenShootTexture;
+//	   ID3D11ShaderResourceView* SRV_ScreenShootTexture;
+
+// ----------    FXAA    ----------
+
+
+// ++++++++++ DirectX 10 , DirectWrite , FONTS    ++++++++++++++++
+	   const float ZeroColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f }; // Используется классом StringsList для очистки текстуры для написания строк текста
+
+
+// ---------- DirectX 10 , DirectWrite , FONTS    ----------------
+
+			 InputClass* m_EngineInputClass;	// Нужно для MenuControllerClass для управления вводом при назначении клавиш в игре 
+//	 KFResourceManager* ShaderManager;
+	};
+
+// Используется для передачи массива данных при рисовании текстом на текстуре
+// смотри D3DGlobalContext.h
+	struct TextOnTextureData
+	{
+	  IDWriteTextFormat* textFormat;
+				XMFLOAT4 fonColour;
+				XMFLOAT4 colour;
+				XMFLOAT4 rectSize;
+
+	};
+
+// Используется для рисования шрифтом на текстуре
+	struct FontOnTextureData
+	{
+		FontOnTextureData ()
+		{
+//			D2D1::ColorF ( 0.0f, 0.0f, 0.0f, 0.0f );
+		};
+		
+// https://msdn.microsoft.com/query/dev14.query?appId=Dev14IDEF1&l=EN-US&k=k(DWrite%2FDWRITE_FONT_FACE_TYPE_TRUETYPE);k(DWRITE_FONT_FACE_TYPE_TRUETYPE);k(DevLang-C%2B%2B);k(TargetOS-Windows)&rd=true
+DWRITE_FONT_FACE_TYPE FontFaceType;
+  D2D1_ANTIALIAS_MODE AliasingMode;
+			   WCHAR* FontName;
+			   float  FontSize;		// Размер шрифта для рисования ( 20.0f / 72.0f )*96.0f
+		  ID2D1Brush* FillBrush;	// Кисть для заливки  символа
+		  ID2D1Brush* OutlineBrush;	// Кисть для окантовки символа
+				bool  Outline;		// Окантовка вокруг текста нужна ?
+			   float  OutlineWidth;	// Ширина окантовки вокруг символов
+//			XMFLOAT4 GradientPos;	// x,y - start point  z,w - end point 
+
+	};
+
+	// Constant buffer
+	struct CB_FXAA
+	{
+		XMVECTOR m_fxaa;
+	};
+
+// Используется в D3DClass для создания списка доступных и рабочих режимов системы отображения ( монитора, ТВ, LСD )
+	struct Display_Mode
+	{
+		UINT Number; // Номер режима в списке
+		UINT Hieght; 
+		UINT Width;
+		UINT Freqency;
+	 wchar_t Resolution[15]; // Строка для меню ( например: 1024 x 768 )
+	};
+
+
+	struct SENTENCE_INIT_DATA
+	{
+	 XMFLOAT4	Colour;		// цвет предложения RGBA
+		float	ScrollSpeed; // Скорость сдвига предложения
+
+		  int	MaxLength;	// максимальная длинна предложения
+		  int	FontType;	// номер шрифта из созданных пользователем ( индекс шрифта в массиве векторов )
+		  int	ShowType;	// как именно отрисовывается, анимируется на экране ( разные шейдеры и функции )
+		  int	HideType;	// как именно убирается с экрана при установке render = false ( разные шейдеры и функции )
+		  int 	PosX;		// позиция X на экране
+		  int	PosY;		// позиция Y на экране
+		  int	Level;		// 0 - текст в игре; 1 - HUD; 2 - Menu; 3 - StringsList1
+		 bool	Render;		// рисовать ли предложение на экране. False = исключается из списка в массиве отрисовываемых
+
+	};
+
+// Перечень глобальных индексов строк текста 
+enum GLOBAL_TEXT_INDEXES{
+	INGAME_TEXT	= 0,
+	HUD			= 1,
+	MENU		= 2,
+	STRINGLIST1 = 3
+	};
+
+	//  +++++++++++++++++++++++++++    MENU    +++++++++++++++++++++++++++++++++++++++++++++
+	// Типы объектов которые могут быть созданы на базе KFButton
+enum {
+	   BUTTON	= 0,
+	   CHECKBOX = 1,
+	   LABEL	= 2,
+	   EDIT		= 3
+	};
+
+enum {
+		MIDLE = 0,
+		UP	  = 1,
+		DOWN  = 2,
+		LEFT  = 3,
+		RIGHT = 4,
+		FREE  = 5
+	};
+
+
+enum {
+	   ANYSYMBOL  = 1,
+	   AS_INTEGER = 2,
+	   AS_FLOAT   = 3
+	 };
+
+
+	typedef enum {
+//		NOBACKGROUND,
+		STATIC_TEXTURE,
+		ANIMATED_TEXTURE
+	} BackGroundType;
+
+
+// Поворот текстуры для кнопок ScrollBox
+enum {
+	  NO_FLIP					= 0,
+	  FLIP_HORIZONTAL			= 1,
+	  FLIP_VERTICAL				= 2,
+	  ROTATE90					= 3,
+	  ROTATE_90					= 4,
+	  FLIP_HORIZONTAL_ROTATE_90 = 5
+	};
+
+
+	typedef enum {
+		SCROLL_FROM_POINT_INSENTER = 0,
+	} MenuShowMethod;
+
+
+	struct KFButton_Elements {
+	XMFLOAT4 _ObjParam;	// Координаты объекта X,Y, и размеры Z - Height, W - Width
+						// Если Z или W = 0.0f , то берутся размеры текстуры для начального размера
+		char *Label;	// начальный текст
+		int  Type;		// BUTTON = 0, CHECKBOX = 1, LABEL = 2, EDIT = 3
+		int  EditType;	// ANYSYMBOL = 1, AS_INTEGER = 2, AS_FLOAT = 3   если равно NULL или отличное от указанного, то кнопка не будет работать как Edit
+		int  SentenceIndex; // Номер предложения из класса TextClass ( обязательно только для Label и Edit  для остальных можно -1 )
+		SENTENCE_INIT_DATA* Data;
+		bool Checked;	// Для CheckBox - в нажатом ли состоянии кнопка
+		bool Enabled;	// Доступен ли объект или рисуется текстура недоступности и объект не реагирует на мышь и прочее
+// Label
+		bool ActiveStringsList;		// Для активного списка строк в меню. На которые можно нажать и они подсвечиваются при проходе мышки. При нажатии должна вернуть номер строки связанный с этим Label
+		bool WaitingForKeyPress;	// Для Label который используется для привязки виртуальных кнопок в игре ( если False, то Label просто как строка текста - не реагирует на нажатие и пролёты мышки и прочее )
+		int  VirtualKeyIndex;		// Привязка Label к виртуальной кнопке в движке. ( Для переопределения кнопки в меню )
+		bool SecondSlot;			// Слот для определения кнопок tckb true, то привязка ко 2-му слоту
+// Label
+		ID3D11Resource * OsnTextureResource;
+		ID3D11ShaderResourceView * OsnTexture;
+		ID3D11ShaderResourceView * IsClickTexture;
+		ID3D11ShaderResourceView * IsMouseOnButtonTexture;
+		ID3D11ShaderResourceView * IsNotEnalbledTexture;
+		ID3D10Blob * Blob;
+	};
+
+	struct KFButtons_OutPut {
+		bool IsPress;
+		bool IsMouseOnButton;
+	};
+
+	struct KFScrollBar_Elements
+	{
+		bool ShowButtons;
+		XMFLOAT4 ObjParam;	// Координаты объекта X,Y, и размеры Z - Width, W - Height
+							// Если Z или W = 0.0f , то берутся размеры текстуры для начального размера
+		XMFLOAT4 Values;	// Min, Max, Current, Step
+		bool Horizontal;	// Горизонтальный ли ScrollBar
+		bool UpSideDown;	// Если ScrollBar вертикальный, то удобно когда большее значение - вверху. Для прокрутки на странице удобнее наоборот
+		ID3D11Resource * OsnTextureResource;
+		ID3D11ShaderResourceView * BodyTexture;
+		ID3D11ShaderResourceView * ButtonsTexture;
+		ID3D11ShaderResourceView * TravellerTexture;
+	
+		ID3D11ShaderResourceView * MouseOnButtonTexture;
+		ID3D11ShaderResourceView * MouseOnTravellerTexture;
+
+		ID3D11ShaderResourceView * BodyNotEnalbledTexture;
+		ID3D11ShaderResourceView * ButtonNotEnalbledTexture;
+		ID3D11ShaderResourceView * TravellerNotEnalbledTexture;
+
+		ID3D11ShaderResourceView * ButtonPressTexture;
+		ID3D11ShaderResourceView * TravellerPressTexture;
+
+
+		ID3D10Blob * Blob;
+	};
+
+	struct StringsList_Elements
+	{
+//		StringsList_Elements()
+//		{
+//			Strings;
+//		};
+			bool	_ShowStringsList;
+			bool	Enabled;
+		XMFLOAT4	ObjParam;		// Координаты объекта X,Y, и размеры Z - Width, W - Height
+			 int	SentencesIndex; // Индекс группы текстовых строк в списке всех строк, чтобы все строки для конкретного StringsList рисовались одновременно
+			 int	FontIndex;		// номер шрифта которым рисуется текст	
+			 int	StringsSpacing; // Растояние между строками
+		   float	Scaling;		// Для подгонки текста в окно StringsList
+			 int	StringsMAXLength;// Максимальное количество char в строках
+			 int	ScrollSpeed;	// Скорость прокрутки
+  vector <char*>    Strings;		// массив строк из которого берутся отображаемые строки
+	  ID3D10Blob*   Blob;
+	};
+
+
+//  +++++++++++++++++++++++++++    MENU    +++++++++++++++++++++++++++++++++++++++++++++
+
+
+// ++++++++++++++++++++++++++++    PARTICLE SYSTEM     +++++++++++++++++++++++++++++++++
+
+struct TorchFireSmoke
+{
+	XMFLOAT3 TorchPosition;	// Позиция факела
+	int UX_Amount;			// Количество строк в текстуре анимации
+	int VY_Amount;			// Количестко столбцов в текстуре анимации
+
+	int FireFrameStart;		// Стартовый кадр Fire
+	int SmokeFrameStart;	// Стартовый уадр Smoke
+
+	int FireFlyFrameNumber;	// Кадр из которого нарезаются FireFly
+	int FireFlyCutWidth;	// Размер нарезки куска для FireFly по ширине
+	int FireFlyCutHeight;	// Размер нарезки куска для FireFly по высоте
+
+	int FireFramesAmount;	// Реальное количество анимаций в текстуре Fire
+	int SmokeFramesAmount;	// Реальное количество анимаций в текстуре Smoke
+};
+
+// Информация о каждой модели на сцене ( Для обработки отрисовки модели )
+struct Model_data
+{
+	int Index;		// Индекс модели в общем списке
+  float CamDistance;// Расстояние до камеры
+   bool Render;		// Рисуется
+   bool InFrustum;	// В зоне видимости камеры
+// bool Ocluded;	// Закрыт другим объектом
+};
+#endif

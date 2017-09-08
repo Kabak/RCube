@@ -1,0 +1,132 @@
+#pragma once
+#include "stdafx.h"
+
+#ifndef _STRINGSLISTCLASS_H_
+#define _STRINGSLISTCLASS_H_
+
+#include "SquareObjectClass.h"
+#include "FPSTimers.h"
+#include "FontClass.h"
+#include "TextClass.h"
+#include <vector>
+
+
+class StringsListClass : public SquareObjectClass
+{
+
+public:
+	
+	StringsListClass();
+   ~StringsListClass();
+
+	void ShutDown ();
+
+	bool ShowStringsList;
+
+	bool Enabled;
+
+	// Параметры экрана
+	XMFLOAT4 ScreenCoords;
+	// Параметры родительской формы
+	XMFLOAT4 FormCoord;
+
+	// Абсолютные координаты для проверки нахождения мыши на объекте
+	long ABSoluteX;		// Абсолютная экранная позиция по X
+	long ABSoluteY;		// Абсолютная экранная позиция по Y
+	long ABSolute_Width; // Абсолютная ширина
+	long ABSolute_Height;// Абсолютная высота
+
+//	vector <ID3D11ShaderResourceView*> StringsList_SRV; // Массив текстур с написаным текстом для текстовых строк из StringsList
+
+	int StringsNumber;		// Количество строк в StringList
+
+	int MaxVisibleIndex;	// Сколько строк рисовать из общего списка
+
+	// Статический имеет ограничения по количеству элементов - строк в списке. 
+	// но рисуется быстрее. За счёт того, что строки рисуются на текстуре один раз без возможности обновления 
+	HRESULT Init( D3DGlobalContext* D3DGC,
+			   XMFLOAT4& _ScreenCoords,
+			   XMFLOAT4& _FormCoord,
+			   StringsList_Elements& StringsListInit,
+			   TextClass* g_text
+			 );
+																	
+	void Draw();
+
+	bool SaveTextureToPNG( ID3D11ShaderResourceView* );
+
+	void UpdateABSElementAll();
+
+	void SetStringsListParam();
+
+	// Возвращает номер элемента с которым были изменения
+	int Frame( DXINPUTSTRUCT& InputClass, FPSTimers& fpstimers, bool &ObjectBUSY );
+
+	// Сдвигаем все строки вверх
+	void ScrollUp();
+	// Сдвигаем все строки вниз
+	void ScrollDown();
+
+//	void InitDynamicStringsList( vector <char*> StringsList ); // Динамический StringsList
+
+private:
+	
+	D3DGlobalContext* Local_D3DGC;
+	TextClass* Global_text;
+
+	vector <char*> Strings;	// Массив строк подлежащих отрисовке
+
+vector <int> SentencesResIndex;// Список индексов предложений зарезервированных для нашего StringsList
+
+	int SentencesIndex;			// Индекс группы текстовых строк в списке всех строк резервируется для конкретнго StringsList, чтобы все строки для конкретного StringsList рисовались одновременно
+	int FontIndex;				// номер шрифта которым рисуется текст
+	int FontHeightInPixel;		// Размер текстуры шрифта в пикселях ( для качественного написания любого символа )
+
+	int Strings_Amount_ToRender;// Сколько всего строк нужно рисовать
+
+	int First_Visible_Index;	// номер 1-й отображаемой строки в общем списке строк
+	int Last_Visible_Index;		// номер последней отображаемой строки в общем списке строк
+
+	int StringHeigt;			// Высота строки текста в пикселях
+	int StringsSpacing;			// расстояние между строками
+  float Scaling;				// Для подгонки текста в окно StringsList
+
+	int Scroll_Y_Pos;			// Вверхняя левая Позиция массива строк при скролинге. Относительно которой рисуются все строки
+	int ScrollSpeed;			// Скорость прокрутки
+	int StringsHeigh;			// Высота одной строки в StringsKist
+
+	int ObjParam_X;				// int версия массива ObjParam для ускорения работы с позицией на экране в int
+	int ObjParam_Y;
+	int ObjParam_Z;
+	int ObjParam_W;
+
+   bool StringsListPressed;		// Левая кнопка мыши нажата на StringsList
+    int Old_MouseZ;				// Старое значение 
+
+	int StringsMAXLength;		// Максимальная длинна любой строки
+
+	XMFLOAT2 FirstStringOffset; // Сдвиг строк текста относительно угла
+
+	// Координаты в текстуре для отображения куска
+	XMFLOAT2 TextureLeftTop;
+	XMFLOAT2 TextureRightBottom;
+	XMFLOAT2 TextureLeftBottom;
+	XMFLOAT2 TextureRightTop;
+
+	XMFLOAT4 StrList_Frame_pos;			// Позиция окна в текстуре где мы рисуем строки текста ( для вырезания этого куска в реальное окно )
+
+	// ScrollDir = 1 - Up, = 0 - Down
+	void ScrollStringsList( bool ScrollDir ); // Проверка на попадание строки в зону видимости
+
+	void UpdateVisibleSentence( bool ScrollDir );	// Изменяем видимые строки в StringsList
+
+	bool SetInitFrameData();	// Установнка начальных значений для окна в котором будут отображаться строки ( зависит от высоты строк и промежутком между строками )
+
+	void UpdateVisibleSentance();	// Обновляем данные для всех видимых на экране предложений
+
+	ID3D11RenderTargetView* Default_RTV;// Основной экран
+	ID3D11RenderTargetView* StrList_RTV;// Текстура куда рисуется StringsList который нужно прокручивать в окошке
+  ID3D11ShaderResourceView* StrList_SRV;// Для сохранения в файл и отображения строк в меню
+};
+
+#endif
