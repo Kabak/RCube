@@ -4,9 +4,7 @@
 
 DX11 C++ Render FrameWork based on 
 
-http://www.rastertek.com/ 
-https://www.braynzarsoft.net/old/index.php?p=DX11Lessons
-https://software.intel.com/en-us/articles/forward-clustered-shading ( Forward Clustered Shading )
+http://www.rastertek.com/ |  https://www.braynzarsoft.net/old/index.php?p=DX11Lessons  |  https://software.intel.com/en-us/articles/forward-clustered-shading ( Forward Clustered Shading )
 
 for those who love programing and studying on PC under DirectX 11
 
