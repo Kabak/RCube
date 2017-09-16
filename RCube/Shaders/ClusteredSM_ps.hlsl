@@ -180,9 +180,9 @@ matrix QuatToMatrix(float4 Quat) {
 //--------------------------------------------------------------------------------------
 // Utility
 //--------------------------------------------------------------------------------------
-float3 texOffset(int u, int v, int w, float Divider)
+float3 texOffset(float u, float v, float w, float Divider)
 {
-	return float3(u * (1.0f / Divider ) /*mCameraNearFar.x*/, v * (1.0f / Divider ) /*mCameraNearFar.y*/, w);
+	return float3(u * (1.0f / Divider ) , v * (1.0f / Divider ) , w);
 }
 
 float linstep(float min, float max, float v)
@@ -267,7 +267,7 @@ void AccumulatePhongBRDF(
 {
 
 	NdotL = saturate(dot(normal, lightDir));
-	lightContrib /= (0.4f + (0.02f * distance));
+	lightContrib /= 0.4f + 0.02f * distance;
 
 	if (angel > 0.0f)
 	{
@@ -276,7 +276,6 @@ void AccumulatePhongBRDF(
 
 		float spread = 360.0f / angel;
 		lightContrib *= 20 * pow(max(LightDot, 0.0f), spread);
-
 	}
 
 	if (NdotL > 0.0f)
@@ -297,8 +296,6 @@ void AccumulatePhongBRDF(
 // Uses an in-out for accumulation to avoid returning and accumulating 0
 void AccumulateBRDF(SurfaceData surface, Light light, inout float3 lit)
 {
-	float3 ShadowFactor = 0.0f;
-//	float3 PixeLightColor = 0.0f;
 	float attenuation = 0.0f;
 	float3 Contribute = 0.0f;
 	float3 litDiffuse = 0.0f;
@@ -317,10 +314,11 @@ void AccumulateBRDF(SurfaceData surface, Light light, inout float3 lit)
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //				Проблемное место по litDiffuse. проступает тень от "Солнца" рядом с солнцем, если включена тень
 //				при полной темноте   
-// 1
-		Contribute = saturate((attenuation * light.color) / ( 1.0f + (diffuseColor.y * distanceToLight)));// / (0.4f + (0.02f * distanceToLight));
-// 2
-//		Contribute = attenuation * light.color;
+
+		float3 AtLight = (attenuation * light.color);
+
+		Contribute = saturate(AtLight / (1.0f + (0.005f * distanceToLight)));
+
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 		AccumulatePhongBRDF(
 			surface.normal,
@@ -341,6 +339,9 @@ void AccumulateBRDF(SurfaceData surface, Light light, inout float3 lit)
 		// ++++++++++++     Обсчёт теней     ++++++++++++++
 		if ( mUI.shadowsOn && light.haveShadow )
 		{
+			uint ShadowPixel = 0;
+			float EdgeSmooth = 0.0f;
+//			float3 ShadowFactor = 0.0f;
 			// подставляем матрицу от конкретного источника света 
 			// для корректного наложения SpotLIght Shdow Map
 //			if (light.LightID == light.ShadowMapSliceNumber)
@@ -361,7 +362,7 @@ void AccumulateBRDF(SurfaceData surface, Light light, inout float3 lit)
 
 			// Set the bias value for fixing the floating point precision issues.
 			float4 projectTexCoord = 0;
-			float shadowMapFactor = 1.0f;
+			float shadowMapFactor = 0.0f;
 			//re-homogenize position after interpolation
 			surface.lightViewPosition.xyz /= surface.lightViewPosition.w;
 
@@ -387,6 +388,8 @@ void AccumulateBRDF(SurfaceData surface, Light light, inout float3 lit)
 				{
 					// PCF фильтрация, если включены мягкие тени
 					// http://http.developer.nvidia.com/GPUGems/gpugems_ch11.html
+					// https://takinginitiative.wordpress.com/2011/05/25/directx10-tutorial-10-shadow-mapping-part-2/
+					// https://habrahabr.ru/post/259679/
 					if ( mUI.softShadowsOn )
 					{
 						//PCF sampling for shadow map
@@ -406,7 +409,8 @@ void AccumulateBRDF(SurfaceData surface, Light light, inout float3 lit)
 							}
 						}
 
-						shadowMapFactor -= sum / Devider;
+						shadowMapFactor += sum / Devider;
+
 
 					}
 // + Эксперименты
@@ -426,16 +430,14 @@ void AccumulateBRDF(SurfaceData surface, Light light, inout float3 lit)
 //					float distanceToObject = length( directionOfShadow );
 //					Contribute -= ( ( (shadowMapFactor ) / ( distanceToObject ) ) / diffuseColor.x ) / ( (  distanceToLight * ( diffuseColor.x )));
 // - Эксперименты
-					// saturate для сглаживания белых ступенек по краю тени
-					Contribute -= saturate( shadowMapFactor * ( attenuation ) / ( distanceToLight * diffuseColor.x ));
+
+					float3 BorderContribute = saturate(min(saturate(Contribute), saturate(shadowMapFactor * diffuseColor.x)));
+					litDiffuse += saturate(Contribute * BorderContribute * NdotL);
+
+					lit += surface.albedo.rgb * litDiffuse;
+					return;
 				}
 				// ++++++++++++     ДЛЯ СВЕТОВ С ТЕНЬЮ       ++++++++++++++++
-				litDiffuse += saturate( Contribute * NdotL );
-				litSpecular += saturate( Contribute * specular );
-				lit += surface.albedo.rgb * litDiffuse;
-				lit += surface.specularAmount * litSpecular;
-				return;
-
 			}
 			// ++++++++++++     ДЛЯ СВЕТОВ НЕ ПОПАВШИХ ВО FRUSTUM СВЕТА       ++++++++++++++++
 		//			return;
@@ -450,7 +452,6 @@ void AccumulateBRDF(SurfaceData surface, Light light, inout float3 lit)
 		// 2
 		litDiffuse += saturate(Contribute * NdotL);
 		litSpecular += saturate(Contribute * specular);
-//		lit += surface.albedo.rgb * (litDiffuse + surface.specularAmount * litSpecular);// - ShadowFactor;
 		lit += surface.albedo.rgb * litDiffuse;
 		lit += surface.specularAmount * litSpecular;
 		// -------------------------------------------------------------

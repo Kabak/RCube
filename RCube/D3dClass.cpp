@@ -12,7 +12,7 @@ D3DClass::D3DClass()
 
 	ActiveAdapter = 0;
 	D3DGC->EnableMSAA = false;
-	D3DGC->EnableFXAA = true;
+	D3DGC->EnableFXAA = false;
 	D3DGC->ShadowsOn = true;
 	D3DGC->SoftShadowsOn = true;
 	D3DGC->PCF_Amount = 8.0f;
@@ -931,10 +931,10 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	}
 	{
 		CD3D11_SAMPLER_DESC desc(D3D11_DEFAULT);
-		desc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;//D3D11_FILTER_COMPARISON_MIN_MAG_POINT_MIP_LINEAR;
-		desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;//
-		desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-		desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+		desc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR; //D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;//D3D11_FILTER_COMPARISON_MIN_MAG_POINT_MIP_LINEAR;
+		desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;// D3D11_TEXTURE_ADDRESS_WRAP;//
+		desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;//D3D11_TEXTURE_ADDRESS_WRAP;
+		desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;//D3D11_TEXTURE_ADDRESS_WRAP;
 		desc.MaxAnisotropy = 1;
 		desc.ComparisonFunc = D3D11_COMPARISON_LESS;//D3D11_COMPARISON_LESS_EQUAL;
 		D3DGC->D11_device->CreateSamplerState(&desc, &D3DGC->CLight_cmpSampler);

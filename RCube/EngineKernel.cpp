@@ -72,6 +72,8 @@ EngineKernel::EngineKernel()
 // Используем для отладки теней в и шейдера
 	DiffuseX = 0.0f;
 	DiffuseY = 0.0f;
+	DiffuseZ = 0.0f;
+
 	DepthBias = 0.0f;
 	SlopeScaledDepthBias = 0.0f;
 
@@ -523,7 +525,8 @@ bool EngineKernel::Frame()
 
 	DiffuseX = m_Graphics->Hud->GetScrollBarValue( 1 );
 	DiffuseY = m_Graphics->Hud->GetScrollBarValue( 8 );
-	m_Graphics->m_Light->SetDiffuseColor( XMFLOAT4 { DiffuseX,DiffuseY,0.0f,0.0f } );
+	DiffuseZ = m_Graphics->Hud->GetScrollBarValue( 9 );
+	m_Graphics->m_Light->SetDiffuseColor( XMFLOAT4 { DiffuseX,DiffuseY,DiffuseZ,0.0f } );
 
 	float Val = m_Graphics->Hud->GetScrollBarValue( 2 );
 	bool Need = false;

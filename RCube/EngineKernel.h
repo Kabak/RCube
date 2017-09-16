@@ -104,6 +104,8 @@ private:
 	// Используем для отладки теней в и шейдера
 	float DiffuseX;
 	float DiffuseY;
+	float DiffuseZ;
+
 	float DepthBias;
 	float SlopeScaledDepthBias;
 

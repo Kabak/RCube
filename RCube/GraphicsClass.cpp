@@ -988,7 +988,12 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Data->PosY = 470;
 	Number = m_Text->AddSentence(Data, "         ");
 
-	// 15 Текст о Видеоплате
+	// 15
+	Data->FontType = 0;
+	Data->PosY = 500;
+	Number = m_Text->AddSentence(Data, "         ");
+
+	// 16 Текст о Видеоплате
 	Data->MaxLength = 128;
 	Data->PosY = 310;
 	Data->ShowType = SHOW_SCROLLING;
@@ -1195,7 +1200,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 					 m_Text
 					 );
 
-	KFScrollBar_Elements Bars[10];
+	KFScrollBar_Elements Bars[11];
 
 	Bars[0].Blob = MyManager->BlobsArr[4];
 	Bars[0].Horizontal = false;
@@ -1216,10 +1221,10 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[0].TravellerPressTexture = MyManager->ShaderResourceArr[15];
 	Bars[0].MouseOnTravellerTexture = NULL;
 
-// Для отладки шейдера теней
+	// Diffuse.X
 	Bars[1].Blob = MyManager->BlobsArr[4];
 	Bars[1].Horizontal = false;
-	Bars[1].Values = { 0.00001f, 0.03f, 0.00392f, 0.0001f };
+	Bars[1].Values = { 0.01f, 10.0f, 1.64f, 0.01f };
 	Bars[1].ShowButtons = true;
 	Bars[1].ObjParam = { 10.0f, 450.0f, 0.0f, 100.0f };
 	Bars[1].UpSideDown = true;
@@ -1273,10 +1278,10 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[3].TravellerNotEnalbledTexture = NULL;
 	Bars[3].TravellerPressTexture = MyManager->ShaderResourceArr[15];
 	Bars[3].MouseOnTravellerTexture = NULL;
-
+	// PCF_Amount
 	Bars[4].Blob = MyManager->BlobsArr[4];
 	Bars[4].Horizontal = false;
-	Bars[4].Values = { 0.5f, 15.0f, 2.5f, 0.01f };
+	Bars[4].Values = { 0.1f, 15.0f, 7.1f, 0.01f };
 	Bars[4].ShowButtons = true;
 	Bars[4].ObjParam = { 100.0f, 450.0f, 0.0f, 100.0f };
 	Bars[4].UpSideDown = true;
@@ -1292,10 +1297,10 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[4].TravellerNotEnalbledTexture = NULL;
 	Bars[4].TravellerPressTexture = MyManager->ShaderResourceArr[15];
 	Bars[4].MouseOnTravellerTexture = NULL;
-
+	// PCF_Step
 	Bars[5].Blob = MyManager->BlobsArr[4];
 	Bars[5].Horizontal = false;
-	Bars[5].Values = { 0.1f, 10.0f, 1.24f, 0.01f };
+	Bars[5].Values = { 0.1f, 10.0f, 2.36f, 0.01f };
 	Bars[5].ShowButtons = true;
 	Bars[5].ObjParam = { 130.0f, 450.0f, 0.0f, 100.0f };
 	Bars[5].UpSideDown = true;
@@ -1333,7 +1338,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	// Shadow Divider
 	Bars[7].Blob = MyManager->BlobsArr[4];
 	Bars[7].Horizontal = false;
-	Bars[7].Values = { 1.0f, 8128.0f, 3192.0f, 1.0f };
+	Bars[7].Values = { 1.0f, 8128.0f, 8128.0f, 1.0f };
 	Bars[7].ShowButtons = true;
 	Bars[7].ObjParam = { 190.0f, 450.0f, 0.0f, 100.0f };
 	Bars[7].UpSideDown = true;
@@ -1350,10 +1355,10 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[7].TravellerPressTexture = MyManager->ShaderResourceArr[15];
 	Bars[7].MouseOnTravellerTexture = NULL;
 
-	// DyffuseY
+	// Diffuse.Y
 	Bars[8].Blob = MyManager->BlobsArr[4];
 	Bars[8].Horizontal = true;
-	Bars[8].Values = { -1.0f, 1.0f, 0.005f, 0.001f };
+	Bars[8].Values = { -1.0f, 1.0f, 0.325f, 0.001f };
 	Bars[8].ShowButtons = true;
 	Bars[8].ObjParam = { 35.0f, 700.0f, 100.0f, 25.0f };
 	Bars[8].UpSideDown = false;
@@ -1370,10 +1375,10 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[8].TravellerPressTexture = MyManager->ShaderResourceArr[15];
 	Bars[8].MouseOnTravellerTexture = NULL;
 
-	// Active LIghts on Screen
+	// Diffuse.Z
 	Bars[9].Blob = MyManager->BlobsArr[4];
 	Bars[9].Horizontal = true;
-	Bars[9].Values = { 1.0f, 3000.0f , 150.0f, 1.0f };
+	Bars[9].Values = { -1.0f, 2.0f , 2.0f, 0.001f };
 	Bars[9].ShowButtons = true;
 	Bars[9].ObjParam = { 35.0f, 730.0f, 100.0f, 25.0f };
 	Bars[9].UpSideDown = false;
@@ -1390,12 +1395,32 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[9].TravellerPressTexture = MyManager->ShaderResourceArr[15];
 	Bars[9].MouseOnTravellerTexture = NULL;
 
+	// Active Lights on Screen
+	Bars[10].Blob = MyManager->BlobsArr[4];
+	Bars[10].Horizontal = true;
+	Bars[10].Values = { 1.0f, 3000.0f , 150.0f, 1.0f };
+	Bars[10].ShowButtons = true;
+	Bars[10].ObjParam = { 35.0f, 760.0f, 100.0f, 25.0f };
+	Bars[10].UpSideDown = false;
+
+	Bars[10].OsnTextureResource = MyManager->ResourceArr[12];
+	Bars[10].BodyTexture = MyManager->ShaderResourceArr[12];
+	Bars[10].BodyNotEnalbledTexture = NULL;
+	Bars[10].ButtonsTexture = MyManager->ShaderResourceArr[13];
+	Bars[10].ButtonPressTexture = MyManager->ShaderResourceArr[17];
+	Bars[10].ButtonNotEnalbledTexture = NULL;
+	Bars[10].MouseOnButtonTexture = MyManager->ShaderResourceArr[16];
+	Bars[10].TravellerTexture = MyManager->ShaderResourceArr[14];
+	Bars[10].TravellerNotEnalbledTexture = NULL;
+	Bars[10].TravellerPressTexture = MyManager->ShaderResourceArr[15];
+	Bars[10].MouseOnTravellerTexture = NULL;
+
 
 	Buttons[1].Label = "";
 	Buttons[1].Data = NULL;
 
 	Buttons[2].Type = CHECKBOX; // CheckBox
-	Buttons[2].Checked = true;
+	Buttons[2].Checked = m_D3D->D3DGC->ShadowsOn;
 	Buttons[2].Label = "";
 	Buttons[2].OsnTextureResource = MyManager->ResourceArr[5];
 	Buttons[2].OsnTexture = MyManager->ShaderResourceArr[5];
@@ -1404,7 +1429,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 
 
 	Buttons[3].Type = CHECKBOX; // CheckBox
-	Buttons[3].Checked = true;
+	Buttons[3].Checked = m_D3D->D3DGC->EnableFXAA;
 	Buttons[3].Label = "";
 	Buttons[3].OsnTextureResource = MyManager->ResourceArr[5];
 	Buttons[3].OsnTexture = MyManager->ShaderResourceArr[5];
@@ -1424,7 +1449,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Buttons[6].SentenceIndex = -1;
 	Buttons[6].Type = CHECKBOX; // Button
 	Buttons[6].EditType = NULL;
-	Buttons[6].Checked = true;
+	Buttons[6].Checked = m_D3D->D3DGC->SoftShadowsOn;
 	Buttons[6].Enabled = true;
 	Buttons[6].WaitingForKeyPress = false;
 	Buttons[6].VirtualKeyIndex = 0;
@@ -1486,12 +1511,6 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Buttons[5].SecondSlot = true;
 	Buttons[5].Blob = MyManager->BlobsArr[4];
 
-
-	Buttons[2].Type = 1; // CheckBox
-	Buttons[2].Checked = true;
-	Buttons[3].Type = 1; // CheckBox
-	Buttons[3].Checked = true;
-
 	// Hide Text
 	Buttons[7]._ObjParam = { 10.0f, 600.0f, 0.0f, 0.0f };
 	Buttons[7].OsnTextureResource = MyManager->ResourceArr[3];
@@ -1523,8 +1542,8 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 
 	Hud = new MenuControrerClass;
 	Hud->Init(m_D3D->D3DGC,
-		Buttons, 8, 
-		Bars, 10,
+		Buttons, 8,
+		Bars, 11,
 		NULL, 0,	// StringsLists
 		AnimTexture,	// Передаём объект анимации в меню
 		{ float(screenWidth - 250) , 0.0f, 250.0f, float(screenHeight) },
@@ -2096,10 +2115,14 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 	m_Text->UpdateSentence( 12, Str, 100, 340 );
 
 	angel = Hud->GetScrollBarValue(8);
-	sprintf_s(Str, 50, "DiffuseY = %1.3f", angel);
+	sprintf_s(Str, 50, "DiffuseY = %1.5f", angel);
 	m_Text->UpdateSentence(14, Str, 100, 470);
 
-	m_Text->UpdateSentence( 15, m_Text->GetSentenceText(15), m_Text->GetPosX(15), m_Text->GetPosY(15) );
+	angel = Hud->GetScrollBarValue(9);
+	sprintf_s(Str, 50, "DiffuseZ = %1.5f", angel);
+	m_Text->UpdateSentence(15, Str, 100, 500);
+
+	m_Text->UpdateSentence( 16, m_Text->GetSentenceText(16), m_Text->GetPosX(16), m_Text->GetPosY(16) );
 
 // +++++++++++++++++++++++++++++++++ блок со включённым Альфаблендингом ++++++++++++++++++++++++++++++++
 //	m_D3D->TurnOnAlphaBlending();
@@ -2288,7 +2311,7 @@ m_Camera->Render();
 	m_D3D->D3DGC->Shadow_Divider = Hud->GetScrollBarValue( 7 );
 
 	// Регулировка частиц
-	FireParticles->ChangeActiveParticleAmount((int)Hud->GetScrollBarValue(9));
+	FireParticles->ChangeActiveParticleAmount((int)Hud->GetScrollBarValue(10));
 /*
 	if ( !m_D3D->D3DGC->SoftShadowsOn )
 	{
