@@ -37,7 +37,6 @@ HRESULT StringsListClass::Init(
 	XMFLOAT4& _FormCoord,
 	StringsList_Elements& StringsListClassInit,
 	TextClass* g_text
-//	ID3D10Blob* WorkBlob
 	)
 {
 	HRESULT Result = S_OK;
@@ -102,34 +101,34 @@ Result = SetInitFrameData();
 	TextureRightBottom	= {(ObjParam.x + ObjParam.z) * X_OnePixel, (ObjParam.y + ObjParam.w) * Y_OnePixel };
 	TextureLeftBottom	= { ObjParam.x * X_OnePixel, ( ObjParam.y + ObjParam.w ) * Y_OnePixel };
 	TextureRightTop		= {(ObjParam.x + ObjParam.z) * X_OnePixel, ObjParam.y * Y_OnePixel };
-	InterfaceVertexType* vertices;
+	Vertex_FlatObject* vertices;
 	// Create the vertex array.
-	vertices = new InterfaceVertexType[4];
+	vertices = new Vertex_FlatObject[4];
 	if ( !vertices )
 	{
 		return E_FAIL;
 	}
 
-	vertices[0].position = XMFLOAT3( left, top, 0.0f );  // Top left.
-	vertices[0].texture = TextureLeftTop;
+	vertices[0].Position = XMFLOAT3( left, top, 0.0f );  // Top left.
+	vertices[0].TexCoord = TextureLeftTop;
 //	vertices[0].texture = XMFLOAT2( 0.0f, 0.0f );
 
-	vertices[1].position = XMFLOAT3( right, bottom, 0.0f );  // Bottom right.
-	vertices[1].texture = TextureRightBottom;
+	vertices[1].Position = XMFLOAT3( right, bottom, 0.0f );  // Bottom right.
+	vertices[1].TexCoord = TextureRightBottom;
 //	vertices[1].texture = XMFLOAT2( 1.0f, 1.0f );
 
-	vertices[2].position = XMFLOAT3( left, bottom, 0.0f );  // Bottom left.
-	vertices[2].texture = TextureLeftBottom;
+	vertices[2].Position = XMFLOAT3( left, bottom, 0.0f );  // Bottom left.
+	vertices[2].TexCoord = TextureLeftBottom;
 //	vertices[2].texture = XMFLOAT2( 0.0f, 1.0f );
 
-	vertices[3].position = XMFLOAT3( right, top, 0.0f );  // Top right.
-	vertices[3].texture = TextureRightTop;
+	vertices[3].Position = XMFLOAT3( right, top, 0.0f );  // Top right.
+	vertices[3].TexCoord = TextureRightTop;
 //	vertices[3].texture = XMFLOAT2( 1.0f, 0.0f );
 
 	unsigned long indices[6] = { 0, 1, 2, 0, 3, 1 };
 
 	Obj = new KF2DObjClass;
-	Result = Obj->Init( D3DGC, vertices, indices, StrList_SRV, 4, 6, StringsListClassInit.Blob );
+	Result = Obj->Init( D3DGC, vertices, indices, StrList_SRV, 4, 6 );
 	if ( FAILED( Result ) )
 	{
 		MessageBox( NULL, L"StringsList Obj creation Error", 0, 0 );

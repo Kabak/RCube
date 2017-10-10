@@ -26,8 +26,6 @@ HRESULT KFButton::Init(
 			XMFLOAT4& _ScreenCoords,
 			XMFLOAT4& _FormCoord,
    KFButton_Elements& ButtonInitData
-//		   TextClass* g_text, 
-//		  ID3D10Blob* WorkBlob 
 		  ) 
 	{
 	HRESULT Result = S_OK ;
@@ -83,31 +81,31 @@ HRESULT KFButton::Init(
 
 	SetButtonParam();
 
-	InterfaceVertexType* vertices ;
+	Vertex_FlatObject* vertices ;
 	// Create the vertex array.
-	vertices = new InterfaceVertexType[4];
+	vertices = new Vertex_FlatObject[4];
 	if(!vertices)
 	{
 		return E_FAIL ;
 	}
 
-	vertices[0].position = XMFLOAT3(left, top, 0.0f);  // Top left.
-	vertices[0].texture = XMFLOAT2(0.0f, 0.0f);
+	vertices[0].Position = XMFLOAT3(left, top, 0.0f);  // Top left.
+	vertices[0].TexCoord = XMFLOAT2(0.0f, 0.0f);
 
-	vertices[1].position = XMFLOAT3(right, bottom, 0.0f);  // Bottom right.
-	vertices[1].texture = XMFLOAT2(1.0f, 1.0f);
+	vertices[1].Position = XMFLOAT3(right, bottom, 0.0f);  // Bottom right.
+	vertices[1].TexCoord = XMFLOAT2(1.0f, 1.0f);
 
-	vertices[2].position = XMFLOAT3(left, bottom, 0.0f);  // Bottom left.
-	vertices[2].texture = XMFLOAT2(0.0f, 1.0f);
+	vertices[2].Position = XMFLOAT3(left, bottom, 0.0f);  // Bottom left.
+	vertices[2].TexCoord = XMFLOAT2(0.0f, 1.0f);
 
-	vertices[3].position = XMFLOAT3(right, top, 0.0f);  // Top right.
-	vertices[3].texture = XMFLOAT2(1.0f, 0.0f);
+	vertices[3].Position = XMFLOAT3(right, top, 0.0f);  // Top right.
+	vertices[3].TexCoord = XMFLOAT2(1.0f, 0.0f);
 
 
 	unsigned long indices[6] = { 0, 1, 2, 0, 3, 1 };
 
 	Obj = new KF2DObjClass ;
-	Obj->Init( D3DGC, vertices, indices, ButtonInitData.OsnTexture, 4, 6, ButtonInitData.Blob);
+	Obj->Init( D3DGC, vertices, indices, ButtonInitData.OsnTexture, 4, 6 );
 
 	delete [] vertices ;
 	
@@ -172,22 +170,22 @@ void KFButton::ResetButtonParam() {
 
 	SetButtonParam();
 
-	InterfaceVertexType* vertices ;
+	Vertex_FlatObject* vertices ;
 	// Create the vertex array.
-	vertices = new InterfaceVertexType[4];
+	vertices = new Vertex_FlatObject[4];
 
 
-	vertices[0].position = XMFLOAT3(left, top, 0.0f);  // Top left.
-	vertices[0].texture = XMFLOAT2(0.0f, 0.0f);
+	vertices[0].Position = XMFLOAT3(left, top, 0.0f);  // Top left.
+	vertices[0].TexCoord = XMFLOAT2(0.0f, 0.0f);
 
-	vertices[1].position = XMFLOAT3(right, bottom, 0.0f);  // Bottom right.
-	vertices[1].texture = XMFLOAT2(1.0f, 1.0f);
+	vertices[1].Position = XMFLOAT3(right, bottom, 0.0f);  // Bottom right.
+	vertices[1].TexCoord = XMFLOAT2(1.0f, 1.0f);
 
-	vertices[2].position = XMFLOAT3(left, bottom, 0.0f);  // Bottom left.
-	vertices[2].texture = XMFLOAT2(0.0f, 1.0f);
+	vertices[2].Position = XMFLOAT3(left, bottom, 0.0f);  // Bottom left.
+	vertices[2].TexCoord = XMFLOAT2(0.0f, 1.0f);
 
-	vertices[3].position = XMFLOAT3(right, top, 0.0f);  // Top right.
-	vertices[3].texture = XMFLOAT2(1.0f, 0.0f);
+	vertices[3].Position = XMFLOAT3(right, top, 0.0f);  // Top right.
+	vertices[3].TexCoord = XMFLOAT2(1.0f, 0.0f);
 
 	Obj->SetVertexBuffer( vertices ) ;
 

@@ -6,6 +6,7 @@
 
 #include <d3d11.h>
 #include <DirectXMath.h>
+#include "VertexBuffers_def.h"
 
 using namespace DirectX;
 
@@ -40,14 +41,6 @@ enum
 
 // BASIC
 // Перечень параметров частицы передаваемых в Vertex шейдер
-struct BillBordVertexes
-{
-	XMFLOAT3 position;
-	XMFLOAT2 texture;
-};
-
-
-
 struct ParticleShaderInstance_BASIC
 {
 	XMFLOAT3 position;
@@ -172,7 +165,7 @@ struct BASIC_ParticlesSystem
 				float   ParticlesMAXAmount;	// Максимальное количество частиц
 			BasicType  *ParticlesData;		// Указатель на дополнительные данные для частиц
 		   ParticleShaderInstance_BASIC  *ShaderInstances;	// Указатель на массив свойств частиц передающихся в шейдера рисующий частицы   ParticleShaderInstanceType1
-					   BillBordVertexes	 *VertexStructure;	// Указатель на описание вертекса передаваемого в шейдер						ParticleShaderVertexType1
+					   Vertex_FlatObject	 *VertexStructure;	// Указатель на описание вертекса передаваемого в шейдер						ParticleShaderVertexType1
 					  ID3D11InputLayout  *Layout;
 					  ID3D11VertexShader *VertexShader;
 					  ID3D11PixelShader  *PixelShader;

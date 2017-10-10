@@ -16,7 +16,7 @@ TorchFireParticles::TorchFireParticles()
 
 	ShaderInstanceAll = nullptr;
 
-	m_sampleState = nullptr;
+//	m_sampleState = nullptr;
 	m_layout = nullptr;
 
 	TextcordTop = nullptr;
@@ -116,7 +116,7 @@ bool TorchFireParticles::Initialize( HWND hwnd,
 									 ID3D10Blob* Blob,
 									 ID3D11ShaderResourceView* _FireTexture,
 									 TorchFireSmoke TorchFireSmokeInit,
-									 LightClass *_EngineLight
+									 D3DClass *_EngineLight
 									 )
 {
 	bool result;
@@ -208,7 +208,7 @@ bool TorchFireParticles::Initialize( HWND hwnd,
 	}
 
 
-	TempLight = new LightClass::PointLight;
+	TempLight = new PointLight;
 
 	TempLight->attenuationBegin = 1.0f;
 	TempLight->attenuationEnd = 7.5f;
@@ -319,7 +319,7 @@ void TorchFireParticles::Render()
 	ID3D11Buffer* bufferPointers[2];
 
 	// Set vertex buffer stride and offset.
-	strides[0] = sizeof( BillBordVertexes );
+	strides[0] = sizeof( Vertex_FlatObject );
 	strides[1] = sizeof( ParticleShaderInstance_TORCH_FIRE );
 
 	// Set the buffer offsets.
@@ -350,7 +350,7 @@ void TorchFireParticles::Render()
 	// D3DGC_Local->D11_deviceContext->PSSetShader(m_pixelShader, NULL, 0);
 
 	// Set the sampler state in the pixel shader.
-	D3DGC_Local->D11_deviceContext->PSSetSamplers( 0, 1, &m_sampleState );
+//	D3DGC_Local->D11_deviceContext->PSSetSamplers( 0, 1, &m_sampleState );
 
 	// Render the triangle.
 	D3DGC_Local->D11_deviceContext->DrawIndexedInstanced( 6, FlameInstanceActive + SmokeInstanceActive + FireFlyInstancesActive, 0, 0, 0 );
@@ -406,7 +406,7 @@ bool TorchFireParticles::InitializeBuffers( ID3D11Device* device, ID3D10Blob* Bl
 	// -----------------   Instancing   --------------------------------
 
 	// Create the vertex array for the particles that will be rendered.
-	FlameVertices = new BillBordVertexes[4];
+	FlameVertices = new Vertex_FlatObject[4];
 //	SmokeVertices = new BillBordVertexes[4];
 
 	unsigned long indices[6] = { 0, 1, 2, 0, 3, 1 };
@@ -474,23 +474,23 @@ bool TorchFireParticles::InitializeBuffers( ID3D11Device* device, ID3D10Blob* Bl
 	// -----------------   Instancing   --------------------------------
 
 	// Initialize vertex array to zeros at first.
-	memset( FlameVertices, 0, ( sizeof( BillBordVertexes ) * 4 ) );
+	memset( FlameVertices, 0, ( sizeof( Vertex_FlatObject ) * 4 ) );
 
 	// Top left.
-	FlameVertices[0].position = XMFLOAT3( -1.0f * m_particleSize, 1.0f * m_particleSize, 0.0f );  // Top left
-	FlameVertices[0].texture = XMFLOAT2( 0.0f, 0.0f );
+	FlameVertices[0].Position = XMFLOAT3( -1.0f * m_particleSize, 1.0f * m_particleSize, 0.0f );  // Top left
+	FlameVertices[0].TexCoord = XMFLOAT2( 0.0f, 0.0f );
 
 	// Bottom right.
-	FlameVertices[1].position = XMFLOAT3( 1.0f * m_particleSize, -1.0f * m_particleSize, 0.0f );  // Bottom right
-	FlameVertices[1].texture = XMFLOAT2( 1.0f, 1.0f );
+	FlameVertices[1].Position = XMFLOAT3( 1.0f * m_particleSize, -1.0f * m_particleSize, 0.0f );  // Bottom right
+	FlameVertices[1].TexCoord = XMFLOAT2( 1.0f, 1.0f );
 
 	// Bottom left.
-	FlameVertices[2].position = XMFLOAT3( -1.0f * m_particleSize, -1.0f * m_particleSize, 0.0f );  // Bottom left.
-	FlameVertices[2].texture = XMFLOAT2( 0.0f, 1.0f );
+	FlameVertices[2].Position = XMFLOAT3( -1.0f * m_particleSize, -1.0f * m_particleSize, 0.0f );  // Bottom left.
+	FlameVertices[2].TexCoord = XMFLOAT2( 0.0f, 1.0f );
 
 	// Top right.
-	FlameVertices[3].position = XMFLOAT3( 1.0f * m_particleSize, 1.0f * m_particleSize, 0.0f );  // Top right.
-	FlameVertices[3].texture = XMFLOAT2( 1.0f, 0.0f );
+	FlameVertices[3].Position = XMFLOAT3( 1.0f * m_particleSize, 1.0f * m_particleSize, 0.0f );  // Top right.
+	FlameVertices[3].TexCoord = XMFLOAT2( 1.0f, 0.0f );
 /*
 	memset( SmokeVertices, 0, ( sizeof( BillBordVertexes ) * 4 ) );
 
@@ -512,7 +512,7 @@ bool TorchFireParticles::InitializeBuffers( ID3D11Device* device, ID3D10Blob* Bl
 */
 	// Set up the description of the dynamic vertex buffer.
 	BillBordVertBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	BillBordVertBufferDesc.ByteWidth = sizeof( BillBordVertexes ) * 4;
+	BillBordVertBufferDesc.ByteWidth = sizeof( Vertex_FlatObject ) * 4;
 	BillBordVertBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	BillBordVertBufferDesc.CPUAccessFlags = 0;
 	BillBordVertBufferDesc.MiscFlags = 0;
@@ -565,7 +565,7 @@ bool TorchFireParticles::InitializeBuffers( ID3D11Device* device, ID3D10Blob* Bl
 	{
 		return false;
 	}
-
+/*
 	D3D11_SAMPLER_DESC samplerDesc;
 
 	// Create a texture sampler state description.
@@ -590,7 +590,7 @@ bool TorchFireParticles::InitializeBuffers( ID3D11Device* device, ID3D10Blob* Bl
 		return false;
 	}
 
-
+*/
 	return true;
 }
 
@@ -605,7 +605,7 @@ void TorchFireParticles::ShutdownBuffers()
 //	RCUBE_ARR_DELETE( SmokeVertices )
 	
 	RCUBE_RELEASE( IndexBuffer )
-	RCUBE_RELEASE( m_sampleState )
+//	RCUBE_RELEASE( m_sampleState )
 	RCUBE_RELEASE( m_layout )
 	
 //	RCUBE_ARR_DELETE( FlameInstIndNumber )

@@ -25,7 +25,7 @@ private:
 	SquareObjectClass *MaxButton;
 	SquareObjectClass *Traveller;
 
-	InterfaceVertexType *BodyVertexes;
+	Vertex_FlatObject *BodyVertexes;
 
 	ID3D11ShaderResourceView *ButtonsTexture;
 	ID3D11ShaderResourceView *MouseOnButtonTexture;

@@ -3,7 +3,7 @@
 
 #include "SquareObjectClass.h"
 #include "D3DGlobalContext.h"
-#include "KFResourceManager.h"
+#include "ResourceManager.h"
 #include "FPSTimers.h"
 
 #ifndef _KF2DTextureANIMATION_H_
@@ -21,19 +21,18 @@ public:
 		ID3D11ShaderResourceView * animTexture,
 		int DrawShaderIndex,				// Номер шейдера в движке которым нужно рисовать анимацию
 		int ReturnShaderIndex,				// Номер шейдера в движке который нужно включить после анимации
-		KFResourceManager *_ShaderManager,
-		XMFLOAT4& _ObjParam,				// x,y - позиция на экране  z - Width , w - Height
-		ID3D10Blob * WorkBlob);
+		ResourceManager *_ShaderManager,
+		XMFLOAT4& _ObjParam				// x,y - позиция на экране  z - Width , w - Height
+		);
 
 	void Frame( FPSTimers &fpstimers );
 	void Draw();
 
 	bool Enabled;
-	// Параметры экрана
-//	XMFLOAT4 ScreenCoords;
-	// Параметры родительской формы
-//	XMFLOAT4 FormCoord;
-	
+
+	int ShaderForDraw = -1;
+	int ShaderReturnTo = -1;
+
 	XMFLOAT4 ObjParam;	// Дублирует параметры объекта.
 //	XMFLOAT4 ObjPreviosParam; // Предыдущие параметры объекта ( из предыдущего кадра )
 
@@ -54,9 +53,7 @@ private:
 	int UX_Amount;			// Ширина текстуры Width X U
 	int VY_Amount;			// Высота текстуры Height Y V
 
-	int ShaderForDraw;
-	int ShaderReturnTo;
-	KFResourceManager *ShaderManager;
+	ResourceManager *ShaderManager;
 	// Сколько всего кадров в анимации
 	int NumOfAnimeFrams;
 	// Текущий кадр

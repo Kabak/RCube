@@ -302,7 +302,7 @@ void KF_PXControler::Init(HWND * g_hwnd , D3DGlobalContext *D3DGC, KFModelList *
 
 }
 
-void KF_PXControler::CreateHeildHield(int HFRows, int HFCollums , float VertixesInderect , KFTerrain::HeightMapType* terrainData ,
+void KF_PXControler::CreateHeildHield(int HFRows, int HFCollums , float VertixesInderect , Terrain::HeightMapType* terrainData ,
 	std::wstring filename ) {
 
 	FIZFileData FizData;
@@ -565,7 +565,7 @@ int KF_PXControler::CreateObject(std::wstring filename, bool IsDynamic, ObjectDa
 	int spIndex;
 	// создаем материал
 	WorkgMaterial = gPhysics->createMaterial(FizData.StaticFriction, FizData.DynamicFriction, FizData.Restitution);
-	KFModel::PositionType PosesData = g_ModelList->RCubeModelList[Data->ModelIndex]->ThisObjDesc.Positions[Data->InstanceIndex];
+	PositionType PosesData = g_ModelList->RCubeModelList[Data->ModelIndex]->ThisObjDesc.Positions[Data->InstanceIndex];
 	// Создаём Кватернион для PhysX		
 	WorkQuat = XMQuaternionRotationRollPitchYaw(PosesData.rotation.Fl3.x, PosesData.rotation.Fl3.y, PosesData.rotation.Fl3.z);
 	WorkPxQ = { XMVectorGetX(WorkQuat), XMVectorGetY(WorkQuat), XMVectorGetZ(WorkQuat), XMVectorGetW(WorkQuat) };
@@ -583,7 +583,7 @@ int KF_PXControler::CreateObject(std::wstring filename, bool IsDynamic, ObjectDa
 	int c = 0;
 	while (c < FizData.fullShapesCount){
 
-		shapesArr[c] = CreateChape(Data->ModelIndex, FizData.Shapes[c]);
+		shapesArr[c] = CreateShape(Data->ModelIndex, FizData.Shapes[c]);
 		
 	++c;
    }
@@ -660,7 +660,7 @@ int KF_PXControler::CreateObject(std::wstring filename, bool IsDynamic, ObjectDa
 
 void KF_PXControler::CreateInstancingObjects(std::wstring filename, bool IsDynamic , int ObjInex) {
 
-	int InstNum =  g_ModelList->RCubeModelList[ObjInex]->ThisObjDesc.instanceCount, c = 0;
+	int InstNum =  g_ModelList->RCubeModelList[ObjInex]->ThisObjDesc.InstanceCount, c = 0;
 
 	ObjectData Temp;
 
@@ -684,11 +684,11 @@ void KF_PXControler::Frame() {
 		int c = 0;
 
 		ObjectData * Temp = DynamicDataArr;
-		KFModel::PositionType ** Temp2 = g_ModelList->ObjPoses;
+		PositionType ** Temp2 = g_ModelList->ObjPoses;
 
 		while (c < DynamicDataArrCounter) {
 
-			KFModel::PositionType  * Temp3 = &Temp2[Temp->ModelIndex][Temp->InstanceIndex];
+			PositionType  * Temp3 = &Temp2[Temp->ModelIndex][Temp->InstanceIndex];
 
 			KinematicData = DymanicRigitArray[c]->getGlobalPose();
 
@@ -718,7 +718,7 @@ void KF_PXControler::Frame() {
 
 		while (c < NumOfIndefinedCharacters) {
 
-			KFModel::PositionType  * Temp4 = &Temp2[CharactersDataArr[c].ModelIndex][CharactersDataArr[c].InstanceIndex];
+			PositionType  * Temp4 = &Temp2[CharactersDataArr[c].ModelIndex][CharactersDataArr[c].InstanceIndex];
 
 			position = ControllersArray[c]->getPosition ();
 			Temp4->position.Fl3.x = (float)position.x;
@@ -732,7 +732,7 @@ void KF_PXControler::Frame() {
 	}
 }
 
-PxShape* KF_PXControler::CreateChape(int ModelIndex, ShapeData  Shape) {
+PxShape* KF_PXControler::CreateShape(int ModelIndex, ShapeData  Shape) {
 
 	PxGeometry * WorkGeometry = nullptr;
 	KFModel * model = g_ModelList->RCubeModelList[ModelIndex];
@@ -775,9 +775,9 @@ PxShape* KF_PXControler::CreateChape(int ModelIndex, ShapeData  Shape) {
 			inv_c = model->ThisObjDesc.Meshes[counter].VertexBufferSize;
 			while (c < model->ThisObjDesc.Meshes[counter].VertexBufferSize) {
 
-				verts[fullCounter].x = model->ThisObjDesc.Meshes[counter].VertArr[c].pos.x;
-				verts[fullCounter].y = model->ThisObjDesc.Meshes[counter].VertArr[c].pos.y;
-				verts[fullCounter].z = model->ThisObjDesc.Meshes[counter].VertArr[c].pos.z;
+				verts[fullCounter].x = model->ThisObjDesc.Meshes[counter].VertArr[c].Position.x;
+				verts[fullCounter].y = model->ThisObjDesc.Meshes[counter].VertArr[c].Position.y;
+				verts[fullCounter].z = model->ThisObjDesc.Meshes[counter].VertArr[c].Position.z;
 
 				indices32[fullCounter] = inv_c;
 
@@ -850,7 +850,7 @@ int KF_PXControler::CreateCharacter(std::wstring filename , ObjectData * Data) {
 	ReadFIZFile(&FizData, filename);
 
 	PxMaterial* gMaterial = gPhysics->createMaterial(FizData.StaticFriction, FizData.DynamicFriction, FizData.Restitution);
-	KFModel::PositionType PosesData = g_ModelList->RCubeModelList[Data->ModelIndex]->ThisObjDesc.Positions[Data->InstanceIndex];
+	PositionType PosesData = g_ModelList->RCubeModelList[Data->ModelIndex]->ThisObjDesc.Positions[Data->InstanceIndex];
 
 	// Box
 	if (FizData.Shapes[0].GeomData[0] == 'B' && FizData.Shapes[0].GeomData[1] == 'o' && FizData.Shapes[0].GeomData[2] == 'x') {

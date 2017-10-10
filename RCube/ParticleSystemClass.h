@@ -16,7 +16,8 @@
 #include "D3DGlobalContext.h"
 #include "ParticleSystemDefinitions.h"
 #include "FPSTimers.h"
-#include "LightClass.h"
+#include "D3DClass.h"
+#include "Light_def.h"
 #include <vector>
 
 ///////////////////////
@@ -41,7 +42,7 @@ public:
 	ParticleSystemClass();
    ~ParticleSystemClass();
 
-	bool Initialize(HWND hwnd, D3DGlobalContext *D3DGC_Local, ID3D10Blob* Blob, ID3D11ShaderResourceView* texture, LightClass *_EngineLight);
+	bool Initialize(HWND hwnd, D3DGlobalContext *D3DGC_Local, ID3D10Blob* Blob, ID3D11ShaderResourceView* texture, D3DClass *_EngineLight);
 	void Shutdown();
 	void Frame( FPSTimers &Timers );
 	void Render();
@@ -56,8 +57,8 @@ public:
 private:
 	D3DGlobalContext *D3DGC_Local;
 	
-	LightClass *EngineLight;
-	LightClass::PointLight *TempLight;
+	D3DClass *EngineLight;
+	PointLight *TempLight;
 
 	bool InitializeParticleSystem();
 	void ShutdownParticleSystem();
@@ -83,9 +84,9 @@ public:
 	ID3D11ShaderResourceView* m_Texture;
 	BasicType* m_particleList;
 	int m_vertexCount, m_indexCount;
-	BillBordVertexes* m_vertices;
+	Vertex_FlatObject* m_vertices;
 	ID3D11InputLayout* m_layout;
-	ID3D11SamplerState* m_sampleState;
+//	ID3D11SamplerState* m_sampleState;
 
 	ID3D11Buffer *m_vertexBuffer, *m_indexBuffer;
 // +++++++++++++++++   Instancing   ++++++++++++++++++++++++++++++++

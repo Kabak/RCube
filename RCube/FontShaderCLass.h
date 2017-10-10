@@ -13,7 +13,8 @@
 //////////////
 #include <d3d11.h>
 #include "DirectXMath.h"
-#include "D3Dcompiler.h"
+#include "D3DGlobalContext.h"
+//#include "D3Dcompiler.h"
 //#include <d3dx11async.h>
 #include <fstream>
 using namespace std;
@@ -61,7 +62,7 @@ public:
     }
 // ------------------------------------
 
-	bool Initialize(ID3D11Device*, HWND , ID3D10Blob*);
+	bool Initialize( D3DGlobalContext* D3DGC );
 	void Shutdown();
 	void Render(ID3D11DeviceContext*, int,  ID3D11ShaderResourceView*, XMVECTOR&);
 
@@ -70,10 +71,6 @@ private:
 	void OutputShaderErrorMessage(ID3D10Blob*, HWND, WCHAR*);
 
 private:
-//	ID3D11VertexShader* m_vertexShader;
-//	ID3D11PixelShader* m_pixelShader;
-	ID3D11InputLayout* m_layout;
-	ID3D11SamplerState* m_sampleState;
 // The FontShaderClass has a constant buffer for the pixel color that will be used to render the text fonts with color.
 	ID3D11Buffer* m_pixelBuffer;
 };

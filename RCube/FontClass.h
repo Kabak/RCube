@@ -14,7 +14,7 @@
 #include <DirectXTex.h>
 // Для альтернативного рисования текстом на текстуре без MAP
 #include "SquareObjectClass.h"
-#include "KFResourceManager.h"
+#include "ResourceManager.h"
 //#include <afx.h>
 
 
@@ -45,7 +45,7 @@ public:
     }
 // ------------------------------------
 
-	bool Initialize(D3DGlobalContext* D3DGC, FontOnTextureData *FOTData1, KFResourceManager *ResManager );
+	bool Initialize(D3DGlobalContext* D3DGC, FontOnTextureData *FOTData1 );
 	void Shutdown();
 	ID3D11ShaderResourceView* GetTexture();
 //	void SetTexture(ID3D11ShaderResourceView* Texture);
@@ -166,7 +166,7 @@ private:
 //		   IDXGIAdapter1* Adapter;			// не удаляем
 		    ID3D11Device* d3d11Device;		// не удаляем
 		D3DGlobalContext* Local_D3DGC;
-	   KFResourceManager* LocalResManager;
+	   ResourceManager* LocalResManager;
 #if defined( DEBUG ) || defined( _DEBUG )
 			 ID3D11Debug* DebugDevice;
 #endif

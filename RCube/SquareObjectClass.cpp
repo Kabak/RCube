@@ -19,9 +19,8 @@ SquareObjectClass::SquareObjectClass()
 
 HRESULT SquareObjectClass::Init(D3DGlobalContext* D3DGC,
 	XMFLOAT4& _ObjParam, 
-	ID3D11ShaderResourceView * texture,
-	int _TextureFlip,
-	ID3D10Blob * WorkBlob
+	ID3D11ShaderResourceView * TexCoord,
+	int _TexCoordFlip
 	){
 
 	HRESULT Result = S_OK ;
@@ -30,7 +29,7 @@ HRESULT SquareObjectClass::Init(D3DGlobalContext* D3DGC,
 
 	ObjOriginalParam = ObjParam = _ObjParam;
 
-	TextureFlip = _TextureFlip;
+	TextureFlip = _TexCoordFlip;
 
 	_2DPixelXmax = float(D3DGC_Obj->ScreenWidth / 2);
 	_2DPixelYmax = float(D3DGC_Obj->ScreenHeight / 2);
@@ -38,30 +37,30 @@ HRESULT SquareObjectClass::Init(D3DGlobalContext* D3DGC,
 	UpdateVertexPos();
 /*
 	// определение размеров текстуры
-	D3D11_TEXTURE2D_DESC* InputTextureDesc = new D3D11_TEXTURE2D_DESC;
+	D3D11_TexCoord2D_DESC* InputTexCoordDesc = new D3D11_TexCoord2D_DESC;
 	ID3D11Resource* MyRes;
-	ID3D11Texture2D* InputTexture;
+	ID3D11TexCoord2D* InputTexCoord;
 	teture->GetResource(&MyRes);
-	MyRes->QueryInterface<ID3D11Texture2D>(&InputTexture);
-	InputTexture->GetDesc(InputTextureDesc);
-	float TextureWidth = (float)InputTextureDesc->Width;
-	float TextureHeigth = (float)InputTextureDesc->Height;
-	delete InputTextureDesc;
+	MyRes->QueryInterface<ID3D11TexCoord2D>(&InputTexCoord);
+	InputTexCoord->GetDesc(InputTexCoordDesc);
+	float TexCoordWidth = (float)InputTexCoordDesc->Width;
+	float TexCoordHeigth = (float)InputTexCoordDesc->Height;
+	delete InputTexCoordDesc;
 	MyRes->Release();
-	InputTexture->Release();
+	InputTexCoord->Release();
 	// определение размеров текстуры
 */
 		
-	InterfaceVertexType* vertices ;
+	Vertex_FlatObject* vertices ;
 
-	vertices = new InterfaceVertexType[4];
+	vertices = new Vertex_FlatObject[4];
 
 	GenerateVertexes( vertices, TextureFlip );
 	
 	unsigned long indices[6] = { 0, 1, 2, 0, 3, 1 };
 
 	Obj = new KF2DObjClass ;
-	if ( Obj->Init( D3DGC, vertices, indices, texture, 4, 6, WorkBlob) != S_OK )
+	if ( Obj->Init( D3DGC, vertices, indices, TexCoord, 4, 6 ) != S_OK )
 	{
 		Result = E_FAIL;
 	}
@@ -85,9 +84,9 @@ SquareObjectClass::~SquareObjectClass(){
 	RCUBE_DELETE( Obj );
 }
 
-void SquareObjectClass::SetObjectTexture(ID3D11ShaderResourceView* texture){
+void SquareObjectClass::SetObjectTexture (ID3D11ShaderResourceView* TexCoord){
 
-	Obj->SetObjectTexture(texture) ;
+	Obj->SetObjectTexture (TexCoord) ;
 }
 
 
@@ -95,58 +94,58 @@ void SquareObjectClass::SetObjectTexture(ID3D11ShaderResourceView* texture){
 // Используется в классе анимации текстур
 void SquareObjectClass::ResetObjectTexcord( XMFLOAT4& Position )
 {
-		InterfaceVertexType* vertices ;
+	Vertex_FlatObject* vertices ;
 	// Create the vertex array.
-	vertices = new InterfaceVertexType[4];
+	vertices = new Vertex_FlatObject[4];
 
-	vertices[0].position = XMFLOAT3( left, top, 0.0f );  // Top left.
-	vertices[1].position = XMFLOAT3( right, bottom, 0.0f );  // Bottom right.
-	vertices[2].position = XMFLOAT3( left, bottom, 0.0f );  // Bottom left.
-	vertices[3].position = XMFLOAT3( right, top, 0.0f );  // Top right.
+	vertices[0].Position = XMFLOAT3( left, top, 0.0f );  // Top left.
+	vertices[1].Position = XMFLOAT3( right, bottom, 0.0f );  // Bottom right.
+	vertices[2].Position = XMFLOAT3( left, bottom, 0.0f );  // Bottom left.
+	vertices[3].Position = XMFLOAT3( right, top, 0.0f );  // Top right.
 
 	switch (TextureFlip)
 	{
 		// NO_FLIP
 	case 0:
-		vertices[0].texture = XMFLOAT2( Position.y, Position.x );
-		vertices[1].texture = XMFLOAT2( Position.w, Position.z );
-		vertices[2].texture = XMFLOAT2( Position.y, Position.z );
-		vertices[3].texture = XMFLOAT2( Position.w, Position.x );
+		vertices[0].TexCoord = XMFLOAT2( Position.y, Position.x );
+		vertices[1].TexCoord = XMFLOAT2( Position.w, Position.z );
+		vertices[2].TexCoord = XMFLOAT2( Position.y, Position.z );
+		vertices[3].TexCoord = XMFLOAT2( Position.w, Position.x );
 		break;
 		// FLIP_HORIZONTAL
 	case 1:
-		vertices[0].texture = XMFLOAT2( 1.0f, 0.0f );
-		vertices[1].texture = XMFLOAT2( 0.0f, 1.0f );
-		vertices[2].texture = XMFLOAT2( 1.0f, 1.0f );
-		vertices[3].texture = XMFLOAT2( 0.0f, 0.0f );
+		vertices[0].TexCoord = XMFLOAT2( 1.0f, 0.0f );
+		vertices[1].TexCoord = XMFLOAT2( 0.0f, 1.0f );
+		vertices[2].TexCoord = XMFLOAT2( 1.0f, 1.0f );
+		vertices[3].TexCoord = XMFLOAT2( 0.0f, 0.0f );
 		break;
 		// FLIP_VERTICAL
 	case 2:
-		vertices[0].texture = XMFLOAT2( 0.0f, 0.0f );
-		vertices[1].texture = XMFLOAT2( 1.0f, 1.0f );
-		vertices[2].texture = XMFLOAT2( 0.0f, 1.0f );
-		vertices[3].texture = XMFLOAT2( 1.0f, 0.0f );
+		vertices[0].TexCoord = XMFLOAT2( 0.0f, 0.0f );
+		vertices[1].TexCoord = XMFLOAT2( 1.0f, 1.0f );
+		vertices[2].TexCoord = XMFLOAT2( 0.0f, 1.0f );
+		vertices[3].TexCoord = XMFLOAT2( 1.0f, 0.0f );
 		break;
 		// ROTATE90
 	case 3:
-		vertices[0].texture = XMFLOAT2( 0.0f, 1.0f );
-		vertices[1].texture = XMFLOAT2( 1.0f, 0.0f );
-		vertices[2].texture = XMFLOAT2( 1.0f, 1.0f );
-		vertices[3].texture = XMFLOAT2( 0.0f, 0.0f );
+		vertices[0].TexCoord = XMFLOAT2( 0.0f, 1.0f );
+		vertices[1].TexCoord = XMFLOAT2( 1.0f, 0.0f );
+		vertices[2].TexCoord = XMFLOAT2( 1.0f, 1.0f );
+		vertices[3].TexCoord = XMFLOAT2( 0.0f, 0.0f );
 		break;
 		// ROTATE_90
 	case 4:
-		vertices[0].texture = XMFLOAT2( 1.0f, 0.0f );
-		vertices[1].texture = XMFLOAT2( 0.0f, 1.0f );
-		vertices[2].texture = XMFLOAT2( 0.0f, 0.0f );
-		vertices[3].texture = XMFLOAT2( 1.0f, 1.0f );
+		vertices[0].TexCoord = XMFLOAT2( 1.0f, 0.0f );
+		vertices[1].TexCoord = XMFLOAT2( 0.0f, 1.0f );
+		vertices[2].TexCoord = XMFLOAT2( 0.0f, 0.0f );
+		vertices[3].TexCoord = XMFLOAT2( 1.0f, 1.0f );
 		break;
 		// FLIP_HORIZONTAL_ROTATE_90
 	case 5:
-		vertices[0].texture = XMFLOAT2( 1.0f, 1.0f );
-		vertices[1].texture = XMFLOAT2( 0.0f, 0.0f );
-		vertices[2].texture = XMFLOAT2( 0.0f, 1.0f );
-		vertices[3].texture = XMFLOAT2( 1.0f, 0.0f );
+		vertices[0].TexCoord = XMFLOAT2( 1.0f, 1.0f );
+		vertices[1].TexCoord = XMFLOAT2( 0.0f, 0.0f );
+		vertices[2].TexCoord = XMFLOAT2( 0.0f, 1.0f );
+		vertices[3].TexCoord = XMFLOAT2( 1.0f, 0.0f );
 		break;
 
 	default:;
@@ -159,7 +158,7 @@ void SquareObjectClass::ResetObjectTexcord( XMFLOAT4& Position )
 
 ID3D11ShaderResourceView * SquareObjectClass::GetTexture(){
 
-	return Obj->GetTexture() ;
+	return Obj->GetTexture () ;
 
 }
 
@@ -168,9 +167,9 @@ void SquareObjectClass::SetObjParam(){
 
 	UpdateVertexPos();
 
-	InterfaceVertexType* vertices ;
+	Vertex_FlatObject* vertices ;
 
-	vertices = new InterfaceVertexType[4];
+	vertices = new Vertex_FlatObject[4];
 
 	GenerateVertexes( vertices, TextureFlip );
 
@@ -206,56 +205,56 @@ void SquareObjectClass::SetOriginalSize(void)
 
 // Генерация вертексов и текстуры объекта в соответствии с поворотом текстуры 
 // Для кнопок ScrollBar, чтобы можно было использовать одну текстуру для Min и Max кнопки
-void SquareObjectClass::GenerateVertexes( InterfaceVertexType* vertices, int TextureFlip )
+void SquareObjectClass::GenerateVertexes( Vertex_FlatObject* vertices, int TexCoordFlip )
 {
-	vertices[0].position = XMFLOAT3( left, top, 0.0f );  // Top left.
-	vertices[1].position = XMFLOAT3( right, bottom, 0.0f );  // Bottom right.
-	vertices[2].position = XMFLOAT3( left, bottom, 0.0f );  // Bottom left.
-	vertices[3].position = XMFLOAT3( right, top, 0.0f );  // Top right.
+	vertices[0].Position = XMFLOAT3( left, top, 0.0f );  // Top left.
+	vertices[1].Position = XMFLOAT3( right, bottom, 0.0f );  // Bottom right.
+	vertices[2].Position = XMFLOAT3( left, bottom, 0.0f );  // Bottom left.
+	vertices[3].Position = XMFLOAT3( right, top, 0.0f );  // Top right.
 
-	switch (TextureFlip)
+	switch (TexCoordFlip)
 	{
 		// NO_FLIP
 	case 0:
-		vertices[0].texture = XMFLOAT2( 0.0f, 0.0f );
-		vertices[1].texture = XMFLOAT2( 1.0f, 1.0f );
-		vertices[2].texture = XMFLOAT2( 0.0f, 1.0f );
-		vertices[3].texture = XMFLOAT2( 1.0f, 0.0f );
+		vertices[0].TexCoord = XMFLOAT2( 0.0f, 0.0f );
+		vertices[1].TexCoord = XMFLOAT2( 1.0f, 1.0f );
+		vertices[2].TexCoord = XMFLOAT2( 0.0f, 1.0f );
+		vertices[3].TexCoord = XMFLOAT2( 1.0f, 0.0f );
 		break;
 		// FLIP_HORIZONTAL
 	case 1:
-		vertices[0].texture = XMFLOAT2( 1.0f, 0.0f );
-		vertices[1].texture = XMFLOAT2( 0.0f, 1.0f );
-		vertices[2].texture = XMFLOAT2( 1.0f, 1.0f );
-		vertices[3].texture = XMFLOAT2( 0.0f, 0.0f );
+		vertices[0].TexCoord = XMFLOAT2( 1.0f, 0.0f );
+		vertices[1].TexCoord = XMFLOAT2( 0.0f, 1.0f );
+		vertices[2].TexCoord = XMFLOAT2( 1.0f, 1.0f );
+		vertices[3].TexCoord = XMFLOAT2( 0.0f, 0.0f );
 		break;
 		// FLIP_VERTICAL
 	case 2:
-		vertices[0].texture = XMFLOAT2( 0.0f, 0.0f );
-		vertices[1].texture = XMFLOAT2( 1.0f, 1.0f );
-		vertices[2].texture = XMFLOAT2( 0.0f, 1.0f );
-		vertices[3].texture = XMFLOAT2( 1.0f, 0.0f );
+		vertices[0].TexCoord = XMFLOAT2( 0.0f, 0.0f );
+		vertices[1].TexCoord = XMFLOAT2( 1.0f, 1.0f );
+		vertices[2].TexCoord = XMFLOAT2( 0.0f, 1.0f );
+		vertices[3].TexCoord = XMFLOAT2( 1.0f, 0.0f );
 		break;
 		// ROTATE90
 	case 3:
-		vertices[0].texture = XMFLOAT2( 0.0f, 1.0f );
-		vertices[1].texture = XMFLOAT2( 1.0f, 0.0f );
-		vertices[2].texture = XMFLOAT2( 1.0f, 1.0f );
-		vertices[3].texture = XMFLOAT2( 0.0f, 0.0f );
+		vertices[0].TexCoord = XMFLOAT2( 0.0f, 1.0f );
+		vertices[1].TexCoord = XMFLOAT2( 1.0f, 0.0f );
+		vertices[2].TexCoord = XMFLOAT2( 1.0f, 1.0f );
+		vertices[3].TexCoord = XMFLOAT2( 0.0f, 0.0f );
 		break;
 		// ROTATE_90
 	case 4:
-		vertices[0].texture = XMFLOAT2( 1.0f, 0.0f );
-		vertices[1].texture = XMFLOAT2( 0.0f, 1.0f );
-		vertices[2].texture = XMFLOAT2( 0.0f, 0.0f );
-		vertices[3].texture = XMFLOAT2( 1.0f, 1.0f );
+		vertices[0].TexCoord = XMFLOAT2( 1.0f, 0.0f );
+		vertices[1].TexCoord = XMFLOAT2( 0.0f, 1.0f );
+		vertices[2].TexCoord = XMFLOAT2( 0.0f, 0.0f );
+		vertices[3].TexCoord = XMFLOAT2( 1.0f, 1.0f );
 		break;
 		// FLIP_HORIZONTAL_ROTATE_90
 	case 5:
-		vertices[0].texture = XMFLOAT2( 1.0f, 1.0f );
-		vertices[1].texture = XMFLOAT2( 0.0f, 0.0f );
-		vertices[2].texture = XMFLOAT2( 0.0f, 1.0f );
-		vertices[3].texture = XMFLOAT2( 1.0f, 0.0f );
+		vertices[0].TexCoord = XMFLOAT2( 1.0f, 1.0f );
+		vertices[1].TexCoord = XMFLOAT2( 0.0f, 0.0f );
+		vertices[2].TexCoord = XMFLOAT2( 0.0f, 1.0f );
+		vertices[3].TexCoord = XMFLOAT2( 1.0f, 0.0f );
 		break;
 	default:;
 	}
@@ -265,7 +264,7 @@ void SquareObjectClass::GenerateVertexes( InterfaceVertexType* vertices, int Tex
 void SquareObjectClass::ChangeMousePosition( int positionX, int positionY )
 {
 	int left, right, top, bottom;
-	InterfaceVertexType* vertices;
+	Vertex_FlatObject* vertices;
 
 	// If the position we are rendering this bitmap to has not changed then don't update the vertex buffer since it
 	// currently has the correct parameters.
@@ -291,19 +290,19 @@ void SquareObjectClass::ChangeMousePosition( int positionX, int positionY )
 	bottom = top - (int)ObjParam.w; //m_bitmapHeight;
 
 	// Create the vertex array.
-	vertices = new InterfaceVertexType[4];
+	vertices = new Vertex_FlatObject[4];
 
-	vertices[0].position = XMFLOAT3( ( float ) left, ( float ) top, 0.0f );  // Top left.
-	vertices[0].texture = XMFLOAT2( 0.0f, 0.0f );
+	vertices[0].Position = XMFLOAT3( ( float ) left, ( float ) top, 0.0f );  // Top left.
+	vertices[0].TexCoord = XMFLOAT2( 0.0f, 0.0f );
 
-	vertices[1].position = XMFLOAT3( ( float ) right, ( float ) bottom, 0.0f );  // Bottom right.
-	vertices[1].texture = XMFLOAT2( 1.0f, 1.0f );
+	vertices[1].Position = XMFLOAT3( ( float ) right, ( float ) bottom, 0.0f );  // Bottom right.
+	vertices[1].TexCoord = XMFLOAT2( 1.0f, 1.0f );
 
-	vertices[2].position = XMFLOAT3( ( float ) left, ( float ) bottom, 0.0f );  // Bottom left.
-	vertices[2].texture = XMFLOAT2( 0.0f, 1.0f );
+	vertices[2].Position = XMFLOAT3( ( float ) left, ( float ) bottom, 0.0f );  // Bottom left.
+	vertices[2].TexCoord = XMFLOAT2( 0.0f, 1.0f );
 
-	vertices[3].position = XMFLOAT3( ( float ) right, ( float ) top, 0.0f );  // Top right.
-	vertices[3].texture = XMFLOAT2( 1.0f, 0.0f );
+	vertices[3].Position = XMFLOAT3( ( float ) right, ( float ) top, 0.0f );  // Top right.
+	vertices[3].TexCoord = XMFLOAT2( 1.0f, 0.0f );
 
 
 	Obj->SetVertexBuffer( vertices );

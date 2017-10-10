@@ -28,11 +28,14 @@
     <Filter Include="Menu">
       <UniqueIdentifier>{37ea2e0d-df63-4083-bbf8-a6760a1f67be}</UniqueIdentifier>
     </Filter>
-    <Filter Include="D3D">
-      <UniqueIdentifier>{6407eb5f-e1b7-45f5-b684-779b58298da0}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Materials">
       <UniqueIdentifier>{7b69c3d6-6385-478a-a380-84cef673b0b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Render">
+      <UniqueIdentifier>{6407eb5f-e1b7-45f5-b684-779b58298da0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Render\Buffers">
+      <UniqueIdentifier>{56aa5bc4-f31f-41c3-9bae-c0b376efedc7}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -60,9 +63,6 @@
     <ClInclude Include="CameraClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="LightClass.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="CpuClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -84,12 +84,6 @@
     <ClInclude Include="KFPicking.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="KFSkyDomesClass.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="KFCubeMappingClass.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="KFModel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -100,9 +94,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="RCubeProfiling.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="KFTerrain.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="KFClusterMap.h">
@@ -187,19 +178,13 @@
       <Filter>Menu</Filter>
     </ClInclude>
     <ClInclude Include="D3dClass.h">
-      <Filter>D3D</Filter>
+      <Filter>Render</Filter>
     </ClInclude>
     <ClInclude Include="D3DGlobalContext.h">
-      <Filter>D3D</Filter>
-    </ClInclude>
-    <ClInclude Include="Buffer.h">
-      <Filter>D3D</Filter>
+      <Filter>Render</Filter>
     </ClInclude>
     <ClInclude Include="StringsListClass.h">
       <Filter>Menu</Filter>
-    </ClInclude>
-    <ClInclude Include="KFResourceManager.h">
-      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\DirectXTex-master\DDSTextureLoader\DDSTextureLoader.h">
       <Filter>Header Files</Filter>
@@ -209,6 +194,30 @@
     </ClInclude>
     <ClInclude Include="Material.h">
       <Filter>Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="Terrain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ResourceManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CubeMappingClass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DX11Buffers.h">
+      <Filter>Render\Buffers</Filter>
+    </ClInclude>
+    <ClInclude Include="Light_def.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="Buffer.h">
+      <Filter>Render\Buffers</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneObject.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="VertexBuffers_def.h">
+      <Filter>Render\Buffers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -230,9 +239,6 @@
     <ClCompile Include="CameraClass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="LightClass.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="CpuClass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -248,12 +254,6 @@
     <ClCompile Include="KFPicking.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="KFSkyDomesClass.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="KFCubeMappingClass.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="KFModel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -264,9 +264,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RCubeProfiling.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="KFTerrain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="KFClusterMap.cpp">
@@ -347,20 +344,29 @@
     <ClCompile Include="StringsListClass.cpp">
       <Filter>Menu</Filter>
     </ClCompile>
-    <ClCompile Include="KFResourceManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\DirectXTex-master\WICTextureLoader\WICTextureLoader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\DirectXTex-master\DDSTextureLoader\DDSTextureLoader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="D3dClass.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Material.cpp">
       <Filter>Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="D3dClass.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Terrain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ResourceManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CubeMappingClass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DX11Buffers.cpp">
+      <Filter>Render\Buffers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -399,30 +405,6 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\KF2DObj_ps.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\SkyDome_vs.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\SkyDome_ps.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\InstansingModel_vs.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\InstansingModel_ps.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Model_vs.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Model_ps.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\TerrainShader_ps.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\TerrainShader_vs.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\FXAA_vs.hlsl">

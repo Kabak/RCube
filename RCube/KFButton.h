@@ -94,8 +94,6 @@ public :
 				XMFLOAT4& ScreenCoords,
 				XMFLOAT4& FormCoord,
 	   KFButton_Elements& ButtonInitData
-//			   TextClass* g_text,
-//		      ID3D10Blob* WorkBlob
 		);
 
 	HRESULT Draw();

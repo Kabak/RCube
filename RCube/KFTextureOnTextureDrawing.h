@@ -37,10 +37,10 @@ public:
 	~KFTextureOnTextureDrawing();
 	HRESULT Init(HWND hwnd, D3DGlobalContext* D3DGC, UINT StTextureWidth, UINT StTextureHeigth, int screenPosX, int ScreenPosY, ID3D11ShaderResourceView * BackGroundTexture,
 		ID3D11RenderTargetView * ActiveRenderTargetView, float PosX, float PosY , 
-		ID3D11DepthStencilView * ActiveDepthStensil , ID3D10Blob * WorkBlob);
+		ID3D11DepthStencilView * ActiveDepthStensil );
 	void Draw();
 	void AddTexture(D3DGlobalContext* D3DGC, float TexPosX, float TexPosY, float texWidth, float texHeigth
-		, ID3D11ShaderResourceView * Texture, ID3D10Blob * WorkBlob);
+		, ID3D11ShaderResourceView * Texture);
 
 };
 

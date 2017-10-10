@@ -27,7 +27,6 @@ HRESULT MenuControrerClass::Init(D3DGlobalContext* D3DGC,
 	KF2DTextureAnimation *_Animation,
 	XMFLOAT4 BackGroundCoord,
 	ID3D11ShaderResourceView* BackgroundTexture,
-	ID3D10Blob* MenuDrawPlaceBlob,
 	TextClass* GolobalText 
 	)
 {
@@ -61,7 +60,7 @@ HRESULT MenuControrerClass::Init(D3DGlobalContext* D3DGC,
 
 	Background = new SquareObjectClass;
 	Background->Init(McD3DGC, BackGroundCoord,
-		BackgroundTexture, 0, MenuDrawPlaceBlob);
+		BackgroundTexture, 0);
 
 	// Устанавливаем анимацию на фон меню
 	if ( Animation )

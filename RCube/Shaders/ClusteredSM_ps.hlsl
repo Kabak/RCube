@@ -44,9 +44,9 @@ StructuredBuffer<uint4> gLightGrid : register(t6);
 Texture2D gDiffuseTexture : register(t0);
 Texture2DArray ShadowMap3D : register(t1);
 
-SamplerState gDiffuseSampler : register(s0);
-SamplerState SampleTypeClamp  : register(s1);
-SamplerComparisonState cmpSampler  : register(s2);
+SamplerState Model_Texture_Sampler : register(s0);
+SamplerState ShadowMap_Sampler  : register(s1);
+SamplerComparisonState SM_PCF_Sampler : register(s2);
 
 struct GeometryVSOut
 {
@@ -225,7 +225,7 @@ SurfaceData ComputeSurfaceDataFromGeometry(GeometryVSOut input)
 //	surface.normal = normalize(mUI.faceNormals ? faceNormal : input.normal);
 // -----------------------------------------------------------
 // ѕереключаемс€: рисуем текстуру или закрышиваем белым цветом
-	surface.albedo = gDiffuseTexture.Sample(gDiffuseSampler, input.texCoord);
+	surface.albedo = gDiffuseTexture.Sample( Model_Texture_Sampler, input.texCoord);
 	surface.albedo.rgb = mUI.lightingOnly ? float3(1.0f, 1.0f, 1.0f) : surface.albedo.rgb;
 // -----------------------------------------------------------
 	// Map NULL diffuse textures to white
@@ -275,7 +275,7 @@ void AccumulatePhongBRDF(
 		float LightDot = dot(-lightDir, normalize(direction));
 
 		float spread = 360.0f / angel;
-		lightContrib *= 20 * pow(max(LightDot, 0.0f), spread);
+		lightContrib *= 20 * pow(max(LightDot, 0.0f), 0.4f + 0.02f * distance * spread);
 	}
 
 	if (NdotL > 0.0f)
@@ -292,7 +292,8 @@ void AccumulatePhongBRDF(
 	}
 
 }
-
+// ÷ветопередача
+// http://www.gamedev.ru/code/forum/?id=230008
 // Uses an in-out for accumulation to avoid returning and accumulating 0
 void AccumulateBRDF(SurfaceData surface, Light light, inout float3 lit)
 {
@@ -339,9 +340,6 @@ void AccumulateBRDF(SurfaceData surface, Light light, inout float3 lit)
 		// ++++++++++++     ќбсчЄт теней     ++++++++++++++
 		if ( mUI.shadowsOn && light.haveShadow )
 		{
-			uint ShadowPixel = 0;
-			float EdgeSmooth = 0.0f;
-//			float3 ShadowFactor = 0.0f;
 			// подставл€ем матрицу от конкретного источника света 
 			// дл€ корректного наложени€ SpotLIght Shdow Map
 //			if (light.LightID == light.ShadowMapSliceNumber)
@@ -377,40 +375,33 @@ void AccumulateBRDF(SurfaceData surface, Light light, inout float3 lit)
 			// Check if the projected coordinates are in the view of the light, if not then the pixel gets just an ambient value. 
 			if ((saturate(projectTexCoord.x) == projectTexCoord.x) && (saturate(projectTexCoord.y) == projectTexCoord.y))
 			{
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//				surface.shadowMapBias = 0.002013566868665656 * pow(0.9912319723406164, light.positionView.y);//0.00095f;//
-//				surface.lightViewPosition.z -= 0.000035f; //surface.shadowMapBias;
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 				// —мотрим текстуру теней
-				float shadowMapDepth = ShadowMap3D.SampleGrad(SampleTypeClamp, projectTexCoord.xyz, 0.0f, 0.0f).r;
+				float shadowMapDepth = ShadowMap3D.SampleGrad( ShadowMap_Sampler, projectTexCoord.xyz, 0.0f, 0.0f).r;
 
 				if (surface.lightViewPosition.z  > shadowMapDepth)
 				{
 					// PCF фильтраци€, если включены м€гкие тени
-					// http://http.developer.nvidia.com/GPUGems/gpugems_ch11.html
-					// https://takinginitiative.wordpress.com/2011/05/25/directx10-tutorial-10-shadow-mapping-part-2/
-					// https://habrahabr.ru/post/259679/
 					if ( mUI.softShadowsOn )
 					{
+						// http://http.developer.nvidia.com/GPUGems/gpugems_ch11.html
+						// https://takinginitiative.wordpress.com/2011/05/25/directx10-tutorial-10-shadow-mapping-part-2/
+						// https://habrahabr.ru/post/259679/
 						//PCF sampling for shadow map
 
-						float sum = 0;
-						float x, y;
-
+						float sum = 0.0f;
 						//perform PCF filtering on a 4 x 4 texel neighborhood
 						float val = mUI.PCF_Amount;
 						float Step = mUI.PCF_Step;
 						float Devider = ( val * 2 ) * ( val / Step );
-						for ( y = -val; y <= val; y += Step )
+						for (float y = -val; y <= val; y += Step )
 						{
-							for ( x = -val; x <= val; x += Step )
+							for (float x = -val; x <= val; x += Step )
 							{
-								sum += ShadowMap3D.SampleCmpLevelZero( cmpSampler, projectTexCoord.xyz + texOffset( x, y, 0.0f, mUI.Shadow_Divider ), surface.lightViewPosition.z ).r;
+								sum += ShadowMap3D.SampleCmpLevelZero( SM_PCF_Sampler, projectTexCoord.xyz + texOffset( x, y, 0.0f, mUI.Shadow_Divider ), surface.lightViewPosition.z ).r;
 							}
 						}
 
 						shadowMapFactor += sum / Devider;
-
 
 					}
 // + Ёксперименты
@@ -421,19 +412,10 @@ void AccumulateBRDF(SurfaceData surface, Light light, inout float3 lit)
 					// attenuation2 запихиваем сюда чтобы тени уменьшались по мере удалени€ от источника света
 					// attenuation2 * 0.55f - чтобы тень была не очень контрастна€ около источника света
 					// чем больше множитель, тем темнее тень
-//					ShadowFactor = shadowMapFactor * (attenuation * 0.55f);
-//					ShadowFactor = 0.0f;
-					// ¬ыключаем отрисовку света от которго у нас тень
-//					Contribute = 0.0f;
-//					surface.lightViewPosition.xyz - surface.positionView;  // ѕолучаетс€ тень темнее дальше от объекта
-//					float3 directionOfShadow = surface.ObjVertexPos - surface.lightViewPosition.xyz;//surface.positionView; //surface.lightViewPosition.xyz;//surface.ObjVertexPos - 
-//					float distanceToObject = length( directionOfShadow );
-//					Contribute -= ( ( (shadowMapFactor ) / ( distanceToObject ) ) / diffuseColor.x ) / ( (  distanceToLight * ( diffuseColor.x )));
 // - Ёксперименты
 
-					float3 BorderContribute = saturate(min(saturate(Contribute), saturate(shadowMapFactor * diffuseColor.x)));
+					float3 BorderContribute = saturate(min(Contribute, shadowMapFactor * 1.64f));
 					litDiffuse += saturate(Contribute * BorderContribute * NdotL);
-
 					lit += surface.albedo.rgb * litDiffuse;
 					return;
 				}

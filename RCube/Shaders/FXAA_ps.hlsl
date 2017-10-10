@@ -2081,7 +2081,7 @@ FxaaVS_Output FxaaVS(uint id : SV_VertexID) {
     return Output;
 }
 */
-SamplerState InputSampler : register(s0);
+SamplerState InputSampler : register(s2);
 Texture2D    InputTexture : register(t0);
 
 float4 FxaaPS(FxaaVS_Output Input) : SV_TARGET {

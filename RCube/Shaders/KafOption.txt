@@ -1,31 +1,23 @@
- CubeMap_vs.cso //0
+ CubeMap_vs.cso //0	0
  CubeMap_ps.cso //1
- Font_vs.cso //2
+ Font_vs.cso //2	1
  Font_ps.cso //3
- KF2DObj_vs.cso //4
+ KF2DObj_vs.cso //4	2
  KF2DObj_ps.cso //5
- particle_vs.cso //6
+ particle_vs.cso //6	3
  particle_ps.cso //7
- SkyDome_vs.cso //8
- SkyDome_ps.cso //9
- Model_vs.cso //10
- Model_ps.cso //11
- InstansingModel_vs.cso //12
- InstansingModel_ps.cso //13
- TerrainShader_vs.cso //14
- TerrainShader_ps.cso //15
- ClusteredSM_vs.cso //16
- ClusteredSM_ps.cso //17
- FXAA_vs.cso //18
- FXAA_ps.cso //19
- LightRenderSM_vs.cso //20
- LightRenderSM_ps.cso //21
- FireAnimation_vs.cso //22
- FireAnimation_ps.cso //23
- FireParticle3D_vs.cso //24
- FireParticle3D_ps.cso //25
- TorchFire3D_vs.cso //26
- TorchFire3D_ps.cso //27
- Horiz_cs.cso //28    CS Shader - 1
- Vert_cs.cso //29     CS SHader - 2
+ ClusteredSM_vs.cso //8	4
+ ClusteredSM_ps.cso //9
+ FXAA_vs.cso //10	5
+ FXAA_ps.cso //11
+ LightRenderSM_vs.cso //12	6
+ LightRenderSM_ps.cso //13
+ FireAnimation_vs.cso //14	7
+ FireAnimation_ps.cso //15
+ FireParticle3D_vs.cso //16	8
+ FireParticle3D_ps.cso //17
+ TorchFire3D_vs.cso //18	9
+ TorchFire3D_ps.cso //19
+ Horiz_cs.cso //28    CS Shader - 0	
+ Vert_cs.cso //29     CS SHader - 1
 ;

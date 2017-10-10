@@ -5,7 +5,8 @@
 #include "D3DGlobalContext.h"
 #include "ParticleSystemDefinitions.h"
 #include "FPSTimers.h"
-#include "LightClass.h"
+#include "D3DClass.h"
+#include "Light_def.h"
 #include <vector>
 
 #ifndef _TORCH_FIRE_PARTICLE_H_
@@ -27,7 +28,7 @@ public:
 					 ID3D10Blob* Blob,
 					 ID3D11ShaderResourceView* texture,
 					 TorchFireSmoke TorchFIreSmokeInit,
-					 LightClass *_EngineLight
+					 D3DClass *_EngineLight
 					 );
 
 
@@ -39,7 +40,7 @@ public:
 						 //	ID3D11ShaderResourceView *_HeartTexture,
 						 //	ID3D11ShaderResourceView *_ParticlesTexture,
 						 //						 int  InstanceAmount,
-						 LightClass *_EngineLight
+						 D3DClass *_EngineLight
 						 );
 
 	void Shutdown();
@@ -67,13 +68,14 @@ public:
 
 	int GetInstanceCount();
 
+	int ShaderForDraw = -1;
 
 private:
 
 	D3DGlobalContext *D3DGC_Local;
 
-	LightClass *EngineLight;
-	LightClass::PointLight *TempLight;
+	D3DClass *EngineLight;
+	PointLight *TempLight;
 
 	bool InitializeParticleSystem();
 
@@ -86,7 +88,7 @@ private:
 	float m_particleSize; 
 
 	ID3D11InputLayout* m_layout;
-	ID3D11SamplerState* m_sampleState;
+//	ID3D11SamplerState* m_sampleState;
 
 	// Номер света присвоенный системой
 	int LightIndex;
@@ -176,7 +178,7 @@ XMFLOAT4 FireFlyFrameCoord;	// Координаты кадра из которого нарезаются FireFly (
 	Torch_FireSmoke1* TorchFireSmokeAddData;
 	Torch_FireSmoke1* TorchFireFlyAddData;
 	// Тип Vertex Buffer
-	BillBordVertexes *FlameVertices;
+	Vertex_FlatObject *FlameVertices;
 	// Тип Instance Buffer
 	ParticleShaderInstance_TORCH_FIRE *FlameInstances;
 	ParticleShaderInstance_TORCH_FIRE *SmokeInstances;

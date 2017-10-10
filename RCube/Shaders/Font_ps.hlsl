@@ -5,7 +5,9 @@ struct PixelInputType
 };
 
 Texture2D shaderTexture;
-SamplerState SampleType;
+
+// https://msdn.microsoft.com/en-us/library/windows/desktop/dn899207(v=vs.85).aspx
+SamplerState FlatObject: register (s03);
 
 cbuffer PixelBuffer : register(b13)
 {
@@ -19,7 +21,7 @@ float4 FontPixelShader(PixelInputType input) : SV_TARGET
 
 
 // Sample the texture pixel at this location.
-color = shaderTexture.Sample(SampleType, input.tex);
+color = shaderTexture.Sample( FlatObject, input.tex);
 
 //float mul = color.r;
 //float mul1 = mul * color.g;

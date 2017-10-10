@@ -30,9 +30,8 @@ HRESULT KF2DTextureAnimation::Init(HWND hwnd,
 	ID3D11ShaderResourceView * animTexture,	// Текстура с анимацией
 	int DrawShaderIndex,					// Номер шейдера которым нужно рисовать
 	int ReturnShaderIndex,					// Номер шейдера на который нужно вернуть после анимации
-	KFResourceManager *_ShaderManager,		// Менеджер шейдеров для переключения шейдера
-	XMFLOAT4& _ObjParam,					// x,y - позиция X,Y , z - Width , w - Height элемента
-	ID3D10Blob * WorkBlob					// Blob от шейдера для совмещения с Layout
+	ResourceManager *_ShaderManager,		// Менеджер шейдеров для переключения шейдера
+	XMFLOAT4& _ObjParam						// x,y - позиция X,Y , z - Width , w - Height элемента
 	)
 {
 
@@ -74,7 +73,7 @@ HRESULT KF2DTextureAnimation::Init(HWND hwnd,
 //	float h = TextcordTop[0], i = TextcordLeft[0];
 
 	AnimeTextures = new SquareObjectClass;
-	result = AnimeTextures->Init(D3DGC, ObjParam, animTexture, 0, WorkBlob );
+	result = AnimeTextures->Init(D3DGC, ObjParam, animTexture, 0 );
 	if (result == E_FAIL){
 
 		MessageBox(hwnd, L"Не могу создать место для отрисовки. KFAnimation.cpp.", L"Error", MB_OK);

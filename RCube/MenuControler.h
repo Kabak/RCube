@@ -103,6 +103,7 @@ public :
 	// Рисовать ли меню
 	bool IsMenuDraw;
 
+	int ShaderForDraw = -1;
 	// Позиция и размеры фона окна меню
 	//	x - X в % , y - Y в % , Width в % к оригинальному размеру текстуры,
 	// Height в % к оригинальному размеру текстуры
@@ -141,7 +142,6 @@ public :
 		KF2DTextureAnimation *_Animation,			// Указатель на анимацию в фоне, если NULL, то нет анимации
 		XMFLOAT4 BackGroundCoord,					// Фактически размеры меню и позиция на экране
 		ID3D11ShaderResourceView* BackgroundTexture,// Указатель на текстуру фона
-		ID3D10Blob* MenuDrawPlaceBlob,				// Блоб от шейдера которым рисуем элемент
 		TextClass * GolobalText						// Указатель на класс текста в движке, для создания строк в Label, Edit
 		);
 

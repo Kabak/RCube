@@ -42,9 +42,9 @@ D3DClass::D3DClass()
 	D3DGC->mGeometryBlendState			= nullptr;
 	D3DGC->m_alphaParticleBlendingState = nullptr;
 	D3DGC->m_depthStencilBuffer			= nullptr;
-	D3DGC->m_rasterState				= nullptr;
+	D3DGC->DefaultRasterizerState		= nullptr;
 	D3DGC->m_EngineInputClass			= nullptr;
-	m_rasterStateNone					= nullptr;
+	D3DGC->RasterStateCullNone			= nullptr;
 	m_depthDisabledStencilState			= nullptr;
 
 #if defined( DEBUG ) || defined( _DEBUG )
@@ -59,17 +59,14 @@ D3DClass::D3DClass()
 	D3DGC->BackBuffer_CopyResolveTexture= nullptr;
 	D3DGC->BackBuffer_CopyResolveTextureSRV = nullptr;
 	D3DGC->BackBuffer_CopyResolveTextureUAV = nullptr;
-//	D3DGC->g_pSamPointMirror			= nullptr;
-//	D3DGC->g_pSamLinearWrap				= nullptr;
-//	D3DGC->g_pSamPointCmpClamp			= nullptr;
-	D3DGC->g_pSamBilinear				= nullptr;
+
 	D3DGC->ScreenShootTexture			= nullptr;
-//	D3DGC->SRV_ScreenShootTexture		= nullptr;
 
 // Shadow Maps & Lights
-	D3DGC->CLight_DiffuseSampler		= nullptr;
-	D3DGC->CLight_SampleTypeClamp		= nullptr;
-	D3DGC->CLight_cmpSampler			= nullptr;
+	D3DGC->Wrap_Model_Texture			= nullptr;
+	D3DGC->CLight_ShadowMap_Sampler		= nullptr;
+	D3DGC->CLight_SM_PCF_Sampler		= nullptr;
+	D3DGC->FlatObject_Sampler			= nullptr;
 
 // Direct Write Fonts
 	D3DGC->sharedTex11					= nullptr;
@@ -79,12 +76,56 @@ D3DClass::D3DClass()
 	D3DGC->keyedMutex10					= nullptr;
 	D3DGC->D2DRenderTarget				= nullptr;
 	D3DGC->D2DFactory					= nullptr;
+	
+	LightShaderForDraw					= -1;
+
+	Light = nullptr;
+
+	lightBufferSRV = nullptr;
+	LightGridBufferSRV = nullptr;
+
+	ShadowMap3D = nullptr;
+	SRV_ShadowMap3D = nullptr;
+
+	PointLightSize = sizeof ( PointLight );
+
+	SMWidth = 512; // Ширина Shadow Map
+	SMHeight = 512;// Высота Shadow Map
+
+	mPointLightParameters.reserve ( MAX_LIGHTS );
+
+	FreeLightIndex.reserve ( MAX_LIGHTS );
+
+	SpotLightsWithShadowsIndexes.reserve ( MAX_LIGHTS );
+
+	LightPos.Vec = { 0.0f, 0.0f, 0.0f, 1.0f };
+	LightPosCopy.Vec = { 0.0f, 0.0f, 0.0f, 1.0f };
+	Temp.Vec = { 0.0f, 0.0f, 0.0f, 1.0f };
+	Temp2.Vec = { 0.0f, 0.0f, 0.0f, 1.0f };
+/*
+// + Shadow Works
+	cbShadowBuffer = nullptr;
+	LightRender_RS = nullptr;
+	LightRender_DS = nullptr;
+	DSV_ShadowMap3D = nullptr;
+	Up = XMVectorSet ( 0.0f, 1.0f, 0.0f, 0.0f );
+	LightPosition.Vec = { 0.0f, 0.0f, 0.0f, 1.0f };
+	LightTarget.Vec = { 0.0f, 0.0f, 0.0f, 1.0f };
+// - Shadow Works
+*/
+ClustersAmount = 0;
+
+	mLightGridBufferSize = 64 * 1024 * 32; // 32 MB;
+
 	// Размеры текстуры для отрисовки шрифтов 
 	// достаточные для размера шрифта 74.0f с Outline 10
 	// Максимальная длинна 8192 для DX10
 	D3DGC->sharedTex11_Width			= 8192;
 	D3DGC->sharedTex11_Height			= 128;
 
+	FXAAShaderIndex						= -1;
+	BlureHorizComputeShaderIndex		= -1;
+	BlureVertComputeShaderIndex			= -1;
 }
 
 
@@ -94,62 +135,13 @@ D3DClass::~D3DClass()
 }
 
 bool D3DClass::Initialize(HWND hwnd, int screenWidth, int screenHeight, bool vsync, bool fullscreen,
-	float screenDepth, float screenNear)
+	float screenDepth, float screenNear, FrustumClass* frustum )
 {
 	HRESULT result;
 	IDXGIFactory1*			 Factory1	= nullptr;
 	IDXGIOutput*        AdapterOutput	= nullptr;
 
 	D3DGC->hwnd							= hwnd;
-
-/*
-	HRESULT hr = CoInitializeEx( NULL, COINIT_APARTMENTTHREADED |
-								 COINIT_DISABLE_OLE1DDE );
-	if ( SUCCEEDED( hr ) )
-	{
-		IFileOpenDialog *pFileOpen;
-
-		// Create the FileOpenDialog object.
-		hr = CoCreateInstance( CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
-							   IID_IFileOpenDialog, reinterpret_cast<void**>( &pFileOpen ) );
-
-		if ( SUCCEEDED( hr ) )
-		{
-			// Show the Open dialog box.
-			hr = pFileOpen->Show( NULL );
-
-			// Get the file name from the dialog box.
-			if ( SUCCEEDED( hr ) )
-			{
-				IShellItem *pItem;
-				hr = pFileOpen->GetResult( &pItem );
-				if ( SUCCEEDED( hr ) )
-				{
-					PWSTR pszFilePath;
-					hr = pItem->GetDisplayName( SIGDN_FILESYSPATH, &pszFilePath );
-
-					// Display the file name to the user.
-					if ( SUCCEEDED( hr ) )
-					{
-						MessageBox( NULL, pszFilePath, L"File Path", MB_OK );
-						CoTaskMemFree( pszFilePath );
-					}
-					pItem->Release();
-				}
-			}
-			pFileOpen->Release();
-		}
-		CoUninitialize();
-	}
-
-*/
-
-
-
-
-
-
-
 	D3DGC->ScreenWidth					= screenWidth;
 	D3DGC->ScreenHeight					= screenHeight;
 	D3DGC->ScreenRatio = float(D3DGC->ScreenWidth / D3DGC->ScreenHeight);
@@ -166,7 +158,6 @@ bool D3DClass::Initialize(HWND hwnd, int screenWidth, int screenHeight, bool vsy
 	D3D11_TEXTURE2D_DESC depthBufferDesc;
 	D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
 	D3D11_RASTERIZER_DESC rasterDesc;
-	D3D11_VIEWPORT viewport;
 	float fieldOfView, screenAspect;
 	D3D11_DEPTH_STENCIL_DESC depthDisabledStencilDesc;
 	D3D11_BLEND_DESC blendStateDescription;
@@ -187,7 +178,7 @@ bool D3DClass::Initialize(HWND hwnd, int screenWidth, int screenHeight, bool vsy
 	result = CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)&Factory1);
 	if (FAILED(result))
 	{
-		MessageBox(hwnd, L"Could not initialize CreateDXGIFactory1.", L"Error", MB_OK);
+		MessageBox(hwnd, L"Could not initialize CreateDXGIFactory1.", 0, MB_OK);
 		return false;
 	}
 
@@ -219,7 +210,7 @@ bool D3DClass::Initialize(HWND hwnd, int screenWidth, int screenHeight, bool vsy
 				error = wcstombs_s(&stringLength, m_videoCardDescription, 128, AdapterDesc.Description, 127);
 				if (error != 0)
 				{
-					MessageBox(hwnd, L"Could not copy VideoAdapter name.", L"Error", MB_OK);
+					MessageBox(hwnd, L"Could not copy VideoAdapter name.", 0, MB_OK);
 					RCUBE_RELEASE( Factory1 );
 					Shutdown();
 					return false;
@@ -235,7 +226,7 @@ bool D3DClass::Initialize(HWND hwnd, int screenWidth, int screenHeight, bool vsy
 	result = Adapters[0]->EnumOutputs(0, &AdapterOutput);
 	if (FAILED(result))
 	{
-		MessageBox(hwnd, L"Could not get Adapters[0]->EnumOutputs.", L"Error", MB_OK);
+		MessageBox(hwnd, L"Could not get Adapters[0]->EnumOutputs.", 0, MB_OK);
 		RCUBE_RELEASE( Factory1 );
 		Shutdown();
 		return false;
@@ -244,7 +235,7 @@ bool D3DClass::Initialize(HWND hwnd, int screenWidth, int screenHeight, bool vsy
 	result = AdapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, NULL);
 	if (FAILED(result))
 	{
-		MessageBox(hwnd, L"Could not get AdapterOutput->GetDisplayModeList.", L"Error", MB_OK);
+		MessageBox(hwnd, L"Could not get AdapterOutput->GetDisplayModeList.", 0, MB_OK);
 		RCUBE_RELEASE( Factory1 );
 		Shutdown();
 		return false;
@@ -253,10 +244,9 @@ bool D3DClass::Initialize(HWND hwnd, int screenWidth, int screenHeight, bool vsy
 	displayModeList = new DXGI_MODE_DESC[numModes];
 	if (!displayModeList)
 	{
-		MessageBox(hwnd, L"No DisplayMode in List.", L"Error", MB_OK);
-		delete[] displayModeList;
+		MessageBox(hwnd, L"No DisplayMode in List.", 0, MB_OK);
+		RCUBE_ARR_DELETE( displayModeList );
 		RCUBE_RELEASE( AdapterOutput );
-//		AdaptersRelease();
 		RCUBE_RELEASE( Factory1 );
 		Shutdown();
 		return false;
@@ -413,7 +403,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	result = D3DGC->D11_device->QueryInterface(__uuidof(ID3D11Debug), reinterpret_cast<void**>(&D3DGC->DebugDevice));
 	if (FAILED(result))
 	{
-		MessageBox(hwnd, L"Could not initialize DebugDevice.", L"Error", MB_OK);
+		MessageBox(hwnd, L"Could not initialize DebugDevice.", 0, MB_OK);
 //		AdaptersRelease();
 		RCUBE_RELEASE( Factory1 );
 		Shutdown();
@@ -638,7 +628,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	rasterDesc.SlopeScaledDepthBias = 0.0f;
 
 	// Create the rasterizer state from the description we just filled out.
-	result = D3DGC->D11_device->CreateRasterizerState(&rasterDesc, &D3DGC->m_rasterState);
+	result = D3DGC->D11_device->CreateRasterizerState(&rasterDesc, &D3DGC->DefaultRasterizerState );
 	if (FAILED(result))
 	{
 		MessageBox(hwnd, L"Direct3D CreateRasterizerState.", 0, 0);
@@ -648,7 +638,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	rasterDesc.FrontCounterClockwise = true;
 	rasterDesc.CullMode = D3D11_CULL_NONE;
 	rasterDesc.DepthClipEnable = false;
-	result = D3DGC->D11_device->CreateRasterizerState(&rasterDesc, &m_rasterStateNone);
+	result = D3DGC->D11_device->CreateRasterizerState(&rasterDesc, &D3DGC->RasterStateCullNone );
 	if (FAILED(result))
 	{
 		MessageBox(hwnd, L"Direct3D CreateRasterizerState CULLNONE.", 0, 0);
@@ -657,7 +647,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	}
 
 	// Now set the rasterizer state.
-	D3DGC->D11_deviceContext->RSSetState(D3DGC->m_rasterState);
+	D3DGC->D11_deviceContext->RSSetState(D3DGC->DefaultRasterizerState );
 
 	// The viewport also needs to be setup so that Direct3D can map clip space coordinates to the render target space. Set this to be the entire size of the window.
 
@@ -815,7 +805,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 		reinterpret_cast<IUnknown**>(&D3DGC->DWriteFactory));
 	if (FAILED(result))
 	{
-		MessageBox(hwnd, L"Could not initialize DWrite CreateFactory.", L"Error", MB_OK);
+		MessageBox(hwnd, L"Could not initialize DWrite CreateFactory.", 0, MB_OK);
 		Shutdown();
 		return false;
 	}
@@ -830,7 +820,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	result = D3DGC->D11_device->CreateBuffer(&cbDesc, NULL, &D3DGC->g_pcbFXAA);
 	if (FAILED(result))
 	{
-		MessageBox(hwnd, L"Could not initialize g_pcbFXAA.", L"Error", MB_OK);
+		MessageBox(hwnd, L"Could not initialize g_pcbFXAA.", 0, MB_OK);
 		Shutdown();
 		return false;
 	}
@@ -859,88 +849,194 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 
 	if ( !FxaaIntegrateResource(D3DGC->D11_device, &pBackBufferSurfaceDesc ) )
 	{
-		MessageBox( hwnd, L"Could not initialize FXAA.", L"Error", MB_OK );
+		MessageBox( hwnd, L"Could not initialize FXAA.", 0, MB_OK );
 		Shutdown();
 		return false;
 	}
 	
 	if ( !InitD2D_D3D101_DWrite() )
 	{
-		MessageBox( hwnd, L"Could not initialize DWrite.", L"Error", MB_OK );
+		MessageBox( hwnd, L"Could not initialize DWrite.", 0, MB_OK );
 		Shutdown();
 		return false;
 	}
-
-	D3D11_SAMPLER_DESC samDesc;
-
-	ZeroMemory(&samDesc, sizeof(samDesc));
-	samDesc.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT; //D3D11_FILTER_ANISOTROPIC;//D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-	samDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-	samDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-	samDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-	samDesc.MipLODBias = 0.0f;
-	samDesc.MaxAnisotropy = 1;
-	samDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-	samDesc.BorderColor[0] = samDesc.BorderColor[1] = samDesc.BorderColor[2] = samDesc.BorderColor[3] = 0;
-	samDesc.MinLOD = 0;
-	samDesc.MaxLOD = D3D11_FLOAT32_MAX;
-	result = D3DGC->D11_device->CreateSamplerState( &samDesc, &D3DGC->g_pSamBilinear );
-
-/*
-	samDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;//D3D11_FILTER_ANISOTROPIC;//D3D11_FILTER_MIN_MAG_MIP_POINT;
-	samDesc.AddressU = D3D11_TEXTURE_ADDRESS_MIRROR;
-	samDesc.AddressV = D3D11_TEXTURE_ADDRESS_MIRROR;
-	samDesc.AddressW = D3D11_TEXTURE_ADDRESS_MIRROR;
-	result = D3DGC->D11_device->CreateSamplerState(&samDesc, &D3DGC->g_pSamPointMirror);
-
-	samDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR; //D3D11_FILTER_ANISOTROPIC;//D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	samDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	samDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	samDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	result = D3DGC->D11_device->CreateSamplerState(&samDesc, &D3DGC->g_pSamLinearWrap);
-
-	samDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT; //D3D11_FILTER_ANISOTROPIC;//D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT;
-	samDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-	samDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-	samDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-	samDesc.ComparisonFunc = D3D11_COMPARISON_LESS;
-	result = D3DGC->D11_device->CreateSamplerState(&samDesc, &D3DGC->g_pSamPointCmpClamp);
-*/
 	// ---------------------------     FXAA     ----------------------------------
 
-	//  ++++++++++++++++++   Для LightClass и Shadows   ++++++++++++++++++++++++
+	//  ++++++++++++++++++   Для D3DClass и Shadows   ++++++++++++++++++++++++
 	// Create sampler state
 	{
-		CD3D11_SAMPLER_DESC desc(D3D11_DEFAULT);
-		desc.Filter = D3D11_FILTER_ANISOTROPIC;
-		desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;//
+		// All Models Sampler
+		CD3D11_SAMPLER_DESC desc ( D3D11_DEFAULT );
+		desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
 		desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
 		desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-		desc.MaxAnisotropy = 16;
-		D3DGC->D11_device->CreateSamplerState(&desc, &D3DGC->CLight_DiffuseSampler);
+		desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+		result = D3DGC->D11_device->CreateSamplerState ( &desc, &D3DGC->Wrap_Model_Texture );
+		if (FAILED ( result ))
+		{
+			MessageBox ( hwnd, L"Could not initialize Wrap_Model_Texture sampler.", 0, MB_OK );
+			return false;
+		}
 	}
 	{
 		// Если делать не CLAMP то появляются дублирующие тени
 		CD3D11_SAMPLER_DESC desc(D3D11_DEFAULT);
-		desc.Filter = D3D11_FILTER_ANISOTROPIC;
+		desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 		desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
 		desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
 		desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-		desc.MaxAnisotropy = 16;
-		D3DGC->D11_device->CreateSamplerState(&desc, &D3DGC->CLight_SampleTypeClamp);
+		desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+		result = D3DGC->D11_device->CreateSamplerState(&desc, &D3DGC->CLight_ShadowMap_Sampler );
+		if (FAILED ( result ))
+		{
+			MessageBox ( hwnd, L"Could not initialize CLight_ShadowMap_Sampler sampler.", 0, MB_OK );
+			return false;
+		}
 	}
 	{
+		// PCF Filter Sampler
+		// FXAA
 		CD3D11_SAMPLER_DESC desc(D3D11_DEFAULT);
-		desc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR; //D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;//D3D11_FILTER_COMPARISON_MIN_MAG_POINT_MIP_LINEAR;
-		desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;// D3D11_TEXTURE_ADDRESS_WRAP;//
-		desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;//D3D11_TEXTURE_ADDRESS_WRAP;
-		desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;//D3D11_TEXTURE_ADDRESS_WRAP;
-		desc.MaxAnisotropy = 1;
-		desc.ComparisonFunc = D3D11_COMPARISON_LESS;//D3D11_COMPARISON_LESS_EQUAL;
-		D3DGC->D11_device->CreateSamplerState(&desc, &D3DGC->CLight_cmpSampler);
+		desc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+		desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+		desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+		desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+		desc.ComparisonFunc = D3D11_COMPARISON_LESS;
+		result = D3DGC->D11_device->CreateSamplerState(&desc, &D3DGC->CLight_SM_PCF_Sampler );
+		if (FAILED ( result ))
+		{
+			MessageBox ( hwnd, L"Could not Initialize CLight_SM_PCF_Sampler.", 0, MB_OK );
+			return false;
+		}
+	}
+	{
+		// All 2D Object default Sampler
+		CD3D11_SAMPLER_DESC desc ( D3D11_DEFAULT );
+		desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+		desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+		desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+		desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+		result = D3DGC->D11_device->CreateSamplerState ( &desc, &D3DGC->FlatObject_Sampler );
+		if (FAILED ( result ))
+		{
+			MessageBox ( hwnd, L"Could not initialize FlatObject_Sampler sampler.", 0, MB_OK );
+			return false;
+		}
 	}
 	//  ------------------   Для Shadows   -------------------------
 
+
+
+	Frustum = frustum;
+
+	// Размер окна при отресовке теней
+	ZeroMemory ( &LightViewPort, sizeof ( D3D11_VIEWPORT ) );
+	LightViewPort.Width = static_cast<float>(3192);//D3DGC->ScreenWidth ); // 512;//
+	LightViewPort.Height = static_cast<float>(3192);//D3DGC->ScreenHeight ); // 512;//
+	LightViewPort.MinDepth = 0.0f;
+	LightViewPort.MaxDepth = 1.0f;
+	LightViewPort.TopLeftX = 0.0f;
+	LightViewPort.TopLeftY = 0.0f;
+
+	// Создаём константный буфер для базоого света Diffuse,Ambient,Specular
+	// cb_LightBuffer
+	Light = new PerFrameConstants;
+	ZeroMemory ( Light, sizeof ( PerFrameConstants ) );
+
+	Light->mCameraNearFar = XMVECTOR{ D3DGC->NearPlane, D3DGC->FarPlane, 0.0f, 0.0f };
+
+	Light->mFramebufferDimensionsX = D3DGC->ScreenWidth;
+	Light->mFramebufferDimensionsY = D3DGC->ScreenHeight;
+	Light->mFramebufferDimensionsZ = 0;     // Unused
+	Light->mFramebufferDimensionsW = 0;     // Unused
+
+	Light->mUI.lightingOnly = false;
+	Light->mUI.clusteredGridScale = 16;
+	Light->mUI.shadowsOn = D3DGC->ShadowsOn;
+	Light->mUI.softshadowsOn = D3DGC->SoftShadowsOn;
+	Light->mUI.PCF_Amount = D3DGC->PCF_Amount;
+	Light->mUI.PCF_Step = 1.0f;
+	Light->mUI.ShadowCLAMP = 1.0f;
+	Light->mUI.Shadow_Divider = 1024.0f;
+	// Create constant buffers
+	{
+		CD3D11_BUFFER_DESC desc (
+			sizeof ( PerFrameConstants ),
+			D3D11_BIND_CONSTANT_BUFFER,
+			D3D11_USAGE_DEFAULT
+		);
+
+		hr = D3DGC->D11_device->CreateBuffer ( &desc, 0, &mPerFrameConstants );
+		if (FAILED ( hr ))
+		{
+			MessageBox ( hwnd, L"Could not initialize Clustering mPerFrameConstants.", L"Error", MB_OK );
+			return false;
+		}
+	}
+
+	// Set up macros
+	D3D10_SHADER_MACRO defines[] = {
+		{ "MSAA_SAMPLES", "1" }, //msaaSamplesStr.c_str()
+		{ 0, 0 }
+	};
+	// https://msdn.microsoft.com/en-us/library/windows/desktop/bb172416%28v=vs.85%29.aspx
+	UINT shaderFlags = D3D10_SHADER_ENABLE_STRICTNESS | D3D10_SHADER_PACK_MATRIX_ROW_MAJOR;// | D3D10_SHADER_OPTIMIZATION_LEVEL3;
+
+	SetAllLightDefault ();
+
+	mLightGridBuffer = new StructuredBuffer<LightGridEntry> ( D3DGC->D11_device, mLightGridBufferSize, D3D11_BIND_SHADER_RESOURCE, true );
+/*
+// + Shadow Works
+	DrawShadowsObjects = Objects;
+	g_Frustum = Frustum;
+//	g_Light = Light;
+//	myManeger = Maneger;
+//	Local_D3DGC = D3DGC;
+	D3D11_BUFFER_DESC cbbd;
+	ZeroMemory ( &cbbd, sizeof ( D3D11_BUFFER_DESC ) );
+
+	cbbd.Usage = D3D11_USAGE_DEFAULT;
+	cbbd.ByteWidth = sizeof ( cbShadowObject );
+	cbbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	cbbd.CPUAccessFlags = 0;
+	cbbd.MiscFlags = 0;
+
+	HRESULT hr = Local_D3DGC->D11_device->CreateBuffer ( &cbbd, NULL, &cbShadowBuffer );
+
+	// ДЛЯ ТЕНИ
+	// Для отладки вынес в отдельную функцию
+	InitRasterizerState ( 1, 1.0f );
+
+	{
+		CD3D11_DEPTH_STENCIL_DESC desc ( D3D11_DEFAULT );
+		// NOTE: Complementary Z => GREATER test
+		desc.DepthEnable = true;
+		desc.StencilEnable = false;
+		desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;//D3D11_COMPARISON_GREATER;//D3D11_COMPARISON_LESS;
+		desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+		Local_D3DGC->D11_device->CreateDepthStencilState ( &desc, &LightRender_DS );
+	}
+
+	ZeroMemory ( &DSD2, sizeof ( DSD2 ) );
+	DSD2.Flags = 0;
+	DSD2.Format = DXGI_FORMAT_D32_FLOAT;
+	if (Local_D3DGC->MSAAQualityCount > 1)
+	{
+		DSD2.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMSARRAY;
+		DSD2.Texture2DMSArray.ArraySize = 1;
+		DSD2.Texture2DMSArray.FirstArraySlice = 0;
+	}
+	else
+	{
+		DSD2.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+		DSD2.Texture2DArray.MipSlice = 0;
+		DSD2.Texture2DArray.ArraySize = 1;
+		DSD2.Texture2DArray.FirstArraySlice = 0;
+	}
+// - Shadow Works
+*/
 	return true;
 }
 
@@ -950,11 +1046,47 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 
 void D3DClass::Shutdown()
 {
+/*
+// + Shadow Works
+	RCUBE_RELEASE ( cbShadowBuffer );
+	RCUBE_RELEASE ( LightRender_RS );
+	RCUBE_RELEASE ( LightRender_DS );
+// - Shadow Works
+*/
+	DeleteAllLights ();
+	RCUBE_DELETE ( Light );
+	RCUBE_DELETE ( mLightGridBuffer );
+	RCUBE_RELEASE ( mPerFrameConstants );
+
 	for(int i=0, j = (int)ActualDisplayModes.size();  i < j; i++)
 	{
 		delete ActualDisplayModes[i];
 	}
 	ActualDisplayModes.clear();
+
+	// Delete all custom samplers
+	int c = (int)CustomSamplers.size ();
+	for ( int i = 0; i < c; ++i )
+	{
+		RCUBE_ARR_DELETE ( CustomSamplers[i].Name );
+		RCUBE_RELEASE ( CustomSamplers[i].Sampler );
+	}
+
+	// Delete all custom rasterizers
+	c = (int)CustomRasterizers.size ();
+	for (int i = 0; i < c; ++i)
+	{
+		RCUBE_ARR_DELETE ( CustomRasterizers[i].Name );
+		RCUBE_RELEASE ( CustomRasterizers[i].Rasterizer );
+	}
+
+	// Delete all custom DepthStencils
+	c = (int)CustomDepthStencils.size ();
+	for (int i = 0; i < c; ++i)
+	{
+		RCUBE_ARR_DELETE ( CustomDepthStencils[i].Name );
+		RCUBE_RELEASE ( CustomDepthStencils[i].DepthStencilState );
+	}
 
 // Fonts
 	RCUBE_RELEASE( D3DGC->sharedTex11 );
@@ -973,25 +1105,21 @@ void D3DClass::Shutdown()
 	RCUBE_RELEASE( D3DGC->BackBuffer_CopyResolveTexture );
 	RCUBE_RELEASE( D3DGC->BackBuffer_CopyResolveTextureSRV );
 	RCUBE_RELEASE( D3DGC->BackBuffer_CopyResolveTextureUAV );
-//	RCUBE_RELEASE( D3DGC->g_pSamPointMirror );
-//	RCUBE_RELEASE( D3DGC->g_pSamLinearWrap );
-//	RCUBE_RELEASE( D3DGC->g_pSamPointCmpClamp );
-	RCUBE_RELEASE( D3DGC->g_pSamBilinear );
 // FXAA	
+// Engine default Samplers
+	RCUBE_RELEASE( D3DGC->Wrap_Model_Texture );
+	RCUBE_RELEASE( D3DGC->CLight_ShadowMap_Sampler );
+	RCUBE_RELEASE( D3DGC->CLight_SM_PCF_Sampler );
+	RCUBE_RELEASE ( D3DGC->FlatObject_Sampler );
 
-// ShadowMap
-	RCUBE_RELEASE( D3DGC->CLight_DiffuseSampler );
-	RCUBE_RELEASE( D3DGC->CLight_SampleTypeClamp );
-	RCUBE_RELEASE( D3DGC->CLight_cmpSampler );
-//  ShadowMap
 	RCUBE_RELEASE( D3DGC->DWriteFactory );
 	RCUBE_RELEASE( D3DGC->m_alphaDisableBlendingState );
 	RCUBE_RELEASE( D3DGC->m_alphaParticleBlendingState );
 	RCUBE_RELEASE( D3DGC->m_alpha_TOnT_BlendingState );
 	RCUBE_RELEASE( D3DGC->m_alphaEnableBlendingState );
 	RCUBE_RELEASE( m_depthDisabledStencilState );
-	RCUBE_RELEASE( D3DGC->m_rasterState );
-	RCUBE_RELEASE( m_rasterStateNone );
+	RCUBE_RELEASE( D3DGC->DefaultRasterizerState );
+	RCUBE_RELEASE( D3DGC->RasterStateCullNone );
 	RCUBE_RELEASE( D3DGC->m_depthStencilView );
 	RCUBE_RELEASE( D3DGC->m_depthStencilState );
 	RCUBE_RELEASE( D3DGC->mGeometryBlendState );
@@ -1029,16 +1157,15 @@ void D3DClass::Shutdown()
 // All it does is initializes the buffers so they are blank and ready to be drawn to. The other function is Endscene, it tells the swap chain to display our 3D scene once all the drawing has completed
 // at the end of each frame.
 
-void D3DClass::BeginScene(float red, float green, float blue, float alpha)
+void D3DClass::BeginScene(XMFLOAT4& Colour)
 {
 	float color[4];
 
-
 	// Setup the color to clear the buffer to.
-	color[0] = red;
-	color[1] = green;
-	color[2] = blue;
-	color[3] = alpha;
+	color[0] = Colour.x;
+	color[1] = Colour.y;
+	color[2] = Colour.z;
+	color[3] = Colour.w;
 
 	// Clear the back buffer.
 	D3DGC->D11_deviceContext->ClearRenderTargetView(D3DGC->BackBuffer_RTV, color);
@@ -1191,28 +1318,7 @@ ID3D11DepthStencilView* D3DClass::GetDepthStencilView()
 
 void D3DClass::SetBackBufferRenderTarget()
 {
-	// Bind the render target view and depth stencil buffer to the output render pipeline.
 	D3DGC->D11_deviceContext->OMSetRenderTargets(1, &D3DGC->BackBuffer_RTV, D3DGC->m_depthStencilView);
-
-	return;
-}
-
-
-ID3D11RenderTargetView* D3DClass::GetRenderTargetView(){
-	return D3DGC->BackBuffer_RTV;
-}
-
-
-void D3DClass::GetDisplaySupportedModes(UINT resolution_min)
-{
-	DEVMODE dm = { 0 };
-	dm.dmSize = sizeof(dm);
-	//std::ofstream out("out.txt");
-
-	for (int iModeNum = 0; EnumDisplaySettings(NULL, iModeNum, &dm) != 0; ++iModeNum) {
-		//    out << "Mode #" << iModeNum << " = " << dm.dmPelsWidth << "x" << dm.dmPelsHeight << " Bits PP " << dm.dmBitsPerPel <<
-		//        " color " << dm.dmColor << " Freq. " << dm.dmDisplayFrequency << endl;
-	}
 }
 
 
@@ -1226,7 +1332,6 @@ void D3DClass::AdaptersRelease()
 		++i;
 	};
 
-	//    FoundAdapter1->Release();
 	Adapters.clear();
 }
 
@@ -1238,13 +1343,13 @@ char* D3DClass::GetVideoCardString()
 
 void D3DClass::SetDefaultResterizeState()
 {
-	D3DGC->D11_deviceContext->RSSetState(D3DGC->m_rasterState);
+	D3DGC->D11_deviceContext->RSSetState(D3DGC->DefaultRasterizerState );
 }
 
 
-void D3DClass::SetCullNoneRState()
+void D3DClass::SetCullNoneResterizeState ()
 {
-	D3DGC->D11_deviceContext->RSSetState(m_rasterStateNone);
+	D3DGC->D11_deviceContext->RSSetState( D3DGC->RasterStateCullNone );
 }
 
 
@@ -1307,22 +1412,7 @@ bool D3DClass::FxaaIntegrateResource(ID3D11Device* pd3dDevice, const DXGI_SURFAC
 		return false;
 	}
 
-/*
-	desc.BindFlags = 0;
-	desc.Usage = D3D11_USAGE_STAGING;
-	// Сохранение возможно только для текстуры без MSAA 
-	// Нужно делать ResolveSubresource
-	desc.SampleDesc.Count = 1;
-	desc.SampleDesc.Quality = 0;
-	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE | D3D11_CPU_ACCESS_READ;
 
-	result = pd3dDevice->CreateTexture2D(&desc, 0, &D3DGC->ScreenShootTexture);
-	if ( FAILED( result ) )
-	{
-		MessageBox( NULL , L"FXAA can't create ScreenShotTexture", 0, 0 );
-		return false;
-	}
-*/
 #if defined( DEBUG ) || defined( _DEBUG )
 	const char c_szName0[] = "D3DGC->BackBuffer_CopyResolveTexture";
 	D3DGC->BackBuffer_CopyResolveTexture->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof(c_szName0) - 1, c_szName0);
@@ -1345,15 +1435,7 @@ bool D3DClass::FxaaIntegrateResource(ID3D11Device* pd3dDevice, const DXGI_SURFAC
 void D3DClass::FXAAScene()
 {
 
-//		D3DGC->D11_deviceContext->VSSetConstantBuffers(12, 1, &D3DGC->g_pcbFXAA);
 		D3DGC->D11_deviceContext->PSSetConstantBuffers(12, 1, &D3DGC->g_pcbFXAA);
-/*
-		ID3D11SamplerState * ppSamplerStates[4] = { D3DGC->g_pSamPointMirror,
-			D3DGC->g_pSamLinearWrap,
-			D3DGC->g_pSamPointCmpClamp,
-			D3DGC->g_pSamBilinear };
-*/
-		D3DGC->D11_deviceContext->PSSetSamplers(0, 1, &D3DGC->g_pSamBilinear );
 
 		D3DGC->D11_deviceContext->OMSetRenderTargets(1, &D3DGC->BackBuffer_RTV, 0);
 
@@ -1371,7 +1453,7 @@ void D3DClass::FXAAScene()
 			D3DGC->D11_deviceContext->CopyResource(MyresDest, D3DGC->BackBuffer2DT );
 			D3DGC->D11_deviceContext->PSSetShaderResources(0, 1, &D3DGC->BackBuffer_ProxyTextureSRV);
 		}
-//		D3DGC->D11_deviceContext->IASetVertexBuffers( NULL, NULL,NULL,NULL,NULL);
+
 		D3DGC->D11_deviceContext->IASetInputLayout(NULL);
 		D3DGC->D11_deviceContext->Draw(3, 0);
 /*
@@ -1515,7 +1597,7 @@ bool D3DClass::InitD2D_D3D101_DWrite()
 	hr = D3D10CreateDevice1( D3DGC->Adapter, D3D10_DRIVER_TYPE_HARDWARE, NULL, D3D10_CREATE_DEVICE_BGRA_SUPPORT, D3D10_FEATURE_LEVEL_10_1, D3D10_1_SDK_VERSION, &D3DGC->D10_device );
 	if ( FAILED( hr ) )
 	{
-		MessageBox( NULL, L"Could not initialize D3D10CreateDevice1.", L"Error", MB_OK );
+		MessageBox( NULL, L"Could not initialize D3D10CreateDevice1.", 0, MB_OK );
 		return false;
 	}
 
@@ -1537,14 +1619,14 @@ bool D3DClass::InitD2D_D3D101_DWrite()
 	hr = D3DGC->D11_device->CreateTexture2D( &sharedTexDesc, NULL, &D3DGC->sharedTex11 );
 	if ( FAILED( hr ) )
 	{
-		MessageBox( NULL, L"Could not initialize sharedTex11.", L"Error", MB_OK );
+		MessageBox( NULL, L"Could not initialize sharedTex11.", 0, MB_OK );
 		return false;
 	}
 
 	hr = D3DGC->D11_device->CreateShaderResourceView( D3DGC->sharedTex11, NULL, &D3DGC->sharedTex11_SRV );
 	if ( FAILED( hr ) )
 	{
-		MessageBox( NULL, L"Could not initialize ShaderResourceView sharedTex11.", L"Error", MB_OK );
+		MessageBox( NULL, L"Could not initialize ShaderResourceView sharedTex11.", 0, MB_OK );
 		return false;
 	}
 
@@ -1556,7 +1638,7 @@ bool D3DClass::InitD2D_D3D101_DWrite()
 	hr = D3DGC->D11_device->CreateTexture2D( &sharedTexDesc, NULL, &D3DGC->sharedTex11_MAPED );
 	if ( FAILED( hr ) )
 	{
-		MessageBox( NULL, L"Could not initialize sharedTex11_MAPED.", L"Error", MB_OK );
+		MessageBox( NULL, L"Could not initialize sharedTex11_MAPED.", 0, MB_OK );
 		return false;
 	}
 
@@ -1564,7 +1646,7 @@ bool D3DClass::InitD2D_D3D101_DWrite()
 	hr = D3DGC->sharedTex11->QueryInterface( __uuidof( IDXGIKeyedMutex ), ( void** ) &D3DGC->keyedMutex11 );
 	if ( FAILED( hr ) )
 	{
-		MessageBox( NULL, L"Could not initialize sharedTex11->QueryInterfac.", L"Error", MB_OK );
+		MessageBox( NULL, L"Could not initialize sharedTex11->QueryInterfac.", 0, MB_OK );
 		return false;
 	}
 
@@ -1575,14 +1657,14 @@ bool D3DClass::InitD2D_D3D101_DWrite()
 	hr = D3DGC->sharedTex11->QueryInterface( __uuidof( IDXGIResource ), ( void** ) &sharedResource10 );
 	if ( FAILED( hr ) )
 	{
-		MessageBox( NULL, L"Could not initialize sharedTex11->QueryInterface.", L"Error", MB_OK );
+		MessageBox( NULL, L"Could not initialize sharedTex11->QueryInterface.", 0, MB_OK );
 		return false;
 	}
 
 	hr = sharedResource10->GetSharedHandle( &sharedHandle10 );
 	if ( FAILED( hr ) )
 	{
-		MessageBox( NULL, L"Could not initialize sharedResource10->GetSharedHandle.", L"Error", MB_OK );
+		MessageBox( NULL, L"Could not initialize sharedResource10->GetSharedHandle.", 0, MB_OK );
 		return false;
 	}
 	sharedResource10->Release();
@@ -1593,14 +1675,14 @@ bool D3DClass::InitD2D_D3D101_DWrite()
 	hr = D3DGC->D10_device->OpenSharedResource( sharedHandle10, __uuidof( IDXGISurface1 ), ( void** ) ( &sharedSurface10 ) );
 	if ( FAILED( hr ) )
 	{
-		MessageBox( NULL, L"Could not initialize d3d101Device->OpenSharedResource.", L"Error", MB_OK );
+		MessageBox( NULL, L"Could not initialize d3d101Device->OpenSharedResource.", 0, MB_OK );
 		return false;
 	}
 
 	hr = sharedSurface10->QueryInterface( __uuidof( IDXGIKeyedMutex ), ( void** ) &D3DGC->keyedMutex10 );
 	if ( FAILED( hr ) )
 	{
-		MessageBox( NULL, L"Could not initialize sharedSurface10->QueryInterface.", L"Error", MB_OK );
+		MessageBox( NULL, L"Could not initialize sharedSurface10->QueryInterface.", 0, MB_OK );
 		return false;
 	}
 
@@ -1608,7 +1690,7 @@ bool D3DClass::InitD2D_D3D101_DWrite()
 	hr = D2D1CreateFactory( D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof( ID2D1Factory ), ( void** ) &D3DGC->D2DFactory );
 	if ( FAILED( hr ) )
 	{
-		MessageBox( NULL, L"Could not initialize D2D1CreateFactory.", L"Error", MB_OK );
+		MessageBox( NULL, L"Could not initialize D2D1CreateFactory.", 0, MB_OK );
 		return false;
 	}
 
@@ -1622,7 +1704,7 @@ bool D3DClass::InitD2D_D3D101_DWrite()
 	hr = D3DGC->D2DFactory->CreateDxgiSurfaceRenderTarget( sharedSurface10, &renderTargetProperties, &D3DGC->D2DRenderTarget );
 	if ( FAILED( hr ) )
 	{
-		MessageBox( NULL, L"Could not Create DxgiSurfaceRenderTarget.", L"Error", MB_OK );
+		MessageBox( NULL, L"Could not Create DxgiSurfaceRenderTarget.", 0, MB_OK );
 		return false;
 	}
 
@@ -1680,6 +1762,1007 @@ void D3DClass::BlurScene(ID3D11ComputeShader* Horizont, ID3D11ComputeShader* Ver
 }
 
 
+int D3DClass::CreateCustomRasterizerState ( D3D11_RASTERIZER_DESC& Desc )
+{
+// https://msdn.microsoft.com/query/dev15.query?appId=Dev15IDEF1&l=EN-US&k=k(D3D11%2FD3D11_RASTERIZER_DESC);k(D3D11_RASTERIZER_DESC);k(DevLang-C%2B%2B);k(TargetOS-Windows)&rd=true
+	ID3D11RasterizerState* RS;
+	hr = D3DGC->D11_device->CreateRasterizerState ( &Desc, &RS );
+	if (FAILED ( hr ))
+	{
+		MessageBox ( NULL, L"Could not Create CustomRasterizerState.", 0, MB_OK );
+		return -1;
+	}
+
+	CustomRasterizer NewRasterizer;
+
+	NewRasterizer.Rasterizer = RS;
+	NewRasterizer.Name = nullptr;
+
+	int Number = (int)CustomRasterizers.size ();
+
+	CustomRasterizers.push_back ( NewRasterizer );
+
+	return Number;
+}
+
+
+bool D3DClass::ChangeCustomRasterizerState( int Number, D3D11_RASTERIZER_DESC& Desc )
+{
+	int Num = (int)CustomRasterizers.size ();
+	if (Number > Num)
+		return false;
+
+	ID3D11RasterizerState* RS;
+
+	RCUBE_RELEASE ( CustomRasterizers[Number].Rasterizer );
+
+	hr = D3DGC->D11_device->CreateRasterizerState ( &Desc, &RS );
+	if (FAILED ( hr ))
+	{
+		MessageBox ( NULL, L"Could not Update CustomRasterizerState.", 0, MB_OK );
+		return false;
+	}
+
+	CustomRasterizers[Number].Rasterizer = RS;
+
+	return true;
+}
+
+
+ID3D11RasterizerState* D3DClass::GetCustomRasterizerState ( int Number )
+{
+	int Num = (int)CustomRasterizers.size ();
+	if (Number > Num)
+		return nullptr;
+
+	return CustomRasterizers[Number].Rasterizer;
+}
+
+
+
+template<typename T>
+inline T clamp ( T v, T lb, T ub )
+{
+	return min ( max ( v, lb ), ub );
+}
+
+
+inline void D3DClass::UpdateClipRegion (
+	float lc,          // Light x/y coordinate (view space)
+	float& lz,          // Light z coordinate (view space)
+	float& lightRadius,
+	const float& cameraScale, // Project scale for coordinate (_11 or _22 for x/y respectively)
+	float& clipMin,
+	float& clipMax )
+{
+	float rSq = lightRadius * lightRadius;
+	float lcSq = lc * lc;
+	float lzSq = lz * lz;
+	float lcSqPluslzSq = lcSq + lzSq;
+	float d = rSq * lcSq - lcSqPluslzSq * (rSq - lzSq);
+
+	if (d > 0)
+	{
+		float a = lightRadius * lc;
+		float b = sqrtf ( d );
+		float nx0 = (a + b) / lcSqPluslzSq;
+		float nx1 = (a - b) / lcSqPluslzSq;
+		float lcSqPluslzSq_Minus_rSq = lcSqPluslzSq - rSq;
+		// X
+		//		UpdateClipRegionRoot(nx0, lc, lz, lcSqPluslzSq, lightRadius, cameraScale, clipMin, clipMax);
+		float nz = (lightRadius - nx0 * lc) / lz;
+		float pz = lcSqPluslzSq_Minus_rSq / (lz - (nz / nx0) * lc);
+		if (pz > 0.0f) {
+			float c = -nz * cameraScale / nx0;
+			if (nx0 > 0.0f)
+			{                      // Left side boundary
+				clipMin = max ( clipMin, c );
+			}
+			else
+			{                       // Right side boundary
+				clipMax = min ( clipMax, c );
+			}
+		}
+		// Y
+		//		UpdateClipRegionRoot(nx1, lc, lz, lcSqPluslzSq, lightRadius, cameraScale, clipMin, clipMax);
+		nz = (lightRadius - nx1 * lc) / lz;
+		pz = lcSqPluslzSq_Minus_rSq / (lz - (nz / nx1) * lc);
+		if (pz > 0.0f) {
+			float c = -nz * cameraScale / nx1;
+			if (nx1 > 0.0f)
+			{                      // Left side boundary
+				clipMin = max ( clipMin, c );
+			}
+			else
+			{                       // Right side boundary
+				clipMax = min ( clipMax, c );
+			}
+		}
+	}
+}
+
+
+// Returns bounding box [min.xy, max.xy] in clip [-1, 1] space.
+inline XMVECTOR D3DClass::ComputeClipRegion (
+	XMFLOAT3& lightPosView,
+	float& lightRadius,
+	const float& float11,
+	const float& float22,
+	const float& mCameraNearFarX )
+{
+	// Early out with empty rectangle if the light is too far behind the view frustum
+	//	XMVECTOR clipRegion = XMVECTOR{ 1.0f, 1.0f, 0.0f, 0.0f };
+	XMVECTOR clipRegion = { 1.0f, 1.0f, 0.0f, 0.0f };
+	// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	// ++++       Отсеиваем свет невидимый на экране         ++++
+	// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	if (lightPosView.z + lightRadius >= mCameraNearFarX)
+	{
+		//		XMFLOAT2 clipMin = XMFLOAT2(-1.0f, -1.0f);
+		//		XMFLOAT2 clipMax = XMFLOAT2(1.0f, 1.0f);
+		XMFLOAT2 clipMin = { -1.0f, -1.0f };
+		XMFLOAT2 clipMax = { 1.0f, 1.0f };
+
+		UpdateClipRegion ( lightPosView.x, lightPosView.z, lightRadius, float11, clipMin.x, clipMax.x );
+		UpdateClipRegion ( -lightPosView.y, lightPosView.z, lightRadius, float22, clipMin.y, clipMax.y );
+
+		clipRegion = XMVECTOR{ clipMin.x, clipMin.y, clipMax.x, clipMax.y };
+	}
+
+	return clipRegion;
+}
+
+
+inline void D3DClass::GenerateLightFragments (
+	const FragmentFactory& fragmentFactory,
+	LightGridBuilder* builder,
+	XMMATRIX& ProjMatrix,
+	XMMATRIX& CameraMatrix,
+	PointLight* light,
+	int lightIndex )
+{
+
+	LightGridDimensions dim = builder->dimensions ();
+	RCube_VecFloat34 mCameraNearFar;
+	RCubeMatrix MyMatrix;
+	//	XMFLOAT4X4 mCameraProj;
+
+	//	XMStoreFloat4x4(&mCameraProj, ProjMatrix);
+	MyMatrix.XMM = ProjMatrix;
+
+	RCube_VecFloat34 clipRegion1, clipRegion, position, direction;
+
+	mCameraNearFar.Vec = Light->mCameraNearFar;
+
+	float attEnd;
+
+	position.Fl3 = light->position;
+	direction.Fl3 = light->direction;
+
+	//	clipRegion1.Vec = XMVECTOR{ 1.0f, 1.0f, 0.0f, 0.0f };
+	// Преобразовываем координаты центра источника света в соответствии откуда на него смотрим, чтобы правильно 
+	// расчитать кластера занимаемые светом на экране
+	/*	if (light->angel <= 80.0f && light->angel != 0.0f)
+	{
+	attEnd = light->attenuationEnd / 1.58f;//2;
+	LightPos.Vec = (XMVector3Normalize(direction.Vec) * attEnd + position.Vec);
+	}
+	if (light->angel == 0.0f || light->angel > 80.0f)
+	*/ {
+		LightPos.Fl3 = light->position;
+		attEnd = light->attenuationEnd;
+	}
+
+	//	LightPos.Fl3 = light->position;
+	LightPosCopy.Vec = XMVector3TransformCoord ( LightPos.Vec, CameraMatrix ); //camView WorldPos
+
+	clipRegion1.Vec = ComputeClipRegion ( LightPosCopy.Fl3, attEnd, MyMatrix.XMF._11, MyMatrix.XMF._22, mCameraNearFar.Fl4.x );
+	//	clipRegion1.Vec = ComputeClipRegion(LightPosCopy.Fl3, attEnd, mCameraProj._11, mCameraProj._22, mCameraNearFar.Fl4.x);
+	//	clipRegion1.Vec = ComputeClipRegion(LightPosCopy.Fl3, light->attenuationEnd, mCameraProj._11, mCameraProj._22, mCameraNearFar.Fl4.x);
+	// compute view space quad
+	//	clipRegion.Vec = (clipRegion1.Vec + XMVECTOR{ 1.0f, 1.0f, 1.0f, 1.0f }) / 2; // map coordinates to [0..1]
+	clipRegion.Vec = (clipRegion1.Vec + XMVECTOR{ 1.0f, 1.0f, 1.0f, 1.0f }) / 2; // map coordinates to [0..1]
+
+	int intClipRegion[4];
+
+	intClipRegion[0] = (int)(clipRegion.Fl4.x * dim.width);
+	intClipRegion[1] = (int)(clipRegion.Fl4.y * dim.height);
+	intClipRegion[2] = (int)(clipRegion.Fl4.z * dim.width);
+	intClipRegion[3] = (int)(clipRegion.Fl4.w * dim.height);
+
+	if (intClipRegion[0] < 0) intClipRegion[0] = 0;
+	if (intClipRegion[1] < 0) intClipRegion[1] = 0;
+	if (intClipRegion[2] >= dim.width) intClipRegion[2] = dim.width - 1;
+	if (intClipRegion[3] >= dim.height) intClipRegion[3] = dim.height - 1;
+
+	float y_x = mCameraNearFar.Fl4.y - mCameraNearFar.Fl4.x;
+	float center_z = (light->position.z - mCameraNearFar.Fl4.x) / y_x;
+	float dist_z = light->attenuationEnd / y_x;
+
+	int intZBounds[2];
+	intZBounds[0] = (int)((center_z - dist_z)* dim.depth);
+	intZBounds[1] = (int)((center_z + dist_z)* dim.depth);
+
+	if (intZBounds[0] < 0) intZBounds[0] = 0;
+	if (intZBounds[1] < 0) intZBounds[1] = 0;
+	else if (intZBounds[1] >= dim.depth) intZBounds[1] = dim.depth - 1;
+
+
+	for (int y = intClipRegion[1] / 4; y <= intClipRegion[3] / 4; ++y)
+	{
+		int y4 = y * 4;
+		for (int x = intClipRegion[0] / 4; x <= intClipRegion[2] / 4; ++x)
+		{
+			int x4 = x * 4;
+			for (int z = intZBounds[0] / 4; z <= intZBounds[1] / 4; ++z)
+			{
+				int z4 = z * 4;
+				int x1 = clamp ( intClipRegion[0] - x4, 0, 3 );
+				int x2 = clamp ( intClipRegion[2] - x4, 0, 3 );
+				int y1 = clamp ( intClipRegion[1] - y4, 0, 3 );
+				int y2 = clamp ( intClipRegion[3] - y4, 0, 3 );
+				int z1 = clamp ( intZBounds[0] - z4, 0, 3 );
+				int z2 = clamp ( intZBounds[1] - z4, 0, 3 );
+
+				uint64_t coverage = fragmentFactory.coverage ( x1, x2, y1, y2, z1, z2 );
+
+				builder->pushFragment ( dim.cellIndex ( x, y, z ), lightIndex, coverage );
+			}
+		}
+	}
+}
+
+
+ID3D11ShaderResourceView * D3DClass::FrameLights ( ID3D11DeviceContext* d3dDeviceContext, const UIConstants* ui )
+{
+	int n = ui->clusteredGridScale;
+
+	if (ClustersAmount != n)
+	{
+		mLightGridBuilder.reset ( LightGridDimensions ( 2 * n, n, 8 * n ) );
+
+		//		mLightGridBuilder.clearAllFragments ();
+		//	FragmentFactory fragmentFactory;
+		ClustersAmount = n;
+	}
+	//	else
+	mLightGridBuilder.clearAllFragments ();
+
+	// ???????????????????????????????????????????????????????????????????????????????????????????????????????
+	// ???????????????????????????????????????????????????????????????????????????????????????????????????????
+	// ???????????????????????????????????????????????????????????????????????????????????????????????????????
+	// ???????????????????????????????????????????????????????????????????????????????????????????????????????
+
+	if (mActiveLights == 0)
+		assert ( "Нет ни одного источника света в сцене" );// return nullptr;
+														   // ???????????????????????????????????????????????????????????????????????????????????????????????????????
+														   // ???????????????????????????????????????????????????????????????????????????????????????????????????????
+														   // ???????????????????????????????????????????????????????????????????????????????????????????????????????
+
+	PointLight* light = mLightBuffer->MapDiscard ( d3dDeviceContext );
+
+	int c = 0;
+	mVisibleLights = 0;
+
+	PointLight *Dest = &light[0];
+	PointLight **Source = &mPointLightParameters[0];
+
+	// Обновляем массив источников света для шейдера.
+	while (c < mActiveLights)
+	{
+		PointLight *Source1 = *Source;
+
+		// Увеличиваем радиус свету, чтобы он не пропадал с экрана раньше времени
+		float Radius = Source1->attenuationEnd;// * 1.5f;
+											   // Убираем свет из отрисовки, если он не виден на экране
+											   // если свет вообще нужно рисовать и по Frustum  
+		if (Source1->Dummy > -1 && Frustum->CheckSphere ( Source1->position, Radius )) //
+		{
+			/*			if ( !Frustum->CheckSphere( Source1->position, Radius ) )
+			{
+			if ( Source1->)
+			}
+			else
+			{
+			*/
+			GenerateLightFragments ( fragmentFactory, &mLightGridBuilder, D3DGC->ProjectionMatrix, D3DGC->ViewMatrix, *Source, Source1->Dummy );
+			// Copy light list into shader buffer
+			memcpy ( Dest, Source1, PointLightSize );
+			//			*Dest = *Source1;
+			//			}
+			++mVisibleLights;
+		}
+		else
+			Dest->Dummy = -1; // Источник света не виден в кадре
+							  //			memcpy( Dest, &TempL, PointLightSize );
+
+		++Source;
+		++Dest;
+		++c;
+	}
+
+	mLightBuffer->Unmap ( d3dDeviceContext );
+
+	LightGridEntry* gpuBuffer = mLightGridBuffer->MapDiscard ( d3dDeviceContext );
+	mLightGridBuilder.buildAndUpload ( gpuBuffer/*, mLightGridBufferSize * 16*/ );
+	mLightGridBuffer->Unmap ( d3dDeviceContext );
+
+	LightGridBufferSRV = mLightGridBuffer->GetShaderResource ();
+
+	return mLightBuffer->GetShaderResource ();
+}
+
+
+void D3DClass::SetAmbientColor ( XMFLOAT4& Color )
+{
+	Light->AmbientColor = Color;
+}
+
+
+void D3DClass::SetDiffuseColor ( XMFLOAT4& Color )
+{
+	Light->DiffuseColor = Color;
+}
+
+
+void D3DClass::SetDiffusePower ( float& Power )
+{
+	Light->DiffusePower = Power;
+}
+
+
+void D3DClass::SetDiffuseDirection ( XMFLOAT3& Direction )
+{
+	Light->DiffuseDirection = Direction;
+}
+
+
+void D3DClass::GetDiffuseDirection ( XMFLOAT3& Direction )
+{
+	Direction = Light->DiffuseDirection;
+}
+
+
+void D3DClass::SetSpecularColor ( XMFLOAT4& Color )
+{
+	Light->SpecularColor = Color;
+}
+
+
+void D3DClass::SetSpecularPower ( float& power )
+{
+	//	Light->SpecularColor.w = power;
+	Light->SpecularPower = power;
+}
+
+
+void D3DClass::SetSpecularDirection ( XMFLOAT3& Direction )
+{
+	Light->SpecularDirection = Direction;
+}
+
+
+void D3DClass::GetSpecularDirection ( XMFLOAT3& Direction )
+{
+	Direction = Light->SpecularDirection;
+}
+
+
+void D3DClass::GetAmbientColor ( XMFLOAT4& AmbColor )
+{
+	AmbColor = Light->AmbientColor;
+}
+
+
+void D3DClass::GetDiffuseColor ( XMFLOAT4 &DiffColor )
+{
+	DiffColor = Light->DiffuseColor;
+}
+
+
+void D3DClass::GetSpecularColor ( XMFLOAT4& SpecColor )
+{
+	SpecColor = Light->SpecularColor;
+}
+
+
+void D3DClass::GetSpecularPower ( float& SpecPower )
+{
+	//	SpecPower = Light->SpecularColor.w;
+	SpecPower = Light->SpecularPower;
+}
+
+
+float D3DClass::GetSpecularPower ()
+{
+	return Light->SpecularPower;
+}
+
+
+void D3DClass::Frame ()
+{
+	// Обновляем все PointLights
+	Light->mUI.shadowsOn = D3DGC->ShadowsOn;
+	Light->mUI.softshadowsOn = D3DGC->SoftShadowsOn;
+	Light->mUI.PCF_Amount = D3DGC->PCF_Amount;
+	Light->mUI.PCF_Step = D3DGC->PCF_Step;
+	Light->mUI.ShadowCLAMP = D3DGC->ShadowCLAMP;
+	Light->mUI.Shadow_Divider = D3DGC->Shadow_Divider;
+
+	lightBufferSRV = FrameLights ( D3DGC->D11_deviceContext, &Light->mUI );
+
+	D3DGC->D11_deviceContext->UpdateSubresource ( mPerFrameConstants, NULL, NULL, Light, NULL, NULL );
+	D3DGC->D11_deviceContext->PSSetConstantBuffers ( 1, 1, &mPerFrameConstants );
+
+}
+
+
+void D3DClass::SetAllLightDefault ()
+{
+	//	ZeroMemory(Light, sizeof(LightBufferType));
+	Light->AmbientColor = XMFLOAT4 ( 1.0f, 1.0f, 1.0f, 1.0f );
+
+	Light->DiffuseColor = XMFLOAT4 ( 1.0f, 1.0f, 1.0f, 1.0f );
+	Light->DiffuseDirection = XMFLOAT3 ( 100.0f, 100.0f, 100.0f );
+	Light->DiffusePower = 2.0f;
+
+	Light->SpecularColor = XMFLOAT4 ( 1.0f, 1.0f, 1.0f, 1.0f );
+	Light->SpecularDirection = Light->DiffuseDirection;//XMFLOAT3(0.0f, 0.0f, 1.0f);
+	Light->SpecularPower = 0.002f;//0.002f;
+}
+
+
+int D3DClass::AddLightSource ( PointLight &NewLight )
+{
+	int Number;
+
+	// Указатель на новый или старый свет который будет инициализирован
+	PointLight* CreateLight = NULL;
+
+	if (!FreeLightIndex.empty ())
+	{
+		Number = (int)FreeLightIndex.back ();
+		FreeLightIndex.pop_back ();
+
+		CreateLight = mPointLightParameters[Number];
+		memcpy ( CreateLight, &NewLight, PointLightSize );
+	}
+	else
+	{
+		Number = (int)mPointLightParameters.size ();
+
+		// Общее количестмо светов на сцене не должно привышать MAX_LIGHTS - 4096
+		if (Number > MAX_LIGHTS)
+			return -1;
+
+		CreateLight = new PointLight;
+		ZeroMemory ( CreateLight, PointLightSize );
+		memcpy ( CreateLight, &NewLight, PointLightSize );
+		// Создаём свет
+		mPointLightParameters.emplace_back ( CreateLight );
+
+		// Увеличиваем количество светов на сцене на 1
+		mActiveLights = Number + 1;
+
+		// Пересоздаём массив светов нужного размера
+		ResetLightsBuffer ();
+	}
+	// Сохраняем индекс света для отрисовки.  Если свет не рисуется, то Dummy = -1
+	CreateLight->Dummy = Number;
+
+	// Если добавляется свет с тенью, то удаляем массив Shadow Maps 
+	// чтобы создать новый + 1 для нового Spot Light света с тенью
+	if (CreateLight->HaveShadow && mActiveLightsWithShadows < MAX_LIGHTS_WITH_SHADOW)
+	{
+		DeleteShadowMapsArray ( ShadowMap3D, SRV_ShadowMap3D );
+		// Создаём новый массив Shadow Maps + 1 для нового света
+		if (!CreatingShadowMapsArray (
+			(int)LightViewPort.Width,
+			(int)LightViewPort.Height,
+			D3DGC->MSAAQualityCount,
+			D3DGC->MSAAQualityChoosen,
+			++mActiveLightsWithShadows // Количество светов с тенью + 1
+		))
+			return -2; // Не могу создать массив Shadow Maps для теней
+					   // добавляем в список индексов SpotLight которым нужен ShadowMap
+		SpotLightsWithShadowsIndexes.emplace_back ( Number );
+	}
+
+	return Number;
+}
+
+
+void D3DClass::ResetLightsBuffer ()
+{
+	// Удаляем буфер светов, чтобы добавить ещё один свет к существующим.
+	RCUBE_DELETE ( mLightBuffer );
+	// Создаём буфер светов передаваемый в шейдер
+	mLightBuffer = new StructuredBuffer<PointLight> ( D3DGC->D11_device, mActiveLights, D3D11_BIND_SHADER_RESOURCE, true );
+}
+
+
+
+int D3DClass::GetActiveLghtNumber ()
+{
+	return mActiveLights; ;//(int)FreeLightIndex.size();//mActiveLights;
+}
+
+
+void D3DClass::FreeLightSource ( int LightNumber )
+{
+	if (LightNumber < (int)mPointLightParameters.size ())
+	{
+		FreeLightIndex.emplace_back ( LightNumber );		// Помещаем индекс освободившегося света в массив индексов созданных, но не используемых светов
+		mPointLightParameters[LightNumber]->Dummy = -1;	// Убираем свет из отрисовки
+														// Проверяем, была ли у света тень для удаления тени из отрисовки ShadowMap
+		if (mPointLightParameters[LightNumber]->ShadowMapSliceNumber != -1)
+		{
+			int Amount = (int)SpotLightsWithShadowsIndexes.size ();
+			for (int i = 0; i < Amount; i++)
+			{
+				// Удаляем индекс света из списка светов для которых генеится ShadowMap
+				if (SpotLightsWithShadowsIndexes[i] == LightNumber)
+				{
+					SpotLightsWithShadowsIndexes.erase ( SpotLightsWithShadowsIndexes.begin () + i );
+					// Уменьшаем на 1 количество светов с тенью
+					--mActiveLightsWithShadows;
+					break;
+				}
+			}
+		}
+
+	}
+}
+
+
+bool D3DClass::DeleteLightSource ( int LightNumber )
+{
+	int i = (int)mPointLightParameters.size ();
+	if (LightNumber < i)
+	{
+		delete mPointLightParameters[LightNumber];
+		mPointLightParameters.erase ( mPointLightParameters.begin () + LightNumber );
+		--mActiveLights;
+
+		ResetLightsBuffer ();
+
+		return true;
+	}
+	else
+		return false;
+}
+
+
+void D3DClass::DeleteAllLights ()
+{
+	int Number = (int)mPointLightParameters.size ();
+
+	//#pragma loop(ivdep)
+	//#pragma loop(hint_parallel(0))
+	for (int i = 0; i < Number; ++i)
+	{
+		delete mPointLightParameters[i];
+	}
+
+	RCUBE_DELETE ( mLightBuffer );
+	// Очищаем буфер светов
+	mPointLightParameters.clear ();
+	// Очищаем буфер индексов светов с тенями
+	SpotLightsWithShadowsIndexes.clear ();
+	// Очищаем буфер свободных индексов для света
+	FreeLightIndex.clear ();
+
+	DeleteShadowMapsArray ( ShadowMap3D, SRV_ShadowMap3D );
+}
+
+
+bool D3DClass::ChangeLightDirection ( int LightNumber, XMFLOAT3& direction )
+{
+	if (LightNumber > (int)mPointLightParameters.size ())
+		return false;
+
+	mPointLightParameters[LightNumber]->direction = direction;
+
+	return true;
+}
+
+
+bool D3DClass::ChangeLightDirection ( int LightNumber, XMVECTOR& direction )
+{
+	if (LightNumber > (int)mPointLightParameters.size ())
+		return false;
+
+	Temp.Vec = direction;
+	mPointLightParameters[LightNumber]->direction = Temp.Fl3;
+
+	return true;
+}
+
+
+bool D3DClass::ChangeLightAttnuationBegin ( int LightNumber, float& attBegin )
+{
+	if (LightNumber > (int)mPointLightParameters.size ())
+		return false;
+
+	mPointLightParameters[LightNumber]->attenuationBegin = attBegin;
+
+	return true;
+}
+
+
+bool D3DClass::ChangeLightAttnuationEnd ( int LightNumber, float& attEnd )
+{
+	if (LightNumber > (int)mPointLightParameters.size ())
+		return false;
+
+	mPointLightParameters[LightNumber]->attenuationEnd = attEnd;
+
+	return true;
+}
+
+
+bool D3DClass::ChangeLightColor ( int LightNumber, XMFLOAT3& color )
+{
+	if (LightNumber > (int)mPointLightParameters.size ())
+		return false;
+
+	mPointLightParameters[LightNumber]->color = color;
+
+	return true;
+}
+
+
+bool D3DClass::ChangeLightDirection ( int LightNumber, XMVECTOR&Axis, float Angel )
+{
+	if (LightNumber > (int)mPointLightParameters.size ())
+		return false;
+
+	XMMATRIX Rot = XMMatrixRotationAxis ( Axis, Angel );
+	Temp.Fl3 = mPointLightParameters[LightNumber]->direction;
+	Temp2.Vec = XMVector3TransformCoord ( Temp.Vec, Rot );
+	mPointLightParameters[LightNumber]->direction = Temp2.Fl3;
+
+	return true;
+}
+
+
+bool D3DClass::GetLightDirection ( int LightNumber, XMFLOAT3& direction )
+{
+	if (LightNumber > (int)mPointLightParameters.size ())
+		return false;
+
+	direction = mPointLightParameters[LightNumber]->direction;
+
+	return true;
+}
+
+
+bool D3DClass::GetLightDirection ( int LightNumber, XMVECTOR& direction )
+{
+	if (LightNumber > (int)mPointLightParameters.size ())
+		return false;
+
+	Temp.Fl3 = mPointLightParameters[LightNumber]->direction;
+	direction = Temp.Vec;
+
+	return true;
+}
+
+
+bool D3DClass::GetLightPos ( int LightNumber, XMFLOAT3& pos )
+{
+	if (LightNumber > (int)mPointLightParameters.size ())
+		return false;
+
+	pos = mPointLightParameters[LightNumber]->position;
+
+	return true;
+}
+
+
+bool D3DClass::GetLightPos ( int LightNumber, XMVECTOR& pos )
+{
+	if (LightNumber > (int)mPointLightParameters.size ())
+		return false;
+
+	Temp.Fl3 = mPointLightParameters[LightNumber]->position;
+	pos = Temp.Vec;
+
+	return true;
+}
+
+
+void D3DClass::LightsOnly ()
+{
+	Light->mUI.lightingOnly = true;
+}
+
+
+void D3DClass::LightsOnlyOFF ()
+{
+	Light->mUI.lightingOnly = false;
+}
+
+
+void D3DClass::SetClustersAmount ( int amount )
+{
+	if (amount == 4 || amount == 8 || amount == 16 || amount == 24 || amount == 32)
+		Light->mUI.clusteredGridScale = amount;
+}
+
+
+bool D3DClass::ChangeLightPos ( int LightNumber, XMFLOAT3& pos )
+{
+	if (LightNumber > (int)mPointLightParameters.size ())
+		return false;
+	mPointLightParameters[LightNumber]->position = pos;
+	return true;
+}
+
+
+bool D3DClass::ChangeLightPos ( int LightNumber, XMVECTOR& pos )
+{
+	if (LightNumber > (int)mPointLightParameters.size ())
+		return false;
+	Temp.Vec = pos;
+	mPointLightParameters[LightNumber]->position = Temp.Fl3;
+	return true;
+
+}
+
+
+void D3DClass::RenderIndextedClustered ( ID3D11ShaderResourceView *ModelTexture,
+	int indexDrawAmount, int InstancCout ) {
+
+	D3DGC->D11_deviceContext->PSSetShaderResources ( 0, 1, &ModelTexture );
+	D3DGC->D11_deviceContext->PSSetShaderResources ( 1, 1, &SRV_ShadowMap3D );
+	D3DGC->D11_deviceContext->PSSetShaderResources ( 5, 1, &lightBufferSRV );
+	D3DGC->D11_deviceContext->PSSetShaderResources ( 6, 1, &LightGridBufferSRV );
+	// instance модель или нет ?  >1 = true
+	if (InstancCout > 1)
+		D3DGC->D11_deviceContext->DrawIndexedInstanced ( indexDrawAmount, InstancCout, 0, 0, 0 );
+	else
+		D3DGC->D11_deviceContext->DrawIndexed ( indexDrawAmount, 0, 0 );
+
+
+}
+
+
+void D3DClass::RenderClustered ( ID3D11ShaderResourceView *ModelTexture,
+	int vertexDrawAmount, int InstancCout )
+{
+
+	D3DGC->D11_deviceContext->PSSetShaderResources ( 0, 1, &ModelTexture );
+	D3DGC->D11_deviceContext->PSSetShaderResources ( 1, 1, &SRV_ShadowMap3D );
+	D3DGC->D11_deviceContext->PSSetShaderResources ( 5, 1, &lightBufferSRV );
+	D3DGC->D11_deviceContext->PSSetShaderResources ( 6, 1, &LightGridBufferSRV );
+	// instance модель или нет ?  >1 = true
+	if (InstancCout > 1)
+		D3DGC->D11_deviceContext->DrawInstanced ( vertexDrawAmount, InstancCout, 0, 0 );
+	else
+		D3DGC->D11_deviceContext->Draw ( vertexDrawAmount, 0 );
+
+}
+
+
+void D3DClass::DeleteShadowMapsArray (
+	ID3D11Texture2D* Texture,
+	ID3D11ShaderResourceView* SRV
+)
+{
+	RCUBE_RELEASE ( SRV );
+	RCUBE_RELEASE ( Texture );
+}
+
+
+bool D3DClass::CreatingShadowMapsArray (
+
+	int Width,
+	int Height,
+	UINT MsaaCount,
+	UINT MsaaQuality,
+	int ArraySize
+)
+{
+	HRESULT res;
+
+	D3D11_TEXTURE2D_DESC depthStencilDesc;
+
+	depthStencilDesc.Width = Width;
+	depthStencilDesc.Height = Height;
+	depthStencilDesc.MipLevels = 1;
+	depthStencilDesc.ArraySize = ArraySize;
+	depthStencilDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+	depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
+	depthStencilDesc.CPUAccessFlags = 0;
+	depthStencilDesc.MiscFlags = 0;
+	depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+	depthStencilDesc.SampleDesc.Count = MsaaCount;
+	depthStencilDesc.SampleDesc.Quality = MsaaQuality;
+
+	res = D3DGC->D11_device->CreateTexture2D ( &depthStencilDesc, NULL, &ShadowMap3D );
+	if (FAILED ( res ))
+	{
+		return false;
+	}
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+	srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+	// Если используется MSAA, то нужно иначе создать текстуру
+	if (D3DGC->MSAAQualityCount > 1)
+	{
+		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMSARRAY;
+		srvDesc.Texture2DMSArray.ArraySize = depthStencilDesc.ArraySize;
+		srvDesc.Texture2DMSArray.FirstArraySlice = 0;
+	}
+	else
+	{
+		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+		srvDesc.Texture2DArray.MipLevels = depthStencilDesc.MipLevels;
+		srvDesc.Texture2DArray.MostDetailedMip = 0;
+		srvDesc.Texture2DArray.ArraySize = depthStencilDesc.ArraySize;
+		srvDesc.Texture2DArray.FirstArraySlice = 0;
+	}
+
+
+	res = D3DGC->D11_device->CreateShaderResourceView ( ShadowMap3D, &srvDesc, &SRV_ShadowMap3D );
+	if (FAILED ( res ))
+	{
+		return false;
+	}
+
+	return true;
+}
+
+
+void D3DClass::ShadowsON ( bool Value )
+{
+	Light->mUI.shadowsOn = Value;
+}
+
+
+void D3DClass::SoftShadowsON ( bool Value )
+{
+	Light->mUI.softshadowsOn = Value;
+}
+
+
+void D3DClass::LightRender ( int LightNumber, bool Yes )
+{
+	if (LightNumber > (int)mPointLightParameters.size ())
+		return;
+	else if (Yes)
+		mPointLightParameters[LightNumber]->Dummy = LightNumber;
+	else
+		mPointLightParameters[LightNumber]->Dummy = -1;
+}
+
+/*
+// + Shadow Works
+void D3DClass::RenderSpotLightsSadowMaps ( std::vector <int> SpotLightsWithShadowsIndexes ) {
+
+	HRESULT res;
+
+	cbShadowObject cbPerObj;
+
+
+	ID3D11ShaderResourceView * tab[1];
+	tab[0] = NULL;
+	Local_D3DGC->D11_deviceContext->PSSetShaderResources ( 1, 1, tab );
+	Local_D3DGC->D11_deviceContext->PSSetShader ( 0, 0, 0 );
+
+	Local_D3DGC->D11_deviceContext->VSSetShader ( ShadowMapShader, 0, 0 );
+	Local_D3DGC->D11_deviceContext->RSSetState ( LightRender_RS );
+	Local_D3DGC->D11_deviceContext->GSSetShader ( 0, 0, 0 );
+	Local_D3DGC->D11_deviceContext->OMSetDepthStencilState ( LightRender_DS, 0 );
+	// Устанавливаем ViewPort для ShadowMap
+	Local_D3DGC->D11_deviceContext->RSSetViewports ( 1, &LightViewPort );
+	//	g_D3DGC->D11_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	int Amount = (int)SpotLightsWithShadowsIndexes.size ();
+	for (int i = 0; i < Amount; i++)
+	{
+
+		// Для скорости убрал всё что не меняется в глобальную инициализацию
+		if (Local_D3DGC->MSAAQualityCount > 1)
+		{
+			DSD2.Texture2DMSArray.FirstArraySlice = i;
+		}
+		else
+		{
+			DSD2.Texture2DArray.FirstArraySlice = i;
+		}
+
+		res = Local_D3DGC->D11_device->CreateDepthStencilView ( ShadowMap3D, &DSD2, &DSV_ShadowMap3D );
+		//if (FAILED(res))
+		//{
+		//	return false;
+		//}
+#if defined( DEBUG ) || defined( _DEBUG )
+		const char c_szName[] = "DSV_ShadowMap3D";
+		DSV_ShadowMap3D->SetPrivateData ( WKPDID_D3DDebugObjectName, sizeof ( c_szName ) - 1, c_szName );
+#endif
+		// Для скорости создаём указатель
+		int* Point = &SpotLightsWithShadowsIndexes[i];
+		PointLight* Point1 = mPointLightParameters[*Point];
+
+		LightPosition.Fl3 = Point1->position;
+		//			LightPosition.Fl4.w = 0.0f;
+		LightTarget.Fl3 = Point1->direction;
+		//			LightTarget.Fl4.w = 0.0f;
+		//			LightTarget.Vec = LightTarget.Vec / 100.0f;
+		//			XMVECTOR LightTarget = XMLoadFloat3(&g_Light->mPointLightParameters[*Point]->direction);
+		// http://www.3dgep.com/understanding-the-view-matrix/
+		// http://www.codinglabs.net/article_world_view_projection_matrix.aspx
+		XMMATRIX LightView = XMMatrixLookToLH ( LightPosition.Vec, LightTarget.Vec, Up ); //XMVector3Normalize  / XMVector3NormalizeEst
+
+		XMMATRIX LightProjection = XMMatrixPerspectiveFovLH ( XM_PIDIV4, Local_D3DGC->ScreenRatio,
+			Local_D3DGC->NearPlane, Point1->attenuationEnd ); //m_Light->D3DGC_Light->FarPlane * 10
+															  //		LightProjection = XMMatrixOrthographicLH( g_D3DGC->ScreenWidth, g_D3DGC->ScreenHeight, g_D3DGC->NearPlane, Point1->attenuationEnd );
+
+		XMMATRIX LightViewProj = LightView * LightProjection;
+		// Это пока не нужно.  У нас пока нет отсеивание объектов по светам. Это нужно не здесь.
+		g_Frustum->ConstructFrustumNew ( LightViewProj );
+
+		cbPerObj.ViewProjection = XMMatrixTranspose ( LightViewProj );
+
+		Local_D3DGC->D11_deviceContext->UpdateSubresource ( cbShadowBuffer, 0, NULL, &cbPerObj, 0, 0 );
+		Local_D3DGC->D11_deviceContext->VSSetConstantBuffers ( 1, 1, &cbShadowBuffer );
+		// Создаём матрицу поворота
+		RCubeMatrix Mat;
+		Mat.XMM = cbPerObj.ViewProjection;
+		Point1->qtwvp = Mat.XMF;
+		//		XMStoreFloat4x4(&Point1->qtwvp, cbPerObj.ViewProjection );
+		// ----------------------------------------------------------------------------------
+		// Создаём кватернион поворота
+		//		LightTarget.Vec = XMQuaternionRotationMatrix( cbPerObj.ViewProjection );
+		//		Point1->RotQuat = LightTarget.Fl4;
+
+		//		cbPerObj.ViewProjection = XMMatrixRotationQuaternion(LightTarget.Vec);
+		// ----------------------------------------------------------------------------------
+		Local_D3DGC->D11_deviceContext->OMSetRenderTargets ( 0, 0, DSV_ShadowMap3D );
+		Local_D3DGC->D11_deviceContext->ClearDepthStencilView ( DSV_ShadowMap3D, D3D11_CLEAR_DEPTH, 1.0f, 0 );
+		DrawObjectUsingShadows ( LightPosition.Vec, true );
+
+		// Сохраняем в световом массиве индекс куска Shadow Map
+		Point1->ShadowMapSliceNumber = i;
+		Point1->LightID = i;
+		DSV_ShadowMap3D->Release ();
+
+	}
+	// Устанавливаем ViewPort для RCube
+	Local_D3DGC->D11_deviceContext->RSSetViewports ( 1, &viewport );
+}
+
+void D3DClass::DrawObjectUsingShadows ( XMVECTOR DrawPosition, bool ReplaseData ) {
+
+	//	DrawShadowsObjects.Terrain->Frame(ReplaseData, DrawPosition);
+	DrawShadowsObjects.Terrain->Render ();
+
+	DrawShadowsObjects.ModelList->Frame ();
+	DrawShadowsObjects.ModelList->Render ();
+
+}
+
+
+void D3DClass::InitRasterizerState ( int DepthBias, float SlopeScaledDepthBias )
+{
+	RCUBE_RELEASE ( LightRender_RS );
+	CD3D11_RASTERIZER_DESC desc ( D3D11_DEFAULT );
+	desc.CullMode = D3D11_CULL_FRONT; //D3D11_CULL_BACK; //D3D11_CULL_FRONT; //D3D11_CULL_NONE;//
+	desc.FillMode = D3D11_FILL_SOLID;//D3D11_FILL_WIREFRAME;//D3D11_FILL_SOLID;//
+	desc.FrontCounterClockwise = false;
+	desc.ScissorEnable = false;
+	desc.DepthClipEnable = true;//true;
+	desc.MultisampleEnable = true;//false;
+	desc.AntialiasedLineEnable = true;
+	desc.DepthBias = DepthBias;//1.e5;//0.0f;//1.e5;
+	desc.SlopeScaledDepthBias = SlopeScaledDepthBias;// 1.0f;//8.0;//0.0f;//8.0;
+	desc.DepthBiasClamp = 1.0f;
+	Local_D3DGC->D11_device->CreateRasterizerState ( &desc, &LightRender_RS );
+}
+// - Shadow Works
+*/
 // Отображение текстуры
 /*
 D3DGC->D11_deviceContext->CopyResource(D3DGC->ScreenShootTexture, D3DGC->backBufferPtr);

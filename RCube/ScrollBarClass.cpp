@@ -137,20 +137,20 @@ HRESULT ScrollBarClass::Init(
 		if ( Horizontal )
 		{
 			// Инициализируем MinButton
-			MinButton->Init(D3DGC_Obj, _MinButton, ButtonsTexture, NO_FLIP, TempScrollBarData.Blob );
+			MinButton->Init(D3DGC_Obj, _MinButton, ButtonsTexture, NO_FLIP );
 			// Инициализируем MaxButton
-			MaxButton->Init(D3DGC_Obj, _MaxButton, ButtonsTexture, FLIP_HORIZONTAL, TempScrollBarData.Blob );
+			MaxButton->Init(D3DGC_Obj, _MaxButton, ButtonsTexture, FLIP_HORIZONTAL );
 			// Инициализируем TravellerButton	
-			Traveller->Init(D3DGC_Obj, _TravellerButton, TravellerTexture, NO_FLIP, TempScrollBarData.Blob );
+			Traveller->Init(D3DGC_Obj, _TravellerButton, TravellerTexture, NO_FLIP );
 		}
 		else
 		{
 			// Инициализируем MinButton
-			MinButton->Init(D3DGC_Obj, _MinButton, ButtonsTexture, ROTATE90, TempScrollBarData.Blob );
+			MinButton->Init(D3DGC_Obj, _MinButton, ButtonsTexture, ROTATE90 );
 			// Инициализируем MaxButton
-			MaxButton->Init(D3DGC_Obj, _MaxButton, ButtonsTexture, FLIP_HORIZONTAL_ROTATE_90, TempScrollBarData.Blob );
+			MaxButton->Init(D3DGC_Obj, _MaxButton, ButtonsTexture, FLIP_HORIZONTAL_ROTATE_90 );
 			// Инициализируем TravellerButton	
-			Traveller->Init(D3DGC_Obj, _TravellerButton, TravellerTexture, ROTATE90, TempScrollBarData.Blob );
+			Traveller->Init(D3DGC_Obj, _TravellerButton, TravellerTexture, ROTATE90 );
 		}
 		
 		// Инвертируем значение для правильной инициализации, скролбара вверх ногами + - вверху   - - внизу
@@ -168,34 +168,34 @@ HRESULT ScrollBarClass::Init(
 
 		SetScrollBarBodyParam();
 
-	BodyVertexes = new InterfaceVertexType[4];
+	BodyVertexes = new Vertex_FlatObject[4];
 
-	BodyVertexes[0].position = XMFLOAT3( left, top, 0.0f );  // Top left.
-	BodyVertexes[1].position = XMFLOAT3( right, bottom, 0.0f );  // Bottom right.
-	BodyVertexes[2].position = XMFLOAT3( left, bottom, 0.0f );  // Bottom left.
-	BodyVertexes[3].position = XMFLOAT3( right, top, 0.0f );  // Top right.
+	BodyVertexes[0].Position = XMFLOAT3( left, top, 0.0f );  // Top left.
+	BodyVertexes[1].Position = XMFLOAT3( right, bottom, 0.0f );  // Bottom right.
+	BodyVertexes[2].Position = XMFLOAT3( left, bottom, 0.0f );  // Bottom left.
+	BodyVertexes[3].Position = XMFLOAT3( right, top, 0.0f );  // Top right.
 
 	//если горизонтально
 	if (Horizontal) 
 	{
-		BodyVertexes[0].texture = XMFLOAT2( 0.0f, 0.0f );
-		BodyVertexes[1].texture = XMFLOAT2( 1.0f, 1.0f );
-		BodyVertexes[2].texture = XMFLOAT2( 0.0f, 1.0f );
-		BodyVertexes[3].texture = XMFLOAT2( 1.0f, 0.0f );
+		BodyVertexes[0].TexCoord = XMFLOAT2( 0.0f, 0.0f );
+		BodyVertexes[1].TexCoord = XMFLOAT2( 1.0f, 1.0f );
+		BodyVertexes[2].TexCoord = XMFLOAT2( 0.0f, 1.0f );
+		BodyVertexes[3].TexCoord = XMFLOAT2( 1.0f, 0.0f );
 	}
 	//если вертикально
 	else
 	{
-		BodyVertexes[0].texture = XMFLOAT2( 0.0f, 1.0f );
-		BodyVertexes[1].texture = XMFLOAT2( 1.0f, 0.0f );
-		BodyVertexes[2].texture = XMFLOAT2( 1.0f, 1.0f );
-		BodyVertexes[3].texture = XMFLOAT2( 0.0f, 0.0f );
+		BodyVertexes[0].TexCoord = XMFLOAT2( 0.0f, 1.0f );
+		BodyVertexes[1].TexCoord = XMFLOAT2( 1.0f, 0.0f );
+		BodyVertexes[2].TexCoord = XMFLOAT2( 1.0f, 1.0f );
+		BodyVertexes[3].TexCoord = XMFLOAT2( 0.0f, 0.0f );
 	}
 
 	unsigned long indices[6] = { 0, 1, 2, 0, 3, 1 };
 
 	Obj = new KF2DObjClass;
-	Obj->Init(D3DGC, BodyVertexes, indices, BodyTexture, 4, 6, TempScrollBarData.Blob );
+	Obj->Init(D3DGC, BodyVertexes, indices, BodyTexture, 4, 6 );
 	if ( FAILED( Result ) )
 	{
 		MessageBox( NULL, L"ScrollBar Obj creation Error", 0, 0 );

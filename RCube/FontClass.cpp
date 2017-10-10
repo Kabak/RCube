@@ -66,16 +66,14 @@ FontClass::~FontClass()
 	delete [] Symbols;
 }
 
-bool FontClass::Initialize(D3DGlobalContext* D3DGC, FontOnTextureData *FOTData1, KFResourceManager *ResManager )
+bool FontClass::Initialize(D3DGlobalContext* D3DGC, FontOnTextureData *FOTData1 )
 {
 	bool result = true;
 	
 	bool SaveFont = false;		// Если нужно сохранить текстуру шрифта
 	bool SaveFontData = false;	// Если нужно сохранить данные к текстуре шрифта
 
-//		Adapter = D3DGC->Adapter;
 	Local_D3DGC = D3DGC;
-LocalResManager = ResManager;
 	d3d11Device = D3DGC->D11_device;
 
 	keyedMutex11 = D3DGC->keyedMutex11;
@@ -965,8 +963,8 @@ bool FontClass::CopyTextTextureOnTexture( ID3D11ShaderResourceView* textureForDr
 
 		hr = Picture->Init( Local_D3DGC, SqObjPos,
 		textureForDraw,
-		NO_FLIP,
-		LocalResManager->BlobsArr[4] );
+		NO_FLIP
+		);
 		if ( FAILED( hr ) )
 		{
 			MessageBox( hwnd, L"Picture->Init.", Error, MB_OK );
@@ -980,15 +978,13 @@ bool FontClass::CopyTextTextureOnTexture( ID3D11ShaderResourceView* textureForDr
 		SqObjPos = { RealPosX, RealPosY, static_cast<float>( CutTextureDesc->Width) , static_cast<float>( CutTextureDesc->Height ) };
 		hr = Text_Pixture->Init( Local_D3DGC, SqObjPos,
 		CutTexture_SRV,
-		NO_FLIP,
-		LocalResManager->BlobsArr[4] );
+		NO_FLIP
+		);
 		if ( FAILED( hr ) )
 		{
 			MessageBox( hwnd, L"Text_Pixture->Init.", Error, MB_OK );
 		}
 
-		// Устанавливаем нужный шейдер
-		LocalResManager->SetActiveShadersInProgramm( 2 );
 		// +  РИСУЕМ текстуру и поверху рисуем текст
 		Picture->Draw();
 		Text_Pixture->Draw();

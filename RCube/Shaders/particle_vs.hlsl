@@ -13,6 +13,7 @@ cbuffer MatrixBuffer : register( b0 )
 	matrix projectionMatrix;
 	matrix viewprojection;
 	matrix OrthoMatrix;
+	matrix ScaleMatrix;
 	float3 cameraPosition;
 	float padding;
 	float4 ViewTransQuat;

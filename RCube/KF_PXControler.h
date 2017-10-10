@@ -12,7 +12,7 @@
 //#include "pxtask/PxGpuTask.h"
 #include <vector>
 #include "D3DGlobalContext.h"
-#include "KFTerrain.h"
+#include "Terrain.h"
 #include "KFModel.h"
 #include "KFModelList.h"
 #include <string.h>
@@ -179,7 +179,7 @@ public:
 	PxPvdTransport *transport = nullptr;
 //#endif
 
-	void CreateHeildHield(int HFRows, int HFCollums, float VertixesInderect , KFTerrain::HeightMapType* terrainData , std::wstring filename);
+	void CreateHeildHield(int HFRows, int HFCollums, float VertixesInderect , Terrain::HeightMapType* terrainData , std::wstring filename);
 	int CreateObject(std::wstring filename, bool IsDynamic ,ObjectData * Data); // функци€ дл€ добавлени€ того или иного обьекта возвращает индекс элемента в соответст моссиве
 	void CreateInstancingObjects(std::wstring filename, bool IsDynamic, int ObjInex);
 	int CreateCharacter(std::wstring filename , ObjectData * Data); // функци€ дл€ добавлени€ персонажа (PxController) в физику возвращает идекс в (g_ControllerManager)
@@ -213,7 +213,7 @@ private:
 	PxMaterial* WorkgMaterial;
 	//***************просто рабочие переменные которыет позвон€ют не тратить врем€ на создание локальных***************
 
-	PxShape* CreateChape(int ModelIndex , ShapeData  Shape);
+	PxShape* CreateShape(int ModelIndex , ShapeData  Shape);
 
 	ObjectData * DynamicDataArr;// моссив хранит данные динамических обьектов дл€ обновлени€ их позиции в дальнейшем
 	std::vector<ObjectData> CharactersDataArr;// моссив хранит данные персонажей дл€ обновлени€ их позиции в дальнейшем

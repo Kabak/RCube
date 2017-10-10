@@ -108,7 +108,7 @@ bool EngineKernel::Initialize()
 	// Initialize the windows api.
 	InitializeWindows( screenWidth, screenHeight, WindowPosX, WindowPosY );
 
-	// Create the input object.  This object will be used to handle reading the keyboard input from the user.
+	// Create the input object.  This object will be used to handle reading the input devices from the user.
 	m_Input = new InputClass;
 	// Initialize the input object.
 	result = m_Input->Initialize( m_hinstance, m_hwnd, screenWidth, screenHeight );
@@ -188,13 +188,14 @@ bool EngineKernel::Initialize()
 	//++++++++++++++++++++инит физикса++++++++++++++++++++++++++++++
 
 	// ++++++++++++++++++++++++++++++   Init Objects   +++++++++++++++++++++++++++++++++++
+	int BlobIndex = m_Graphics->MyManager->GetShaderIndexByName ( L"ClusteredSM" ) * 2;
+	int BunchShaderIndex = m_Graphics->MyManager->GetShaderIndexByName ( L"ClusteredSM" );
 
+	m_Graphics->ModelList->AddObject( L"Models/Cube.kfo", BlobIndex, BunchShaderIndex, MAX_OBJ);//0
 
-	m_Graphics->ModelList->AddObject( L"Models/Cube.kfo", 16, 8, MAX_OBJ);//0
-
-	m_Graphics->ModelList->InitRandInstansingPoses( 0, (m_Graphics->Terrain->g_Rows / 2) * m_Graphics->Terrain->g_VertixesIndent
-		, -((m_Graphics->Terrain->g_Rows / 2) * m_Graphics->Terrain->g_VertixesIndent), 20.0f, 19.0f
-		, (m_Graphics->Terrain->g_Columns / 2) * m_Graphics->Terrain->g_VertixesIndent, -((m_Graphics->Terrain->g_Columns / 2) * m_Graphics->Terrain->g_VertixesIndent) );
+	m_Graphics->ModelList->InitRandInstansingPoses( 0, (m_Graphics->KFTerrain->g_Rows / 2) * m_Graphics->KFTerrain->g_VertixesIndent
+		, -((m_Graphics->KFTerrain->g_Rows / 2) * m_Graphics->KFTerrain->g_VertixesIndent), 20.0f, 19.0f
+		, (m_Graphics->KFTerrain->g_Columns / 2) * m_Graphics->KFTerrain->g_VertixesIndent, -((m_Graphics->KFTerrain->g_Columns / 2) * m_Graphics->KFTerrain->g_VertixesIndent) );
 
 	m_Graphics->ModelList->InitRandInstansingRots( 0 );
 
@@ -213,12 +214,12 @@ bool EngineKernel::Initialize()
 
 	///****************Добавление инстнсинг обьектов***************************************
 
-	m_Graphics->ModelList->AddObject( L"Models/Ship.kfo", 16, 8, 1);//1
+	m_Graphics->ModelList->AddObject( L"Models/Ship.kfo", BlobIndex, BunchShaderIndex, 1);//1
 	m_Graphics->ModelList->SetPositon( 1, 0, 0.0f, 5.0f, 0.0f );
 
 
-	m_Graphics->ModelList->AddObject(L"Models/stones.kfo", 16, 8, 1);//2
-	m_Graphics->ModelList->SetPositon(2 , 0 , XMFLOAT3(0.0f , 4.0f , 0.0f ));
+//	m_Graphics->ModelList->AddObject(L"Models/stones.kfo", BlobIndex, BunchShaderIndex, 1);//2
+//	m_Graphics->ModelList->SetPositon(2 , 0 , XMFLOAT3(0.0f , 4.0f , 0.0f ));
 	//m_Graphics->ModelList->SetRotation(2, 0, XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f));
 	// ********************** ДОБАВЛЕНИЕ ОДНОГО ОБЬЕКТА ОБЬЕКТА  ********************************************
 	//========================
@@ -226,13 +227,14 @@ bool EngineKernel::Initialize()
 	data.ModelIndex = 2;//индекс обькта
 	//=======================
 	// вот это непосредственно создание
-	PxControl->CreateObject(
+/*	PxControl->CreateObject(
 	L"Models/stones.fiz.txt",//имя файла описывающего физ свойства
 	false, //статическии или динамическии обьект
 	&data  //указатель на структуру описанную выше
 	);
 	data.InstanceIndex = 0;//индекс инстэнса
 	data.ModelIndex = 2;//индекс обькта
+*/
 //	PxControl->CreateCharacter(L"Models/Character.fiz.txt" , &data);
 	///********************** ДОБАВЛЕНИЕ ОДНОГО ОБЬЕКТА ОБЬЕКТА  ********************************************
 
@@ -383,10 +385,10 @@ bool EngineKernel::Initialize()
 
 	/// *************** добавление карты высот (террэйна******************************
 	// одна функция
-	PxControl->CreateHeildHield( m_Graphics->Terrain->g_Rows /*количество точек по оси X*/, m_Graphics->Terrain->g_Columns/*количество точек по оси Y*/
-		, m_Graphics->Terrain->g_VertixesIndent/*отступ между точками*/, m_Graphics->Terrain->m_heightMap /*сам вот этот буфер вершин*/, L"Models/Terrain.fiz.txt"/*а это файл физики котрый описывает свойства*/ );
+	PxControl->CreateHeildHield( m_Graphics->KFTerrain->g_Rows /*количество точек по оси X*/, m_Graphics->KFTerrain->g_Columns/*количество точек по оси Y*/
+		, m_Graphics->KFTerrain->g_VertixesIndent/*отступ между точками*/, m_Graphics->KFTerrain->m_heightMap /*сам вот этот буфер вершин*/, L"Models/Terrain.fiz.txt"/*а это файл физики котрый описывает свойства*/ );
 
-	// если юзается все время террэйн моего типа по прсто можно имя заменить Terrain на произвольно созданный KFTerrain или же если наробка или нейкии другой обьект использующии карту вершин можно просто грамотно воспользоватья оргументами для создания
+	// если юзается все время террэйн моего типа по прсто можно имя заменить Terrain на произвольно созданный Terrain или же если наробка или нейкии другой обьект использующии карту вершин можно просто грамотно воспользоватья оргументами для создания
 	/// *************** добавление карты высот (террэйна******************************
 
 
@@ -521,12 +523,12 @@ bool EngineKernel::Frame()
 
 // ++++++++++++++++++     Обрабатываем изменения SсrollBars     ++++++++++++++++++++
 	Ambi = m_Graphics->Hud->GetScrollBarValue ( 0 );
-	m_Graphics->m_Light->SetAmbientColor ( XMFLOAT4 { Ambi,Ambi,Ambi,Ambi } );
+	m_Graphics->m_D3D->SetAmbientColor ( XMFLOAT4 { Ambi,Ambi,Ambi,Ambi } );
 
 	DiffuseX = m_Graphics->Hud->GetScrollBarValue( 1 );
 	DiffuseY = m_Graphics->Hud->GetScrollBarValue( 8 );
 	DiffuseZ = m_Graphics->Hud->GetScrollBarValue( 9 );
-	m_Graphics->m_Light->SetDiffuseColor( XMFLOAT4 { DiffuseX,DiffuseY,DiffuseZ,0.0f } );
+	m_Graphics->m_D3D->SetDiffuseColor( XMFLOAT4 { DiffuseX,DiffuseY,DiffuseZ,0.0f } );
 
 	float Val = m_Graphics->Hud->GetScrollBarValue( 2 );
 	bool Need = false;
@@ -758,25 +760,25 @@ bool EngineKernel::Frame()
 //			m_Timer->StartTimer();
 		// Измеряем быстродействие
 /*	
-			m_Graphics->m_Light->GetLightDirection(0, Source);
-			m_Graphics->m_Light->ChangeLightDirection(0, XMVector3TransformCoord(Source, Rot));
-//		m_Graphics->m_Light->ChangeLightDirection(0, Axis, rot );
+			m_Graphics->m_D3D->GetLightDirection(0, Source);
+			m_Graphics->m_D3D->ChangeLightDirection(0, XMVector3TransformCoord(Source, Rot));
+//		m_Graphics->m_D3D->ChangeLightDirection(0, Axis, rot );
 /*
 Камеру в позицию света и поворот лицом к свету
 		XMFLOAT3 Lpos;
-		m_Graphics->m_Light->GetLightPos(0, Lpos);
+		m_Graphics->m_D3D->GetLightPos(0, Lpos);
 		m_Graphics->m_Camera->SetPosition(Lpos.x, Lpos.y, Lpos.z);
 		m_Graphics->m_Camera->SetLookAt(Direction.x * 1000, Direction.y * 1000, Direction.z * 1000);
 		m_Graphics->m_Camera->FirstPersonCam = false;
 */
 /*
-			m_Graphics->m_Light->GetLightDirection(1, Source);
-			m_Graphics->m_Light->ChangeLightDirection(1, XMVector3TransformCoord(Source, Rot));
-//		m_Graphics->m_Light->ChangeLightDirection(1, Axis, rot);
+			m_Graphics->m_D3D->GetLightDirection(1, Source);
+			m_Graphics->m_D3D->ChangeLightDirection(1, XMVector3TransformCoord(Source, Rot));
+//		m_Graphics->m_D3D->ChangeLightDirection(1, Axis, rot);
 
-			m_Graphics->m_Light->GetLightDirection(2, Source);
-			m_Graphics->m_Light->ChangeLightDirection(2, XMVector3TransformCoord(Source, Rot));
-//		m_Graphics->m_Light->ChangeLightDirection(2, Axis, rot);
+			m_Graphics->m_D3D->GetLightDirection(2, Source);
+			m_Graphics->m_D3D->ChangeLightDirection(2, XMVector3TransformCoord(Source, Rot));
+//		m_Graphics->m_D3D->ChangeLightDirection(2, Axis, rot);
 */
 		// Измеряем быстродействие
 //			m_Timer->StopTimer(Str);
@@ -1135,7 +1137,7 @@ void EngineKernel::KeysPressed()
 			Ambi = 1.0f;
 		else
 			Ambi += 0.01f;
-		m_Graphics->m_Light->SetAmbientColor(XMFLOAT4{Ambi,Ambi,Ambi,Ambi});
+		m_Graphics->m_D3D->SetAmbientColor(XMFLOAT4{Ambi,Ambi,Ambi,Ambi});
 	}
 	//H
 	if (m_Input->ActionKey[17].Pressed)
@@ -1145,7 +1147,7 @@ void EngineKernel::KeysPressed()
 			Ambi = 0.0f;
 		else
 			Ambi -= 0.01f;
-		m_Graphics->m_Light->SetAmbientColor(XMFLOAT4{ Ambi,Ambi,Ambi,Ambi });
+		m_Graphics->m_D3D->SetAmbientColor(XMFLOAT4{ Ambi,Ambi,Ambi,Ambi });
 	}
 	//Y
 	if (m_Input->ActionKey[13].Pressed)
@@ -1155,7 +1157,7 @@ void EngineKernel::KeysPressed()
 			DifPower = 1.0f;
 		else
 			DifPower += 0.01f;
-		m_Graphics->m_Light->SetDiffusePower(DifPower);
+		m_Graphics->m_D3D->SetDiffusePower(DifPower);
 	}
 	//H
 	if (m_Input->ActionKey[15].Pressed)
@@ -1165,7 +1167,7 @@ void EngineKernel::KeysPressed()
 			DifPower = 0.0f;
 		else
 			DifPower -= 0.01f;
-		m_Graphics->m_Light->SetDiffusePower(DifPower);
+		m_Graphics->m_D3D->SetDiffusePower(DifPower);
 	}
 	//T
 	if (m_Input->ActionKey[12].Pressed)
@@ -1177,7 +1179,7 @@ void EngineKernel::KeysPressed()
 			SpecPower = 0.01f;
 		else
 			SpecPower += 0.00001f;
-		m_Graphics->m_Light->SetSpecularPower(SpecPower);
+		m_Graphics->m_D3D->SetSpecularPower(SpecPower);
 
 		sprintf_s(Str, 50, "Spec. Pow = %8.4f", SpecPower);
 		m_Graphics->m_Text->UpdateSentence(4, Str, 100, 160);
@@ -1191,7 +1193,7 @@ void EngineKernel::KeysPressed()
 			SpecPower = 0.00001f;
 		else
 			SpecPower -= 0.00001f;
-		m_Graphics->m_Light->SetSpecularPower(SpecPower);
+		m_Graphics->m_D3D->SetSpecularPower(SpecPower);
 
 		sprintf_s(Str, 50, "Spec. Pow = %8.4f", SpecPower);
 		m_Graphics->m_Text->UpdateSentence(4, Str, 100, 160);
@@ -1205,12 +1207,12 @@ void EngineKernel::KeysPressed()
 		XMFLOAT3 DifDir = { 0.0f, 0.0f, 1.0f };
 		float DifPower = 1.0f;
 		float SpecPower = 0.0f;
-		m_Graphics->m_Light->SetDiffuseDirection(DifDir);
-		m_Graphics->m_Light->SetSpecularDirection(DifDir);
-		m_Graphics->m_Light->SetDiffuseColor(Dif);
-		m_Graphics->m_Light->SetSpecularColor(Specular);
-		m_Graphics->m_Light->SetSpecularPower(SpecPower);
-		m_Graphics->m_Light->SetDiffusePower(DifPower);
+		m_Graphics->m_D3D->SetDiffuseDirection(DifDir);
+		m_Graphics->m_D3D->SetSpecularDirection(DifDir);
+		m_Graphics->m_D3D->SetDiffuseColor(Dif);
+		m_Graphics->m_D3D->SetSpecularColor(Specular);
+		m_Graphics->m_D3D->SetSpecularPower(SpecPower);
+		m_Graphics->m_D3D->SetDiffusePower(DifPower);
 	}
 	//X
 	if (m_Input->ActionKey[5].Pressed)
@@ -1221,12 +1223,12 @@ void EngineKernel::KeysPressed()
 		XMFLOAT3 DifDir = { 0.0f, 0.0f, 1.0f };
 		float DifPower = 0.1f;
 		float SpecPower = 0.05f;
-		m_Graphics->m_Light->SetDiffuseDirection(DifDir);
-		m_Graphics->m_Light->SetSpecularDirection(DifDir);
-		m_Graphics->m_Light->SetDiffuseColor(Dif);
-		m_Graphics->m_Light->SetSpecularColor(Specular);
-		m_Graphics->m_Light->SetSpecularPower(SpecPower);
-		m_Graphics->m_Light->SetDiffusePower(DifPower);
+		m_Graphics->m_D3D->SetDiffuseDirection(DifDir);
+		m_Graphics->m_D3D->SetSpecularDirection(DifDir);
+		m_Graphics->m_D3D->SetDiffuseColor(Dif);
+		m_Graphics->m_D3D->SetSpecularColor(Specular);
+		m_Graphics->m_D3D->SetSpecularPower(SpecPower);
+		m_Graphics->m_D3D->SetDiffusePower(DifPower);
 	}
 
 
@@ -1367,11 +1369,11 @@ void EngineKernel::KeysPressed()
 //		y = 0.0f;
 //		m_Graphics->m_Camera->SetRotation(x, y, z);
 		XMFLOAT3 a;// {  x, -0.3f, -0.9f };
-		m_Graphics->m_Light->GetLightDirection(0, a);
+		m_Graphics->m_D3D->GetLightDirection(0, a);
 		a.x -= 1.0f;
-		m_Graphics->m_Light->ChangeLightDirection(0, a);
+		m_Graphics->m_D3D->ChangeLightDirection(0, a);
 //		XMFLOAT3 a{ 30.0f + x, 10.0f, 70.0f };
-//		m_Graphics->m_Light->ChangeLightPos(0, a);
+//		m_Graphics->m_D3D->ChangeLightPos(0, a);
 	}
 
 	if (m_Input->ActionKey[22].Pressed)
@@ -1381,15 +1383,15 @@ void EngineKernel::KeysPressed()
 //		y = 0.0f;
 //		m_Graphics->m_Camera->SetRotation(x, y, z);
 		XMFLOAT3 a;// {  x, -0.3f, -0.9f };
-		m_Graphics->m_Light->GetLightDirection(0, a);
+		m_Graphics->m_D3D->GetLightDirection(0, a);
 		a.x += 1.0f;
-		m_Graphics->m_Light->ChangeLightDirection(0, a);
+		m_Graphics->m_D3D->ChangeLightDirection(0, a);
 //		XMFLOAT3 a{ 30.0f + x , 10.0f, 70.0f };
-//		m_Graphics->m_Light->ChangeLightPos(0, a);
+//		m_Graphics->m_D3D->ChangeLightPos(0, a);
 	}
 	if (m_Input->ActionKey[24].Pressed)
 	{
-//		m_Graphics->m_Light->LightsOnly();
+//		m_Graphics->m_D3D->LightsOnly();
 //		m_Graphics->m_D3D->D3DGC->EnableFXAA = true;
 // ++++++++++++++++++++     Вращаем свет     ++++++++++++++++++++++++++++++++++++
 
@@ -1398,29 +1400,29 @@ void EngineKernel::KeysPressed()
 
 		//	rotation = (XM_2PI / 360);
 		//	XMMATRIX Rotation = XMMatrixRotationAxis( rotaxis, -0.01745329251944444444444444444444 );
-		m_Graphics->m_Light->GetLightDirection( 2, Dir );
+		m_Graphics->m_D3D->GetLightDirection( 2, Dir );
 //		float a = XMVectorGetX( Dir );
 //		a += 0.3f;//		Dir = XMVectorSetX( Dir, a );
 ////		Dir = XMVector3Normalize(Dir);
-//		m_Graphics->m_Light->ChangeLightDirection( 2, Dir );
+//		m_Graphics->m_D3D->ChangeLightDirection( 2, Dir );
 		//	XMVectorSetW(Dir, 1.0f);
 		//	XMVECTOR a = XMVector3TransformCoord( Dir, XMMatrixRotationAxis( rotaxis, -0.0174532925 ) );
-		m_Graphics->m_Light->ChangeLightDirection( 2, XMVector3TransformCoord( Dir, XMMatrixRotationAxis( rotaxis, 0.0174532925 / 1.0f ) ) );
+		m_Graphics->m_D3D->ChangeLightDirection( 2, XMVector3TransformCoord( Dir, XMMatrixRotationAxis( rotaxis, 0.0174532925 / 1.0f ) ) );
 
 /*
 // Изменяем положение света на сцене
-		m_Graphics->m_Light->GetLightPos(2, Dir);
+		m_Graphics->m_D3D->GetLightPos(2, Dir);
 		float a = XMVectorGetX( Dir );
 		a +=0.5f;
 		Dir = XMVectorSetX( Dir, a );
-		m_Graphics->m_Light->ChangeLightPos(2, Dir);
+		m_Graphics->m_D3D->ChangeLightPos(2, Dir);
 */
 
 		// ++++++++++++++++++++     Вращаем свет     ++++++++++++++++++++++++++++++++++++
 	}
 	if (m_Input->ActionKey[25].Pressed)
 	{
-//		m_Graphics->m_Light->LightsOnlyOFF();
+//		m_Graphics->m_D3D->LightsOnlyOFF();
 //		m_Graphics->m_D3D->D3DGC->EnableFXAA = false;
 // ++++++++++++++++++++     Вращаем свет     ++++++++++++++++++++++++++++++++++++
 
@@ -1429,23 +1431,23 @@ void EngineKernel::KeysPressed()
 
 		//	rotation = (XM_2PI / 360);
 		//	XMMATRIX Rotation = XMMatrixRotationAxis( rotaxis, -0.01745329251944444444444444444444 );
-		m_Graphics->m_Light->GetLightDirection( 2, Dir );
+		m_Graphics->m_D3D->GetLightDirection( 2, Dir );
 //		float a = XMVectorGetX( Dir );
 //		a -=0.3f;
 //		Dir = XMVectorSetX( Dir, a );
 ////		Dir = XMVector3Normalize( Dir );
-//		m_Graphics->m_Light->ChangeLightDirection( 2, Dir );
+//		m_Graphics->m_D3D->ChangeLightDirection( 2, Dir );
 		//	XMVectorSetW(Dir, 1.0f);
 		//	XMVECTOR a = XMVector3TransformCoord( Dir, XMMatrixRotationAxis( rotaxis, -0.0174532925 ) );
-		m_Graphics->m_Light->ChangeLightDirection( 2, XMVector3TransformCoord( Dir, XMMatrixRotationAxis( rotaxis, -0.0174532925 / 1.0f ) ) );
+		m_Graphics->m_D3D->ChangeLightDirection( 2, XMVector3TransformCoord( Dir, XMMatrixRotationAxis( rotaxis, -0.0174532925 / 1.0f ) ) );
 
 /*
 // Изменяем положение света на сцене
-		m_Graphics->m_Light->GetLightPos( 2, Dir );
+		m_Graphics->m_D3D->GetLightPos( 2, Dir );
 		float a = XMVectorGetX( Dir );
 		a -= 0.5f;
 		Dir = XMVectorSetX( Dir, a );
-		m_Graphics->m_Light->ChangeLightPos( 2, Dir );
+		m_Graphics->m_D3D->ChangeLightPos( 2, Dir );
 */
 		// ++++++++++++++++++++     Вращаем свет     ++++++++++++++++++++++++++++++++++++
 	}

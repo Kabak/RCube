@@ -19,6 +19,7 @@ cbuffer MatrixBuffer : register(b0)
 	matrix projectionMatrix;
 	matrix viewprojection;
 	matrix OrthoMatrix;
+	matrix ScaleMatrix;
 	float3 cameraPosition;
 	float padding;
 	float4 ViewTransQuat;
@@ -26,7 +27,7 @@ cbuffer MatrixBuffer : register(b0)
 
 struct GeometryVSIn
 {
-	float4 position : POSITION;
+	float3 position : POSITION;
 	float2 texCoord : TEXCOORD;
 	float3 normal : NORMAL;
 	float3 tangent : TANGENT;
@@ -84,22 +85,16 @@ GeometryVSOut GeometryVS(GeometryVSIn input, uint VertexNum : SV_VertexID )
 
 //	float4 InputPosition = float4(input.position, 1.0f);
 
-//	output.position = float4(qtransform(input.instanceRotation, input.position.xyz) + input.instancePosition.xyz, 1.0f);
 	float4 TempPosition = float4(qtransform(input.instanceRotation, input.position.xyz) + input.instancePosition.xyz, 1.0f);
-	// +++++++++++++++++++++++++    Shadow Map    ++++++++++++++++++++++++++++++
-//	output.lightViewPosition = TempPosition;//output.position;
-	// -------------------------    Shadow Map    ------------------------------
 
 	output.positionView = TempPosition;
 
 	output.position = mul(TempPosition, viewprojection);
 
-//	output.normal = normalize(qtransform(input.instanceRotation, input.normal) + input.normal);
 	output.normal = normalize(qtransform(input.instanceRotation, input.normal));
 
 	output.texCoord = input.texCoord;
 	
-//	output.viewDirection = normalize(cameraPosition.xyz - input.instancePosition.xyz);
 	output.viewDirection = normalize(cameraPosition.xyz - TempPosition.xyz);
 
 	return output;

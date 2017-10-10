@@ -6,12 +6,12 @@ struct PixelInputType
 
 
 Texture2D shaderTexture;
-SamplerState SampleType;
+SamplerState FlatObject : register (s3);
 
 
 float4 TexturePixelShader(PixelInputType input) : SV_TARGET
 {
-	float4 textureColor = shaderTexture.Sample(SampleType, input.tex);
+	float4 textureColor = shaderTexture.Sample( FlatObject, input.tex);
 
 // Для анимации огня
 //		textureColor.a = 1.0 / textureColor.g * textureColor.r * textureColor.b;

@@ -22,7 +22,7 @@
     <ProjectGuid>{311F6B45-3C14-43FF-9236-2FAD3E2207DA}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>RCube</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -74,7 +74,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)\DirectXTex-master\DDSTextureLoader;$(ProjectDir)\DirectXTex-master\WICTextureLoader;$(IncludePath)</IncludePath>
     <LibraryPath>C:\PhysX-3.4-master\PxShared\lib\vc14win64;C:\PhysX-3.4-master\PhysX_3.4\Lib\vc14win64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -84,7 +84,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Users\KAI\Documents\Visual Studio 2015\Projects\RCube\DirectXTex-master\DDSTextureLoader;C:\Users\KAI\Documents\Visual Studio 2015\Projects\RCube\DirectXTex-master\WICTextureLoader;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)\DirectXTex-master\DDSTextureLoader;$(ProjectDir)\DirectXTex-master\WICTextureLoader;$(IncludePath)</IncludePath>
     <LibraryPath>C:\PhysX-3.4-master\PxShared\lib\vc14win64;C:\PhysX-3.4-master\PhysX_3.4\Lib\vc14win64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -136,7 +136,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>Debug</GenerateDebugInformation>
-      <AdditionalDependencies>d3d11.lib;d3d10.lib;dinput8.lib;DXGI.lib;D2D1.lib;DWrite.lib;dxguid.lib;D3DCompiler.lib;Xinput9_1_0.lib;D3D10_1.lib;ws2_32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
       <Profile>true</Profile>
     </Link>
     <FxCompile>
@@ -220,7 +220,7 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
       <GenerateDebugInformation>No</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>d3d11.lib;d3d10.lib;dinput8.lib;DXGI.lib;D2D1.lib;DWrite.lib;dxguid.lib;D3DCompiler.lib;Xinput9_1_0.lib;D3D10_1.lib;ws2_32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
       <Profile>false</Profile>
     </Link>
     <Bscmake>
@@ -253,6 +253,7 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClInclude Include="..\DirectXTex-master\WICTextureLoader\WICTextureLoader.h" />
     <ClInclude Include="BillBord.h" />
     <ClInclude Include="Buffer.h" />
+    <ClInclude Include="DX11Buffers.h" />
     <ClInclude Include="ClusterShadingFragmentFactory.h" />
     <ClInclude Include="D3DGlobalContext.h" />
     <ClInclude Include="DxInputStruct.h" />
@@ -264,14 +265,15 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClInclude Include="IndexesArray.h" />
     <ClInclude Include="KF2DTextureAnimation.h" />
     <ClInclude Include="KFClusterMap.h" />
-    <ClInclude Include="KFCubeMappingClass.h" />
+    <ClInclude Include="CubeMappingClass.h" />
     <ClInclude Include="KFModel.h" />
     <ClInclude Include="KFModelList.h" />
     <ClInclude Include="KFPicking.h" />
-    <ClInclude Include="KFResourceManager.h" />
+    <ClInclude Include="Light_def.h" />
+    <ClInclude Include="ResourceManager.h" />
     <ClInclude Include="KFShadowWork.h" />
-    <ClInclude Include="KFSkyDomesClass.h" />
-    <ClInclude Include="KFTerrain.h" />
+    <ClInclude Include="SceneObject.h" />
+    <ClInclude Include="Terrain.h" />
     <ClInclude Include="KFTextureOnTextureDrawing.h" />
     <ClInclude Include="KF_PXControler.h" />
     <ClInclude Include="LightGrid.h" />
@@ -296,7 +298,6 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClInclude Include="KF2DObjClass.h" />
     <ClInclude Include="MenuControler.h" />
     <ClInclude Include="InputClass.h" />
-    <ClInclude Include="LightClass.h" />
     <ClInclude Include="RCube.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="ScrollBarClass.h" />
@@ -307,10 +308,12 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClInclude Include="TextClass.h" />
     <ClInclude Include="TimerClass.h" />
     <ClInclude Include="TorchFireParticles.h" />
+    <ClInclude Include="VertexBuffers_def.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\DirectXTex-master\DDSTextureLoader\DDSTextureLoader.cpp" />
     <ClCompile Include="..\DirectXTex-master\WICTextureLoader\WICTextureLoader.cpp" />
+    <ClCompile Include="DX11Buffers.cpp" />
     <ClCompile Include="ClusterShadingFragmentFactory.cpp" />
     <ClCompile Include="EffectsManager.cpp" />
     <ClCompile Include="Emiters.cpp" />
@@ -319,14 +322,13 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClCompile Include="IndexesArray.cpp" />
     <ClCompile Include="KF2DTextureAnimation.cpp" />
     <ClCompile Include="KFClusterMap.cpp" />
-    <ClCompile Include="KFCubeMappingClass.cpp" />
+    <ClCompile Include="CubeMappingClass.cpp" />
     <ClCompile Include="KFModel.cpp" />
     <ClCompile Include="KFModelList.cpp" />
     <ClCompile Include="KFPicking.cpp" />
-    <ClCompile Include="KFResourceManager.cpp" />
+    <ClCompile Include="ResourceManager.cpp" />
     <ClCompile Include="KFShadowWork.cpp" />
-    <ClCompile Include="KFSkyDomesClass.cpp" />
-    <ClCompile Include="KFTerrain.cpp" />
+    <ClCompile Include="Terrain.cpp" />
     <ClCompile Include="KFTextureOnTextureDrawing.cpp" />
     <ClCompile Include="KF_PXControler.cpp" />
     <ClCompile Include="LightGrid.cpp" />
@@ -350,7 +352,6 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClCompile Include="KF2DObjClass.cpp" />
     <ClCompile Include="MenuControler.cpp" />
     <ClCompile Include="InputClass.cpp" />
-    <ClCompile Include="LightClass.cpp" />
     <ClCompile Include="RCube.cpp" />
     <ClCompile Include="ScrollBarClass.cpp" />
     <ClCompile Include="SoundClass.cpp" />
@@ -499,22 +500,6 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
       <DisableOptimizations Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DisableOptimizations>
       <EnableDebuggingInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</EnableDebuggingInformation>
     </FxCompile>
-    <FxCompile Include="Shaders\InstansingModel_ps.hlsl">
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Shaders\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Shaders\%(Filename).cso</ObjectFileOutput>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">InstansingPixelShader</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">InstansingPixelShader</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-    </FxCompile>
-    <FxCompile Include="Shaders\InstansingModel_vs.hlsl">
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">InstansingVertexShader</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">InstansingVertexShader</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Shaders\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Shaders\%(Filename).cso</ObjectFileOutput>
-    </FxCompile>
     <FxCompile Include="Shaders\KF2DObj_ps.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
@@ -566,62 +551,6 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Shaders\%(Filename).cso</ObjectFileOutput>
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ParticlePixelShader</EntryPointName>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-    </FxCompile>
-    <FxCompile Include="Shaders\SkyDome_ps.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">SkyDomePixelShader</EntryPointName>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Shaders\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Shaders\%(Filename).cso</ObjectFileOutput>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">SkyDomePixelShader</EntryPointName>
-    </FxCompile>
-    <FxCompile Include="Shaders\SkyDome_vs.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">SkyDomeVertexShader</EntryPointName>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Shaders\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Shaders\%(Filename).cso</ObjectFileOutput>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">SkyDomeVertexShader</EntryPointName>
-    </FxCompile>
-    <FxCompile Include="Shaders\Model_ps.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">PS</EntryPointName>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Shaders\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Shaders\%(Filename).cso</ObjectFileOutput>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PS</EntryPointName>
-    </FxCompile>
-    <FxCompile Include="Shaders\Model_vs.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">VS</EntryPointName>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Shaders\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Shaders\%(Filename).cso</ObjectFileOutput>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">VS</EntryPointName>
-    </FxCompile>
-    <FxCompile Include="Shaders\TerrainShader_ps.hlsl">
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TerrainPixelShader</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TerrainPixelShader</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Shaders\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Shaders\%(Filename).cso</ObjectFileOutput>
-    </FxCompile>
-    <FxCompile Include="Shaders\TerrainShader_vs.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TerrainVertexShader</EntryPointName>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TerrainVertexShader</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Shaders\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Shaders\%(Filename).cso</ObjectFileOutput>
     </FxCompile>
     <FxCompile Include="Shaders\TorchFire3D_ps.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Shaders\%(Filename).cso</ObjectFileOutput>

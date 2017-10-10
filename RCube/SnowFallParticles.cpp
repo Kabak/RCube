@@ -1,6 +1,7 @@
 #pragma once
 #include "stdafx.h"
 #include "SnowFallParticles.h"
+#include "D3dClass.h"
 
 SnowFallParticles::SnowFallParticles()
 {
@@ -15,7 +16,7 @@ SnowFallParticles::SnowFallParticles()
 	m_vertexBuffer = nullptr;
 	m_indexBuffer = nullptr;
 
-	m_sampleState = nullptr;
+//	m_sampleState = nullptr;
 	m_layout = nullptr;
 	// +++++++++++++++++   Instancing   ++++++++++++++++++++++++++++++++
 	m_instanceBuffer = nullptr;
@@ -47,7 +48,7 @@ bool SnowFallParticles::Initialize( HWND hwnd,
 									 int _VY_Amount,							// Количестко столбцов в текстуре анимации
 									 int FramesAmount,						// Реальное количество анимаций в текстуре с верха , слева направо
 
-									 LightClass *_EngineLight
+									 D3DClass *_EngineLight
 									 )
 {
 	bool result;
@@ -107,7 +108,7 @@ bool SnowFallParticles::Initialize( HWND hwnd,
 		return false;
 	}
 
-	TempLight = new LightClass::PointLight;
+	TempLight = new PointLight;
 
 	TempLight->attenuationBegin = 0.1f;
 	TempLight->attenuationEnd = 0.5f;
@@ -184,7 +185,7 @@ void SnowFallParticles::Render()
 	ID3D11Buffer* bufferPointers[2];
 
 	// Set vertex buffer stride and offset.
-	strides[0] = sizeof( BillBordVertexes );
+	strides[0] = sizeof( Vertex_FlatObject );
 	strides[1] = sizeof( ParticleShaderInstance_FIRE );
 
 	// Set the buffer offsets.
@@ -215,7 +216,7 @@ void SnowFallParticles::Render()
 	// deviceContext->PSSetShader(m_pixelShader, NULL, 0);
 
 	// Set the sampler state in the pixel shader.
-	D3DGC_Local->D11_deviceContext->PSSetSamplers( 0, 1, &m_sampleState );
+//	D3DGC_Local->D11_deviceContext->PSSetSamplers( 0, 1, &m_sampleState );
 
 	// Render the triangle.
 	D3DGC_Local->D11_deviceContext->DrawIndexedInstanced( 6, m_currentParticleCount/*m_instanceCount*/, 0, 0, 0 );
@@ -293,7 +294,7 @@ bool SnowFallParticles::InitializeBuffers( ID3D11Device* device, ID3D10Blob* Blo
 	// -----------------   Instancing   --------------------------------
 
 	// Create the vertex array for the particles that will be rendered.
-	m_vertices = new BillBordVertexes[4];
+	m_vertices = new Vertex_FlatObject[4];
 
 
 	unsigned long indices[6] = { 0, 1, 2, 0, 3, 1 };
@@ -347,28 +348,28 @@ bool SnowFallParticles::InitializeBuffers( ID3D11Device* device, ID3D10Blob* Blo
 	// -----------------   Instancing   --------------------------------
 
 	// Initialize vertex array to zeros at first.
-	memset( m_vertices, 0, ( sizeof( BillBordVertexes ) * 4 ) );
+	memset( m_vertices, 0, ( sizeof( Vertex_FlatObject ) * 4 ) );
 
 	// Top left.
-	m_vertices[0].position = XMFLOAT3( -1.0f * m_particleSize, 1.0f * m_particleSize, 0.0f );  // Top left
-	m_vertices[0].texture = XMFLOAT2( 0.0f, 0.0f );
+	m_vertices[0].Position = XMFLOAT3( -1.0f * m_particleSize, 1.0f * m_particleSize, 0.0f );  // Top left
+	m_vertices[0].TexCoord = XMFLOAT2( 0.0f, 0.0f );
 
 	// Bottom right.
-	m_vertices[1].position = XMFLOAT3( 1.0f * m_particleSize, -1.0f * m_particleSize, 0.0f );  // Bottom right
-	m_vertices[1].texture = XMFLOAT2( 1.0f, 1.0f );
+	m_vertices[1].Position = XMFLOAT3( 1.0f * m_particleSize, -1.0f * m_particleSize, 0.0f );  // Bottom right
+	m_vertices[1].TexCoord = XMFLOAT2( 1.0f, 1.0f );
 
 	// Bottom left.
-	m_vertices[2].position = XMFLOAT3( -1.0f * m_particleSize, -1.0f * m_particleSize, 0.0f );  // Bottom left.
-	m_vertices[2].texture = XMFLOAT2( 0.0f, 1.0f );
+	m_vertices[2].Position = XMFLOAT3( -1.0f * m_particleSize, -1.0f * m_particleSize, 0.0f );  // Bottom left.
+	m_vertices[2].TexCoord = XMFLOAT2( 0.0f, 1.0f );
 
 	// Top right.
-	m_vertices[3].position = XMFLOAT3( 1.0f * m_particleSize, 1.0f * m_particleSize, 0.0f );  // Top right.
-	m_vertices[3].texture = XMFLOAT2( 1.0f, 0.0f );
+	m_vertices[3].Position = XMFLOAT3( 1.0f * m_particleSize, 1.0f * m_particleSize, 0.0f );  // Top right.
+	m_vertices[3].TexCoord = XMFLOAT2( 1.0f, 0.0f );
 
 
 	// Set up the description of the dynamic vertex buffer.
 	BillBordVertBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	BillBordVertBufferDesc.ByteWidth = sizeof( BillBordVertexes ) * 4;
+	BillBordVertBufferDesc.ByteWidth = sizeof( Vertex_FlatObject ) * 4;
 	BillBordVertBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	BillBordVertBufferDesc.CPUAccessFlags = 0;
 	BillBordVertBufferDesc.MiscFlags = 0;
@@ -410,7 +411,7 @@ bool SnowFallParticles::InitializeBuffers( ID3D11Device* device, ID3D10Blob* Blo
 	{
 		return false;
 	}
-
+/*
 	D3D11_SAMPLER_DESC samplerDesc;
 
 	// Create a texture sampler state description.
@@ -434,7 +435,7 @@ bool SnowFallParticles::InitializeBuffers( ID3D11Device* device, ID3D10Blob* Blo
 	{
 		return false;
 	}
-
+*/
 
 	return true;
 }
@@ -448,7 +449,7 @@ void SnowFallParticles::ShutdownBuffers()
 	RCUBE_RELEASE( m_indexBuffer );
 	RCUBE_RELEASE( m_vertexBuffer );
 
-	RCUBE_RELEASE( m_sampleState );
+//	RCUBE_RELEASE( m_sampleState );
 	RCUBE_RELEASE( m_layout );
 
 	RCUBE_ARR_DELETE( instances );

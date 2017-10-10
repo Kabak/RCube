@@ -8,16 +8,10 @@
 #include <vector>
 #include "DirectXMath.h"
 #include "D3DGlobalContext.h"
+#include "VertexBuffers_def.h"
 
 using namespace std;
 using namespace DirectX;
-
-struct InterfaceVertexType
-	{
-		XMFLOAT3 position;
-	    XMFLOAT2 texture;
-	};
-
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++ базовый класс для рисования всех обьектов в 2D
 class KF2DObjClass
@@ -40,15 +34,14 @@ public:
 
 	HRESULT Init(
 		D3DGlobalContext* _D3DGC,
-		InterfaceVertexType* Vertexes,
+		Vertex_FlatObject* Vertexes,
 		unsigned long* Indeces,
 		ID3D11ShaderResourceView * texture, 
 		int VertexCount, 
-		int IndexCount,
-		ID3D10Blob * WorkBlob
+		int IndexCount
 		);
 
-	void SetVertexBuffer(InterfaceVertexType* Vertexes ) ;
+	void SetVertexBuffer( Vertex_FlatObject* Vertexes ) ;
 
 	void Render();
 
@@ -61,14 +54,12 @@ private:
 	D3DGlobalContext*			D3DGC;
 	ID3D11Buffer*				g_IndexBuffer; 
 	ID3D11Buffer*				g_VertexBuffer;
-	ID3D11InputLayout*			m_layout;
+//	ID3D11InputLayout*			m_layout;
 	ID3D11SamplerState*			m_sampleState;
 	ID3D11ShaderResourceView*	Texture;
 
 	int VertexNum; 
 	int IndexNum;
-
-	bool IsTextureRealise;
 
 };
 //----------------------------------------------------------------------------- базовый класс для рисования всех обьектов в 2D

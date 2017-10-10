@@ -5,7 +5,8 @@
 #include "D3DGlobalContext.h"
 #include "ParticleSystemDefinitions.h"
 #include "FPSTimers.h"
-#include "LightClass.h"
+#include "D3DClass.h"
+#include "Light_def.h"
 #include <vector>
 
 #ifndef _SNOWFALL_PARTICLES_H_
@@ -29,7 +30,7 @@ public:
 					 int _UX_Amount,							// Количество строк в текстуре анимации
 					 int _VY_Amount,							// Количестко столбцов в текстуре анимации
 					 int FramesAmount,					// Реальное количество анимаций в текстуре с верха , слева направо
-					 LightClass *_EngineLight
+					 D3DClass *_EngineLight
 					 );
 
 
@@ -41,7 +42,7 @@ public:
 						 //	ID3D11ShaderResourceView *_HeartTexture,
 						 //	ID3D11ShaderResourceView *_ParticlesTexture,
 						 //						 int  InstanceAmount,
-						 LightClass *_EngineLight
+						 D3DClass *_EngineLight
 						 );
 
 	void Shutdown();
@@ -59,13 +60,14 @@ public:
 
 	int GetInstanceCount();
 
+	int ShaderForDraw = -1;
 
 private:
 
 	D3DGlobalContext *D3DGC_Local;
 
-	LightClass *EngineLight;
-	LightClass::PointLight *TempLight;
+	D3DClass *EngineLight;
+	PointLight *TempLight;
 
 	bool InitializeParticleSystem();
 	void ShutdownParticleSystem();
@@ -90,9 +92,9 @@ private:
 
 	void SetInstanceStartFrame( int FrameNumber, XMFLOAT4& Data2 );
 
-	BillBordVertexes* m_vertices;
+	Vertex_FlatObject* m_vertices;
 	ID3D11InputLayout* m_layout;
-	ID3D11SamplerState* m_sampleState;
+//	ID3D11SamplerState* m_sampleState;
 	ID3D11Buffer *m_vertexBuffer;
 	ID3D11Buffer *m_indexBuffer;
 	// +++++++++++++++++   Instancing   ++++++++++++++++++++++++++++++++

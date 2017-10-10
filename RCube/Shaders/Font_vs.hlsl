@@ -5,6 +5,7 @@ cbuffer PerFrameBuffer
 	matrix projectionMatrix;
 	matrix viewprojection;
 	matrix OrthoMatrix;
+	matrix ScaleMatrix;
 	float3 cameraPosition;
 	float padding;
 	float4 ViewTransQuat;

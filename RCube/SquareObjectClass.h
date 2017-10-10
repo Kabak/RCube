@@ -39,6 +39,8 @@ public :
 	 SquareObjectClass();
 	~SquareObjectClass();
 
+	int	ShaderIndex = 0; 
+
 	// Координаты объекта на экране
 	XMFLOAT4 ObjParam;	// x - позиция X , y - позиция Y , z - Width ширина элемента , w - Height высота элемента
 	XMFLOAT4 ObjOriginalParam; // Оригинальные параметры при иницоализации объекта = 100% реального размера объекта
@@ -57,8 +59,7 @@ public :
 	HRESULT Init(D3DGlobalContext* D3DGC,
 		XMFLOAT4& _ObjParam,
 		ID3D11ShaderResourceView * texture,
-		int _TextureFlip,
-		ID3D10Blob * WorkBlob
+		int _TextureFlip
 		);
 
 	void Draw();
@@ -83,7 +84,7 @@ public :
 	void SetOriginalSize( void );
 
 	// Генерация вертексов и текстуры объекта
-	void GenerateVertexes( InterfaceVertexType*, int TextureFlip );
+	void GenerateVertexes( Vertex_FlatObject*, int TextureFlip );
     
 };
 //-------------------------------------------------------------------------------- класс для рисования (Прямоугольных) обьектов 

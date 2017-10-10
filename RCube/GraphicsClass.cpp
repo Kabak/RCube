@@ -5,8 +5,9 @@
 // Filename: graphicsclass.cpp
 ////////////////////////////////////////////////////////////////////////////////
 #include "GraphicsClass.h"
+#include "Light_def.h"
 
-void __stdcall Fuck()
+void __stdcall Duck()
 {
 	int a = 1;
 }
@@ -14,27 +15,33 @@ void __stdcall Fuck()
 GraphicsClass::GraphicsClass()
 {
 
-	     ClusterMap = nullptr;
-  cbPerObjectBuffer = nullptr;
-		   MainMenu = nullptr;
-		        Hud = nullptr;
-			  m_D3D = nullptr;
-		   m_Camera = nullptr;
- 		  MyManager = nullptr;
-		   m_Bitmap = nullptr;
-			Mapping = nullptr;
-		  ModelList = nullptr;
-		 ShadowWork = nullptr;
+					 Profile = nullptr;
+				   m_Frustum = nullptr;
+					   m_D3D = nullptr;
+					m_Camera = nullptr;
+GlobalShadersConstantsBuffer = nullptr;
+				   MyManager = nullptr;
+					  m_Text = nullptr;
+					m_Bitmap = nullptr;
+					 Mapping = nullptr;
+//					 m_Light = nullptr;
+
+		 		    MainMenu = nullptr;
+				 AnimTexture = nullptr;
+						 Hud = nullptr;
+
 // + Particel systems
-	  FireParticles = nullptr;
-		  TorchFire = nullptr;
-	  SnowParticles = nullptr;
+			   SnowParticles = nullptr;
+				   TorchFire = nullptr;
+			   FireParticles = nullptr;
 // - Particel systems
- 		  m_Frustum = nullptr;
-		  	Profile = nullptr;
-			m_Light = nullptr;
-			Terrain = nullptr;
-		AnimTexture = nullptr;
+
+
+				   KFTerrain = nullptr;
+				   ModelList = nullptr;
+				  ClusterMap = nullptr;
+				  ShadowWork = nullptr;
+				  
 
 			Global = new  char[100];
 
@@ -75,15 +82,15 @@ GraphicsClass::~GraphicsClass()
 	Strings.clear();
 
 	RCUBE_DELETE ( AnimTexture );
-	RCUBE_DELETE ( Terrain );
+	RCUBE_DELETE ( KFTerrain );
 	RCUBE_DELETE ( Profile );
 	RCUBE_DELETE ( ShadowWork );
-  RCUBE_SHUTDOWN ( m_Light );
+//  RCUBE_SHUTDOWN ( m_Light );
   RCUBE_SHUTDOWN ( FireParticles );
   RCUBE_SHUTDOWN ( TorchFire );
   RCUBE_SHUTDOWN ( SnowParticles );
     RCUBE_DELETE ( ClusterMap );
-   RCUBE_RELEASE ( cbPerObjectBuffer );
+   RCUBE_RELEASE (GlobalShadersConstantsBuffer);
 	RCUBE_DELETE ( ModelList );
     RCUBE_DELETE ( Mapping );
     RCUBE_DELETE ( MainMenu );
@@ -125,14 +132,27 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Profile = new RCubeProfiling;
 	Profile->Initialize();
 
+	m_Frustum = new FrustumClass;
+
 	m_D3D = new D3DClass;
 
-	result = m_D3D->Initialize(hwnd, screenWidth, screenHeight, VSYNC_ENABLED, FULL_SCREEN, SCREEN_DEPTH, SCREEN_NEAR);
+	result = m_D3D->Initialize(hwnd, screenWidth, screenHeight, VSYNC_ENABLED, FULL_SCREEN, SCREEN_DEPTH, SCREEN_NEAR, m_Frustum );
 	if(!result)
 	{
 		MessageBox(hwnd, L"Could not initialize m_D3D Class", Error, MB_OK);
 		return false;
 	}
+
+	// Устанавливаем Samplers
+	ID3D11SamplerState* AllSamplers[4] =
+	{
+		m_D3D->D3DGC->Wrap_Model_Texture,			// Most models sampler
+		m_D3D->D3DGC->CLight_ShadowMap_Sampler,		// ShadowMap sampler
+		m_D3D->D3DGC->CLight_SM_PCF_Sampler,		// ShadowMap PCF sampler , FXAA
+		m_D3D->D3DGC->FlatObject_Sampler			// Flat Object sampler ( CubeMap, Text, Menu Items, All Particles  )
+	};
+	m_D3D->D3DGC->D11_deviceContext->PSSetSamplers ( 0, 4, AllSamplers );
+
 	// Инициализируем глобальную ссылку на InputClass 
 	m_D3D->D3DGC->m_EngineInputClass = _Input;
 	// Инициализируем глобальные размеры окна и положение окна не экране
@@ -143,8 +163,6 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 
 	// Create the camera object.
 	m_Camera = new CameraClass;
-
-	m_Frustum = new FrustumClass;
 
 	m_Camera->GetViewMatrix(m_D3D->D3DGC->ViewMatrix);
 //	m_Camera->Render();
@@ -161,12 +179,12 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	ZeroMemory( &cbbd, sizeof( D3D11_BUFFER_DESC ) );
 
 	cbbd.Usage = D3D11_USAGE_DEFAULT;
-	cbbd.ByteWidth = sizeof( KFModel::cbPerObject );
+	cbbd.ByteWidth = sizeof( ConstantBufferData );
 	cbbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	cbbd.CPUAccessFlags = 0;
 	cbbd.MiscFlags = 0;
 
-	hr = m_D3D->D3DGC->D11_device->CreateBuffer( &cbbd, NULL, &cbPerObjectBuffer );
+	hr = m_D3D->D3DGC->D11_device->CreateBuffer( &cbbd, NULL, &GlobalShadersConstantsBuffer);
 	if ( FAILED( hr ) )
 	{
 		MessageBox( NULL, L"Create cbPerObjectBuffer failed!", Error, 0 );
@@ -175,7 +193,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 
 // - Создаём константный буфер
 
-	MyManager = new KFResourceManager;
+	MyManager = new ResourceManager;
 	MyManager->Init(m_D3D->D3DGC , hwnd);
 //	m_D3D->D3DGC->ShaderManager = MyManager;
 	hr = MyManager->InitTextures(L"Textures/Result.kaf");
@@ -190,45 +208,10 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 		MessageBox( NULL, L"MyManager load \"Shaders/Shaders.kaf\" failed!", Error, 0 );
 		return false;
 	}
-	// Строка автозапуска после компиляции
-	// xcopy /Y "$(ProjectDir)\Shaders\*.cso" "$(OutDir)\Shaders\"
-	//"$(ProjectDir)\Shaders\KafConvertor.exe" 
-	//xcopy / Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"
-//	MyManager->InitOneShader(L"Shaders/CubeMap_vs.cso");		// 0
-//	MyManager->InitOneShader(L"Shaders/CubeMap_ps.cso");		// 0
-//	MyManager->InitOneShader(L"Shaders/Font_vs.cso");			// 1
-//	MyManager->InitOneShader(L"Shaders/Font_ps.cso");			// 1
-//	MyManager->InitOneShader(L"Shaders/KF2DObj_vs.cso");		// 2
-//	MyManager->InitOneShader(L"Shaders/KF2DObj_ps.cso");		// 2
-//	MyManager->InitOneShader(L"Shaders/particle_vs.cso");		// 3
-//	MyManager->InitOneShader(L"Shaders/particle_ps.cso");		// 3
-//	MyManager->InitOneShader(L"Shaders/SkyDome_vs.cso");		// 4
-//	MyManager->InitOneShader(L"Shaders/SkyDome_ps.cso");		// 4
-//	MyManager->InitOneShader(L"Shaders/Model_vs.cso");			// 5
-//	MyManager->InitOneShader(L"Shaders/Model_ps.cso");			// 5
-//	MyManager->InitOneShader(L"Shaders/InstansingModel_vs.cso");// 6
-//	MyManager->InitOneShader(L"Shaders/InstansingModel_ps.cso");// 6
-//	MyManager->InitOneShader(L"Shaders/TerrainShader_vs.cso");	// 7
-//	MyManager->InitOneShader(L"Shaders/TerrainShader_ps.cso");	// 7
 
-	//	MyManager->InitOneShader(hwnd, L"Shaders/Clustered_ps.cso", m_D3D->D3DGC->D11_device, m_D3D->D3DGC->D11_deviceContext);		// 8
-	//	MyManager->InitOneShader(hwnd, L"Shaders/Clustered_vs.cso", m_D3D->D3DGC->D11_device, m_D3D->D3DGC->D11_deviceContext);		// 8
-//	MyManager->InitOneShader(L"Shaders/ClusteredSM_vs.cso");	// 8
-//	MyManager->InitOneShader(L"Shaders/ClusteredSM_ps.cso");	// 8
-// Добавление Clustering и FXAA
-//	MyManager->InitOneShader(L"Shaders/FXAA_vs.cso");			// 9
-//	MyManager->InitOneShader(L"Shaders/FXAA_ps.cso");			// 9
-//	MyManager->InitOneShader(L"Shaders/LightRenderSM_vs.cso");	// 10
-//	MyManager->InitOneShader(L"Shaders/LightRenderSM_ps.cso");	// 10
-//	MyManager->InitOneShader(L"Shaders/FireAnimation_vs.cso");// 11
-//	MyManager->InitOneShader(L"Shaders/FireAnimation_ps.cso");// 11
-//	MyManager->InitOneShader(L"Shaders/FireParticle3D_vs.cso");// 12
-//	MyManager->InitOneShader(L"Shaders/FireParticle3D_ps.cso");// 12
-//	MyManager->InitOneShader(L"Shaders/TorchFire3D_vs.cso");// 13
-//	MyManager->InitOneShader(L"Shaders/TorchFire3D_ps.cso");// 13 27
-//	MyManager->InitOneShader(L"Shaders/Horiz_cs.cso");
-//	MyManager->InitOneShader(L"Shaders/Vert_cs.cso");
-//*/
+	m_D3D->FXAAShaderIndex = MyManager->GetShaderIndexByName(L"FXAA");
+	m_D3D->BlureHorizComputeShaderIndex = MyManager->GetShaderIndexByName(L"Horiz");
+	m_D3D->BlureVertComputeShaderIndex = MyManager->GetShaderIndexByName(L"Vert");
 
 // +++++++++++++++++++++     СОЗДАЁМ ШРИФТЫ     +++++++++++++++++++++++++++++++++++
 // Максимальный размер шрифта 74.0f 
@@ -674,10 +657,9 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	// Create the text object.
 	m_Text = new TextClass;
 	// Initialize the text object.
-	result = m_Text->Initialize(m_D3D->D3DGC,
-		FontList,
-		MyManager
-	);
+	result = m_Text->Initialize(m_D3D->D3DGC, FontList );
+
+	m_Text->TextShaderIndex = MyManager->GetShaderIndexByName(L"Font");
 
 	RCUBE_RELEASE( LinearGradientBrush6 );
 	RCUBE_RELEASE( SolidBrushOutline6 );
@@ -714,29 +696,19 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 // +++++++++++++++++++++   Custom Cursor   ++++++++++++++++++++++++++++++++++
 	XMFLOAT4 MouseCursorPos = {0.0f, 0.0f, 30.0f, 30.0f};
 	m_Bitmap = new SquareObjectClass;
-	hr = m_Bitmap->Init(m_D3D->D3DGC,
-	MouseCursorPos,
-	MyManager->ShaderResourceArr[10],
-	NO_FLIP,
-	MyManager->BlobsArr[2]
+	hr = m_Bitmap->Init ( m_D3D->D3DGC,
+		MouseCursorPos,
+		MyManager->ShaderResourceArr[10],
+		NO_FLIP
 	);
 	
+	m_Bitmap->ShaderIndex = MyManager->GetShaderIndexByName(L"KF2DObj");
+
 	if (FAILED( hr ))
 	{
 		MessageBox(hwnd, L"Could not initialize the bitmap object.", Error, MB_OK);
 		return false;
 	}
-
-//	m_Bitmap = new BitmapClass;
-	// Initialize the bitmap object.
-//	result = m_Bitmap->Initialize(m_D3D->D3DGC, MyManager->ShaderResourceArr[10], 30, 30);
-//	if(!result)
-//	{
-//		MessageBox(hwnd, L"Could not initialize the bitmap object.", L"Error", MB_OK);
-//		return false;
-//	}
-	// Initialize that the user has not clicked on the screen to try an intersection test yet.
-//	m_beginCheck = false;
 // ---------------------   Custom Cursor   ---------------------------------
 
 
@@ -817,29 +789,15 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	UpdateConstantBuffer();
 
-//	m_D3D->TurnOnAlphaBlending();//TurnOnParticleBlending();
-//	m_D3D->TurnOnParticleBlending();
 	m_D3D->TurnOnTextOnTextureBlending();
 	m_D3D->TurnZBufferOff();
 
-	ID3D11RasterizerState* RSCullNone;
-	D3D11_RASTERIZER_DESC cmdesc;
-
-	ZeroMemory( &cmdesc, sizeof( D3D11_RASTERIZER_DESC ) );
-
-	cmdesc.FillMode = D3D11_FILL_SOLID;
-	cmdesc.FrontCounterClockwise = true;
-
-	cmdesc.CullMode = D3D11_CULL_NONE;
-	hr = m_D3D->D3DGC->D11_device->CreateRasterizerState( &cmdesc, &RSCullNone );
-
-	m_D3D->D3DGC->D11_deviceContext->RSSetState( RSCullNone );
+	m_D3D->SetCullNoneResterizeState ();
 	m_D3D->D3DGC->D11_deviceContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
 	m_D3D->D3DGC->D11_deviceContext->OMSetRenderTargets( 1, &m_D3D->D3DGC->BackBuffer_ProxyTextureRTV, NULL ); //m_D3D->D3DGC->m_depthStencilView
 	m_D3D->D3DGC->D11_deviceContext->ClearRenderTargetView( m_D3D->D3DGC->BackBuffer_ProxyTextureRTV, m_D3D->D3DGC->ZeroColor );
 
-
-
+	MyManager->SetActiveShadersInProgramm ( m_Text->TextShaderIndex );
 //	Profile->StartTimer();
 	m_Text->m_Font[0]->RenderFontOnTexture ( MyManager->ShaderResourceArr[1],
 											 Path,
@@ -880,8 +838,6 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 //	Profile->StopTimer(Global);
 
 	m_D3D->D3DGC->D11_deviceContext->ClearRenderTargetView( m_D3D->D3DGC->BackBuffer_ProxyTextureRTV, m_D3D->D3DGC->ZeroColor );
-
-	RSCullNone->Release();
 
 	m_D3D->TurnOffAlphaBlending();
 	m_D3D->TurnZBufferOn();
@@ -993,7 +949,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Data->PosY = 500;
 	Number = m_Text->AddSentence(Data, "         ");
 
-	// 16 Текст о Видеоплате
+	// 15 Текст о Видеоплате
 	Data->MaxLength = 128;
 	Data->PosY = 310;
 	Data->ShowType = SHOW_SCROLLING;
@@ -1042,8 +998,6 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Buttons[0].WaitingForKeyPress = false;
 	Buttons[0].VirtualKeyIndex = 0;
 	Buttons[0].SecondSlot = true;
-	Buttons[0].Blob = MyManager->BlobsArr[4];
-
 
 
 	Buttons[1]._ObjParam = { 10.0f, Buttons[0]._ObjParam.y + y + 10.0f , x, y };
@@ -1071,8 +1025,6 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Buttons[1].WaitingForKeyPress = false;
 	Buttons[1].VirtualKeyIndex = 0;
 	Buttons[1].SecondSlot = true;
-	Buttons[1].Blob = MyManager->BlobsArr[4];
-
 
 
 	Buttons[2]._ObjParam = { 10.0f, Buttons[1]._ObjParam.y + y + 10.0f, x, y };
@@ -1100,7 +1052,6 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Buttons[2].WaitingForKeyPress = false;
 	Buttons[2].VirtualKeyIndex = 0;
 	Buttons[2].SecondSlot = true;
-	Buttons[2].Blob = MyManager->BlobsArr[4];
 
 	Buttons[3]._ObjParam = { 10.0f, Buttons[2]._ObjParam.y + y + 10.0f, x, y };
 	Buttons[3].OsnTextureResource = MyManager->ResourceArr[4];
@@ -1127,8 +1078,6 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Buttons[3].WaitingForKeyPress = false;
 	Buttons[3].VirtualKeyIndex = 0;
 	Buttons[3].SecondSlot = true;
-	Buttons[3].Blob = MyManager->BlobsArr[4];
-
 
 	Buttons[4]._ObjParam = { 10.0f, Buttons[3]._ObjParam.y + y + 10.0f, x, y };
 	Buttons[4].OsnTextureResource = MyManager->ResourceArr[5];
@@ -1146,7 +1095,6 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Buttons[4].WaitingForKeyPress = false;
 	Buttons[4].VirtualKeyIndex = 0;
 	Buttons[4].SecondSlot = true;
-	Buttons[4].Blob = MyManager->BlobsArr[4];
 
 	StringsList_Elements StringsList1[1];
 
@@ -1186,9 +1134,10 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	StringsList1->_ShowStringsList = true;// рисовать StringsList
 	StringsList1->Enabled = true;
 	StringsList1->ScrollSpeed = 10;
-	StringsList1->Blob = MyManager->BlobsArr[4];
 
 	MainMenu = new MenuControrerClass;
+	MainMenu->ShaderForDraw = MyManager->GetShaderIndexByName ( L"KF2DObj" );
+
 	MainMenu->Init ( m_D3D->D3DGC,
 					 Buttons, 5, // Buttons and Checkboxes
 					 NULL, 0,	// ScrollBars
@@ -1196,13 +1145,11 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 					 NULL,		// Нет анимации
 					 { 112.0f, 84.0f, 800.0f, 600.0f },
 					 MyManager->ShaderResourceArr[18],
-					 MyManager->BlobsArr[4],
 					 m_Text
 					 );
 
 	KFScrollBar_Elements Bars[11];
-
-	Bars[0].Blob = MyManager->BlobsArr[4];
+	
 	Bars[0].Horizontal = false;
 	Bars[0].Values = { 0.0f, 1.0f, 0.0f, 0.01f };
 	Bars[0].ShowButtons = true;
@@ -1221,10 +1168,9 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[0].TravellerPressTexture = MyManager->ShaderResourceArr[15];
 	Bars[0].MouseOnTravellerTexture = NULL;
 
-	// Diffuse.X
-	Bars[1].Blob = MyManager->BlobsArr[4];
+// Для отладки шейдера теней
 	Bars[1].Horizontal = false;
-	Bars[1].Values = { 0.01f, 10.0f, 1.64f, 0.01f };
+	Bars[1].Values = { 0.00001f, 0.03f, 0.00392f, 0.0001f };
 	Bars[1].ShowButtons = true;
 	Bars[1].ObjParam = { 10.0f, 450.0f, 0.0f, 100.0f };
 	Bars[1].UpSideDown = true;
@@ -1241,7 +1187,6 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[1].TravellerPressTexture = MyManager->ShaderResourceArr[15];
 	Bars[1].MouseOnTravellerTexture = NULL;
 	// DepthBias
-	Bars[2].Blob = MyManager->BlobsArr[4];
 	Bars[2].Horizontal = false;
 	Bars[2].Values = { -1000.0f, 1000.0f, 1.0f, 1.0f };
 	Bars[2].ShowButtons = true;
@@ -1260,7 +1205,6 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[2].TravellerPressTexture = MyManager->ShaderResourceArr[15];
 	Bars[2].MouseOnTravellerTexture = NULL;
 	// SlopeScaledDepthBias
-	Bars[3].Blob = MyManager->BlobsArr[4];
 	Bars[3].Horizontal = false;
 	Bars[3].Values = { -1.0f, 1000.0f, 4.0f, 1.0f };
 	Bars[3].ShowButtons = true;
@@ -1278,10 +1222,9 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[3].TravellerNotEnalbledTexture = NULL;
 	Bars[3].TravellerPressTexture = MyManager->ShaderResourceArr[15];
 	Bars[3].MouseOnTravellerTexture = NULL;
-	// PCF_Amount
-	Bars[4].Blob = MyManager->BlobsArr[4];
+	// PCF_AMOUNT
 	Bars[4].Horizontal = false;
-	Bars[4].Values = { 0.1f, 15.0f, 7.1f, 0.01f };
+	Bars[4].Values = { 0.5f, 15.0f, 2.5f/*3.3f*/, 0.01f };
 	Bars[4].ShowButtons = true;
 	Bars[4].ObjParam = { 100.0f, 450.0f, 0.0f, 100.0f };
 	Bars[4].UpSideDown = true;
@@ -1298,9 +1241,8 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[4].TravellerPressTexture = MyManager->ShaderResourceArr[15];
 	Bars[4].MouseOnTravellerTexture = NULL;
 	// PCF_Step
-	Bars[5].Blob = MyManager->BlobsArr[4];
 	Bars[5].Horizontal = false;
-	Bars[5].Values = { 0.1f, 10.0f, 2.36f, 0.01f };
+	Bars[5].Values = { 0.1f, 10.0f, 1.24f/*1.29f*/, 0.01f };
 	Bars[5].ShowButtons = true;
 	Bars[5].ObjParam = { 130.0f, 450.0f, 0.0f, 100.0f };
 	Bars[5].UpSideDown = true;
@@ -1317,7 +1259,6 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[5].TravellerPressTexture = MyManager->ShaderResourceArr[15];
 	Bars[5].MouseOnTravellerTexture = NULL;
 
-	Bars[6].Blob = MyManager->BlobsArr[4];
 	Bars[6].Horizontal = false;
 	Bars[6].Values = { -1.0f, 3.0f, 0.003f, 0.0005f };
 	Bars[6].ShowButtons = true;
@@ -1336,9 +1277,8 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[6].TravellerPressTexture = MyManager->ShaderResourceArr[15];
 	Bars[6].MouseOnTravellerTexture = NULL;
 	// Shadow Divider
-	Bars[7].Blob = MyManager->BlobsArr[4];
 	Bars[7].Horizontal = false;
-	Bars[7].Values = { 1.0f, 8128.0f, 8128.0f, 1.0f };
+	Bars[7].Values = { 1.0f, 8128.0f, 3192.0f, 1.0f };
 	Bars[7].ShowButtons = true;
 	Bars[7].ObjParam = { 190.0f, 450.0f, 0.0f, 100.0f };
 	Bars[7].UpSideDown = true;
@@ -1355,10 +1295,9 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[7].TravellerPressTexture = MyManager->ShaderResourceArr[15];
 	Bars[7].MouseOnTravellerTexture = NULL;
 
-	// Diffuse.Y
-	Bars[8].Blob = MyManager->BlobsArr[4];
+	// DyffuseY
 	Bars[8].Horizontal = true;
-	Bars[8].Values = { -1.0f, 1.0f, 0.325f, 0.001f };
+	Bars[8].Values = { -1.0f, 1.0f, 0.005f, 0.001f };
 	Bars[8].ShowButtons = true;
 	Bars[8].ObjParam = { 35.0f, 700.0f, 100.0f, 25.0f };
 	Bars[8].UpSideDown = false;
@@ -1375,10 +1314,9 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[8].TravellerPressTexture = MyManager->ShaderResourceArr[15];
 	Bars[8].MouseOnTravellerTexture = NULL;
 
-	// Diffuse.Z
-	Bars[9].Blob = MyManager->BlobsArr[4];
+	// Active LIghts on Screen
 	Bars[9].Horizontal = true;
-	Bars[9].Values = { -1.0f, 2.0f , 2.0f, 0.001f };
+	Bars[9].Values = { 1.0f, 3000.0f , 150.0f, 1.0f };
 	Bars[9].ShowButtons = true;
 	Bars[9].ObjParam = { 35.0f, 730.0f, 100.0f, 25.0f };
 	Bars[9].UpSideDown = false;
@@ -1396,7 +1334,6 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[9].MouseOnTravellerTexture = NULL;
 
 	// Active Lights on Screen
-	Bars[10].Blob = MyManager->BlobsArr[4];
 	Bars[10].Horizontal = true;
 	Bars[10].Values = { 1.0f, 3000.0f , 150.0f, 1.0f };
 	Bars[10].ShowButtons = true;
@@ -1454,7 +1391,6 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Buttons[6].WaitingForKeyPress = false;
 	Buttons[6].VirtualKeyIndex = 0;
 	Buttons[6].SecondSlot = false;
-	Buttons[6].Blob = MyManager->BlobsArr[4];
 
 
 	Data4->MaxLength = 16; // Для Edit указывать желаемое количество вводи мых символов + 1
@@ -1482,7 +1418,6 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Buttons[4].WaitingForKeyPress = false;
 	Buttons[4].VirtualKeyIndex = 0;
 	Buttons[4].SecondSlot = true;
-	Buttons[4].Blob = MyManager->BlobsArr[4];
 
 	Data5->MaxLength = 32;
 	Data5->PosX = 10;
@@ -1509,7 +1444,6 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Buttons[5].WaitingForKeyPress = true;
 	Buttons[5].VirtualKeyIndex = 0;
 	Buttons[5].SecondSlot = true;
-	Buttons[5].Blob = MyManager->BlobsArr[4];
 
 	// Hide Text
 	Buttons[7]._ObjParam = { 10.0f, 600.0f, 0.0f, 0.0f };
@@ -1528,7 +1462,6 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Buttons[7].WaitingForKeyPress = false;
 	Buttons[7].VirtualKeyIndex = 0;
 	Buttons[7].SecondSlot = false;
-	Buttons[7].Blob = MyManager->BlobsArr[4];
 
 
 	// +++++++++++++++++++     Анимация     ++++++++++++++++++++++++++++++
@@ -1536,19 +1469,22 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	AnimTexture = new KF2DTextureAnimation;
 	XMFLOAT4 ObjData = { 100.0f, 800.0f, 100.0f, 100.0f };
 	AnimTexture->Init(hwnd, m_D3D->D3DGC, 8, 8, MyManager->ShaderResourceArr[8],
-	11, 2, MyManager, ObjData, MyManager->BlobsArr[4]);
+	MyManager->GetShaderIndexByName ( L"FireAnimation" ) ,	// анимация в меню FireAnimation_vs
+	MyManager->GetShaderIndexByName ( L"KF2DObj" ),			// возвращаем KF2DObj_vs
+	MyManager, ObjData );
 	// -------------------     Анимация     ------------------------------
 
 
 	Hud = new MenuControrerClass;
+	Hud->ShaderForDraw = MyManager->GetShaderIndexByName ( L"KF2DObj" );
 	Hud->Init(m_D3D->D3DGC,
-		Buttons, 8,
+		Buttons, 8, 
 		Bars, 11,
 		NULL, 0,	// StringsLists
 		AnimTexture,	// Передаём объект анимации в меню
 		{ float(screenWidth - 250) , 0.0f, 250.0f, float(screenHeight) },
 		MyManager->ShaderResourceArr[18],
-		MyManager->BlobsArr[4],
+//		MyManager->GetShaderBlobByName ( L"KF2DObj" ),
 		m_Text
 		);
 
@@ -1556,7 +1492,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Hud->PutLabelsInsideButtons();
 	// включаем рисование HUD
 	Hud->IsMenuDraw = true;
-//	Hud->SetBackground(MyManager->ShaderResourceArr[0], MyManager->BlobsArr[5]);
+
 	// Активируем HUD или Hud->IsMenuActive = true;
 	Hud->IsMenuActive = true;
 	
@@ -1571,21 +1507,17 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	delete Data4;
 	delete Data5;
 	// --------------------- это коробка
-	Mapping = new KFCubeMapping;
-	Mapping->Init(m_D3D->D3DGC->D11_deviceContext , m_D3D->D3DGC->D11_device, 
-	//MyManager->ShaderResourceArr[22],
-	MyManager->ShaderResourceArr[MyManager->InitOneTexture(L"Textures/skymap.dds")],
-	MyManager->BlobsArr[0]) ;
+	Mapping = new CubeMapping;
+	Mapping->ShaderForDraw = MyManager->GetShaderIndexByName ( L"CubeMap" );
+	Mapping->Init(m_D3D->D3DGC, 
+	MyManager->ShaderResourceArr[MyManager->InitOneTexture(L"Textures/skymap.dds")]) ;
 
-// ++++++++++++++++++++++++++++++++++++++++     LIGHT     ++++++++++++++++++++++++++++++++++++++++++++	
-	m_Light = new LightClass;
-	result = m_Light->Init( hwnd, m_D3D->D3DGC, m_Frustum );
-	if ( !result )
-	{
-		MessageBox( hwnd, L"Light object initialisation failure.", Error, MB_OK );
-		return false;
-	}
-// -----------------------------------------     LIGHT    ---------------------------------------------
+// ++++++++++++++++++++++++++++++++++++++++     LIGHT & ShadowMap    ++++++++++++++++++++++++++++++++++++++++++++	
+//	m_Light = new LightClass;
+	m_D3D->LightShaderForDraw = MyManager->GetShaderIndexByName ( L"ClusteredSM" );
+//	m_D3D->ShadowMapShaderFordraw = MyManager->GetShaderIndexByName ( L"LightRenderSM" );
+//	m_D3D->ShadowMapShader = MyManager->GetVertexShader ( m_D3D->ShadowMapShaderFordraw );
+// ----------------------------------------     LIGHT & ShadowMap    ---------------------------------------------
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++  PARTICLE SYSTEM  ++++++++++++++++++++++++++++
 	// Обязательно для систем частиц !!!
@@ -1593,6 +1525,8 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 
 	// Create the particle system object.
 	SnowParticles = new SnowFallParticles;
+	SnowParticles->ShaderForDraw = MyManager->GetShaderIndexByName ( L"particle" );
+
 	if (!SnowParticles )
 	{
 		return false;
@@ -1602,16 +1536,17 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 		(
 		hwnd,
 		m_D3D->D3DGC,
-		MyManager->BlobsArr[6],				// Блоб от создания шейдера для Particles ( нужен для создания Layout )
+		MyManager->GetShaderBlobByName ( L"particle" ),				// Блоб от создания шейдера для Particles ( нужен для создания Layout )
 												//		MyManager->ShaderResourceArr[20],	// Текстура звезды
 		MyManager->ShaderResourceArr[20], //8
 		1,
 		1,
 		1,
-		m_Light								// Указатель на класс света в движке
+		m_D3D								// Указатель на класс света в движке
 		);
 		
 		TorchFire = new TorchFireParticles;
+		TorchFire->ShaderForDraw = MyManager->GetShaderIndexByName ( L"TorchFire3D" );
 		if ( !TorchFire )
 		{
 			return false;
@@ -1634,11 +1569,10 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 			(
 			hwnd,
 			m_D3D->D3DGC,
-			MyManager->BlobsArr[26],				// Блоб от создания шейдера для Particles ( нужен для создания Layout )
-													//		MyManager->ShaderResourceArr[20],	// Текстура звезды
-			MyManager->ShaderResourceArr[22], //8 22
+			MyManager->GetShaderBlobByName ( L"TorchFire3D" ),// Блоб от создания шейдера для Particles ( нужен для создания Layout )
+			MyManager->ShaderResourceArr[22], //8 22 //		MyManager->ShaderResourceArr[20],	// Текстура звезды
 			TorchFireSmokeInit,
-			m_Light								// Указатель на класс света в движке
+			m_D3D								// Указатель на класс света в движке
 			);
 
 		if ( !result )
@@ -1647,6 +1581,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 		}
 
 	FireParticles = new FireParticleSystem;
+	FireParticles->ShaderForDraw = MyManager->GetShaderIndexByName ( L"FireParticle3D" );
 		if ( !FireParticles )
 		{
 			return false;
@@ -1656,13 +1591,12 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	(	
 		hwnd, 
 		m_D3D->D3DGC, 
-		MyManager->BlobsArr[24],				// Блоб от создания шейдера для Particles ( нужен для создания Layout )
-//		MyManager->ShaderResourceArr[20],	// Текстура звезды
+		MyManager->GetShaderBlobByName ( L"FireParticle3D" ),// Блоб от создания шейдера для Particles ( нужен для создания Layout )
 		MyManager->ShaderResourceArr[8], //8
 		8,
 		8,
 		0,
-		m_Light								// Указатель на класс света в движке
+		m_D3D								// Указатель на класс света в движке
 	);
 
 	if (!result)
@@ -1681,7 +1615,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 
 
 // +++++++++++++++++++     Создаём свет на сцене     +++++++++++++++++++++++
-		LightClass::PointLight AddedLight;
+		PointLight AddedLight;
 		// R
 		AddedLight.attenuationBegin = 0.1f;
 		AddedLight.attenuationEnd = 1900.0f;
@@ -1693,7 +1627,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 		AddedLight.LightID = -2;
 		AddedLight.ShadowMapSliceNumber = -1;
 		AddedLight.Dummy = 1;
-		m_Light->AddLightSource(AddedLight);
+		m_D3D->AddLightSource(AddedLight);
 		// G
 		AddedLight.attenuationBegin = 1.0f;
 		AddedLight.attenuationEnd = 500.0f;
@@ -1705,7 +1639,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 		AddedLight.LightID = -2;
 		AddedLight.ShadowMapSliceNumber = -1;
 		AddedLight.Dummy = 1;
-		m_Light->AddLightSource(AddedLight);
+		m_D3D->AddLightSource(AddedLight);
 		// B
 /*		AddedLight.attenuationBegin = 1.0f;
 		AddedLight.attenuationEnd = 500.0f;
@@ -1844,7 +1778,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 
 // -------------------     Создаём свет на сцене     -----------------------
 		XMFLOAT3 Lpos;
-		m_Light->GetLightPos(0, Lpos);
+		m_D3D->GetLightPos(0, Lpos);
 //		m_Camera->SetPosition(Lpos.x + 20, Lpos.y, Lpos.z);
 // Тень ракеты
 //		m_Camera->SetPosition( -3.05f, 14.25f, -4.97f );
@@ -1859,7 +1793,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 		//int Index = MyManager->InitOneTexture(hwnd, L"Textures/land.jpg", m_D3D->D3DGC->D11_device, m_D3D->D3DGC->D11_deviceContext);
 		//MyManager->InitTextures(hwnd, L"Textures/RcubeTextures.kaf", m_D3D->D3DGC->D11_device, m_D3D->D3DGC->D11_deviceContext);
 
-		KFTerrain::KFLandscapeParam Land;
+		Terrain::KFLandscapeParam Land;
 
 		Land.LowlandsCout = 50;// количество ям
 		Land.HeightesCout = 50;// количество гор
@@ -1873,11 +1807,11 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 
 		//\//\/\/\/!!!!!ОБЯЗАТЕЛЬНО ЧИТАЙ НЮАНСЫ ПОСЛЕ ИНИЦИАЛИЗАЦИИ!!!!!!/\/\/\/\/\/\
 
-		Terrain = new KFTerrain;
-		Terrain->Initialize(hwnd, m_D3D->D3DGC->D11_device, hwnd, MyManager->BlobsArr[16], m_D3D->D3DGC->D11_deviceContext,
+		KFTerrain = new Terrain;
+		KFTerrain->Initialize(hwnd, m_D3D->D3DGC,
 		MyManager->ShaderResourceArr[21], //MyManager->ShaderResourceArr[MyManager->InitOneTexture(hwnd , L"Textures/moonTexture.png" , m_D3D->D3DGC->D11_device , m_D3D->D3DGC->D11_deviceContext)] 
 		Rows , Columns , &Land, 1.0f/* расстояние между точками */, 100 /* количество кластеров на которые разбит тераин по X оси */,
-			100/* количество кластеров на которые разбит тераин по Z оси  */, 49 /* дальность прорисовки в кластерах */, m_Light);
+			100/* количество кластеров на которые разбит тераин по Z оси  */, 49 /* дальность прорисовки в кластерах */, m_D3D);
 
 		/*
 		НЮАНСЫ
@@ -1899,7 +1833,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 
 		ModelList = new KFModelList;
 
-		ModelList->Init(hwnd, m_D3D->D3DGC, MyManager, m_Light, m_Frustum);
+		ModelList->Init(hwnd, m_D3D->D3DGC, MyManager, m_D3D, m_Frustum);
 		ModelList->IsClusteringUse = false;
 
 		ClusterMap = new KFClusterMap(100, 100, 100, 50, 50, 50);
@@ -1909,10 +1843,10 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 		KFShadowWork::ObjectUsingShadows  SWobjects;
 
 		SWobjects.ModelList = ModelList;
-		SWobjects.Terrain = Terrain;
+		SWobjects.Terrain = KFTerrain;
 
-		ShadowWork->Init(hwnd, m_D3D->D3DGC, MyManager, m_Light, m_Frustum, SWobjects);
-		ShadowWork->UsingShaderIndex = 10;
+		ShadowWork->Init(hwnd, m_D3D->D3DGC, m_D3D, m_Frustum, SWobjects);
+		ShadowWork->ShaderFordraw = MyManager->GetShaderIndexByName ( L"LightRenderSM" );
 
 		return true;
 }
@@ -1965,9 +1899,9 @@ bool GraphicsClass::Frame( FPSTimers &Counters, DXINPUTSTRUCT& InputStruct1)
 //	t.join();
 //	DWORD   ThreadId;
 //	unsigned  ThreadAdr;
-//	CreateThread(NULL,0, reinterpret_cast<LPTHREAD_START_ROUTINE>(&Fuck), &fpstimers , CREATE_SUSPENDED , &ThreadId ); 
+//	CreateThread(NULL,0, reinterpret_cast<LPTHREAD_START_ROUTINE>(&Duck), &fpstimers , CREATE_SUSPENDED , &ThreadId ); 
 //	CreateThread( NULL, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>( GraphicsClass::SnowThread ), &fpstimers, CREATE_SUSPENDED, &ThreadId );
-//	_beginthreadex( NULL, 0, reinterpret_cast<_beginthreadex_proc_type>( &Fuck ), &fpstimers, CREATE_SUSPENDED, &ThreadAdr );
+//	_beginthreadex( NULL, 0, reinterpret_cast<_beginthreadex_proc_type>( &Duck ), &fpstimers, CREATE_SUSPENDED, &ThreadAdr );
 //	_beginthreadex(NULL,0, reinterpret_cast<_beginthreadex_proc_type>(SnowThread), &fpstimers , CREATE_SUSPENDED , &ThreadAdr );
 
 //	Profile->StopTimer( Str );
@@ -1990,7 +1924,8 @@ bool GraphicsClass::Frame( FPSTimers &Counters, DXINPUTSTRUCT& InputStruct1)
 // ++++++++++++    Как часто рисуем Тень     +++++++++++++++++++
 	if ( m_D3D->D3DGC->ShadowsOn && ShadowFrameCounts > 0 )//Counters.FpsRate / 25
 	{
-		ShadowWork->RenderSpotLightsSadowMaps( m_Light->SpotLightsWithShadowsIndexes );
+		MyManager->SetActiveShadersInProgramm ( ShadowWork->ShaderFordraw );
+		ShadowWork->RenderSpotLightsSadowMaps( m_D3D->SpotLightsWithShadowsIndexes );
 		ShadowFrameCounts = 0;
 	}
 	// Измеряем быстродействие
@@ -2017,7 +1952,7 @@ bool GraphicsClass::Frame( FPSTimers &Counters, DXINPUTSTRUCT& InputStruct1)
 
 // Обновляем свет сцены
 // Обязательно после отрисовки теней !!!
-	m_Light->Frame();
+		m_D3D->Frame();
 // ------------------------------------------------------------
 
 // Измеряем быстродействие
@@ -2044,22 +1979,11 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 
 	// Clear the buffers to begin the scene.
 	m_D3D->SetBackBufferRenderTarget();
-	m_D3D->BeginScene(0.2f, 0.2f, 0.2f, 1.0f);
+	XMFLOAT4 begin = { 0.2f, 0.2f, 0.2f, 1.0f };
+	m_D3D->BeginScene( begin );
 
 // В первую очередь обрабатываем камеру и получаем её позицию
 	UpdateCamera();
-
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// + Рисуем CUBEMAP	
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	XMMATRIX Scale = XMMatrixScaling(1000.0f, 1000.0f, 1000.0f);
-	XMMATRIX Translation = XMMatrixTranslation(m_D3D->D3DGC->CameraPosition.x, m_D3D->D3DGC->CameraPosition.y, m_D3D->D3DGC->CameraPosition.z);
-	XMMATRIX mtr = Scale * Translation * m_D3D->D3DGC->ViewProjection;
-	MyManager->SetActiveShadersInProgramm(0);
-	Mapping->Render(mtr);
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// - Рисуем CUBEMAP	
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 // Инициализируем массив матриц для всех шейдеров 
 	UpdateConstantBuffer();
@@ -2108,10 +2032,10 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 	m_Text->UpdateSentence( 8, Str, 100, 280 );
 
 // LightInfo
-	sprintf_s( Str, 50, "Active Lights = %d", m_Light->mActiveLights );
+	sprintf_s( Str, 50, "Active Lights = %d", m_D3D->mActiveLights );
 	m_Text->UpdateSentence( 11, Str, 100, 310 );
 
-	sprintf_s( Str, 50, "Visible Lights = %d", m_Light->mVisibleLights );
+	sprintf_s( Str, 50, "Visible Lights = %d", m_D3D->mVisibleLights );
 	m_Text->UpdateSentence( 12, Str, 100, 340 );
 
 	angel = Hud->GetScrollBarValue(8);
@@ -2122,46 +2046,27 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 	sprintf_s(Str, 50, "DiffuseZ = %1.5f", angel);
 	m_Text->UpdateSentence(15, Str, 100, 500);
 
-	m_Text->UpdateSentence( 16, m_Text->GetSentenceText(16), m_Text->GetPosX(16), m_Text->GetPosY(16) );
+	m_Text->UpdateSentence(16, m_Text->GetSentenceText(16), m_Text->GetPosX(16), m_Text->GetPosY(16));
 
-// +++++++++++++++++++++++++++++++++ блок со включённым Альфаблендингом ++++++++++++++++++++++++++++++++
-//	m_D3D->TurnOnAlphaBlending();
-
-// +++++++++++++++++++++++++++++ блок со включонным Z буфером
-//	m_D3D->TurnZBufferOn();
-/*
-// Ставим камеру в позицию света №0 и смотрим как свет
-XMFLOAT3 Pos;
-XMFLOAT3 Dir;
-m_Light->GetLightPos(0, Pos);
-m_Camera->SetPosition( Pos.x, Pos.y, Pos.z );
-m_Light->GetLightDirection(0, Dir);
-m_Camera->SetLookAt(Dir.x * 1000.0f, Dir.y * 1000.0f, Dir.z * 1000.0f );
-m_Camera->FirstPersonCam = false;
-m_Camera->Render();
-// ---------------------------------------------------------------------------
-*/
 // +++++++++++++++++++++    РИСУЕМ ОБЪЕКТЫ НА СЦЕНЕ    +++++++++++++++++++++++++++++++++++++++++++
-	MyManager->SetActiveShadersInProgramm(8);
+	MyManager->SetActiveShadersInProgramm( m_D3D->LightShaderForDraw );
 	// Устанавливаем сразу всё что нужно для отрисовки всех моделей со светом
 	// Чтобы не устанаваить это в цикле много раз
-	m_D3D->D3DGC->D11_deviceContext->PSSetSamplers(0, 1, &m_D3D->D3DGC->CLight_DiffuseSampler);
-	m_D3D->D3DGC->D11_deviceContext->PSSetSamplers(1, 1, &m_D3D->D3DGC->CLight_SampleTypeClamp);
-	m_D3D->D3DGC->D11_deviceContext->PSSetSamplers(2, 1, &m_D3D->D3DGC->CLight_cmpSampler);
 	m_D3D->D3DGC->D11_deviceContext->OMSetDepthStencilState(m_D3D->D3DGC->m_depthStencilState, 0);
-	m_D3D->D3DGC->D11_deviceContext->RSSetState(m_D3D->D3DGC->m_rasterState);
+	m_D3D->SetDefaultResterizeState ();
 	m_D3D->D3DGC->D11_deviceContext->OMSetRenderTargets(1, &m_D3D->D3DGC->BackBuffer_RTV, m_D3D->D3DGC->m_depthStencilView);
 	// Измеряем быстродействие
 	// Федя 540 ns    Мой  517 ns   
 //			char Str[25];// = new char [25];
 //		Profile->StartTimer();
 	// Измеряем быстродействие
-	Terrain->Frame(true, m_Camera->position);
+	KFTerrain->Frame(true, m_Camera->position);
 	// Измеряем быстродействие
 //		Profile->StopTimer(Str);
 //		m_Text->UpdateSentence(5, Str, 100, 160);
 	// Измеряем быстродействие
-	Terrain->LightRender();
+
+	KFTerrain->LightRender();
 
 //	char Str[25];// = new char [25];
 	Profile->StartTimer();
@@ -2173,26 +2078,27 @@ m_Camera->Render();
 	strcpy_s(Str1, 128, "Frustum объектам : ");
 	strcat_s(Str1, 128, Str);
 	m_Text->UpdateSentence(10, Str1, m_Text->GetPosX( 10 ), m_Text->GetPosY( 10 ) );
-
+	
 	ModelList->LightRender();
-
 
 	m_D3D->TurnOffAlphaBlending();
 
-	m_D3D->SetDefaultResterizeState();
+//	m_D3D->SetDefaultResterizeState();
 
 	// Измеряем быстродействие
 //	Profile->StopTimer(Str);
 //	m_Text->UpdateSentence(4, Str, 100, 160);
 	// Измеряем быстродействие
-	// ++++++++    FXAA    +++++++++++	
-	// Обязательно
-	m_D3D->SetCullNoneRState();
+
+	// Обязательно для систем частиц
+	m_D3D->SetCullNoneResterizeState ();
 	// Устанавливаем шейдеры FXAA
-	MyManager->SetActiveShadersInProgramm(9);
+
 	// Фильтруем сцену FXAA
 	if ( m_D3D->D3DGC->EnableFXAA )
 	{
+		// ++++++++    FXAA    +++++++++++	
+		MyManager->SetActiveShadersInProgramm( m_D3D->FXAAShaderIndex );
 		m_D3D->FXAAScene();
 	}
 	// ++++++++    FXAA    +++++++++++	
@@ -2209,7 +2115,7 @@ m_Camera->Render();
 	// Put the particle system vertex and index buffers on the graphics pipeline to prepare them for drawing.
 	
 	// SNOW система частиц
-	MyManager->SetActiveShadersInProgramm( 3 );
+	MyManager->SetActiveShadersInProgramm( SnowParticles->ShaderForDraw );
 	SnowParticles->Render();
 
 //	Profile->StopTimer( Str );
@@ -2221,7 +2127,7 @@ m_Camera->Render();
 	//		char Str[25];// = new char [25];
 //	Profile->StartTimer();
 	// FIRE Летающий анимированный огонь
-	MyManager->SetActiveShadersInProgramm( 12 );
+	MyManager->SetActiveShadersInProgramm( FireParticles->ShaderForDraw );
 	FireParticles->Render();
 //	Profile->StopTimer( Str );
 //	m_Text->UpdateSentence( 5, Str, 100, 160 );
@@ -2232,7 +2138,7 @@ m_Camera->Render();
 	//		char Str[25];// = new char [25];
 //	Profile->StartTimer();
 	// Измеряем быстродействие	
-	MyManager->SetActiveShadersInProgramm( 13 );
+	MyManager->SetActiveShadersInProgramm( TorchFire->ShaderForDraw );
 	TorchFire->Render();
 //	Profile->StopTimer( Str );
 //	m_Text->UpdateSentence( 4, Str, 100, 160 );
@@ -2243,28 +2149,32 @@ m_Camera->Render();
 
 	// -------------------------------- блок со включонным Z буфером
 
-	// ++++++++++++++++++++++++++++++++++блок с выключеным Z буфером
-
-	// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  2D TEXTURE + FONT  +++++++++++++++++++++++++++++++++++++++++++++
-	// Get the world, view, and projection matrices from the camera and d3d objects.
-
-	// мои меню++++++++++++++++++++++++++++++++++++++++++++++++++++
-	// Turn the Z buffer back on now that all 2D rendering has completed
-	//ed->Draw(m_D3D->D3DGC->OrthoMatrix , m_D3D->D3DGC->WorldMatrix);
+	// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	// + Рисуем CUBEMAP	
+	// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	MyManager->SetActiveShadersInProgramm( Mapping->ShaderForDraw );
+	Mapping->Render();
+	// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	// - Рисуем CUBEMAP	
+	// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
 	m_D3D->TurnOnAlphaBlending();
 	m_D3D->TurnZBufferOff();
 
 	// ++++++++++++++++++++++++     Рисуем Текст в игре     +++++++++++++++++++++++++++++
-	MyManager->SetActiveShadersInProgramm(1);
+
 	// Измеряем быстродействие
 	// Федя 540 ns    Мой  517 ns   
 	//	char Str[25];// = new char [25];
 	//	Profile->StartTimer();
 	// Измеряем быстродействие
 	if (!Hud->GetButtonState(7))
+	{
+		MyManager->SetActiveShadersInProgramm( m_Text->TextShaderIndex );
 		result = m_Text->Render( 0 );
+	}
+
 /*
 	// Выключаем свет
 	m_Light->LightRender(0, 0);
@@ -2278,8 +2188,8 @@ m_Camera->Render();
 /*	if (!result)
 	{
 		return false;
-	}
-*/	MyManager->SetActiveShadersInProgramm(2);
+	}*/
+//	MyManager->SetActiveShadersInProgramm(2);
 	// ++++++++++++++++++++++++     Рисуем Текст в игре     +++++++++++++++++++++++++++++
 
 	// ++++++++++++++++++++++++     Рисуем текст в HUD      +++++++++++++++++++++++++++++
@@ -2292,14 +2202,15 @@ m_Camera->Render();
 		//	char Str[25];// = new char [25];
 		//	Profile->StartTimer();
 		// Измеряем быстродействие
+		MyManager->SetActiveShadersInProgramm ( Hud->ShaderForDraw );
 		Hud->Draw();
 		// Измеряем быстродействие
 		//	Profile->StopTimer(Str);
 		//	m_Text->UpdateSentence(4, Str, 100, 160);
 		// Измеряем быстродействие
-		MyManager->SetActiveShadersInProgramm(1);
+		MyManager->SetActiveShadersInProgramm( m_Text->TextShaderIndex );
 		result = m_Text->Render( 2 ); // Рисуем текст для HUD
-		MyManager->SetActiveShadersInProgramm(2);
+//		MyManager->SetActiveShadersInProgramm(2);
 	}
 
 	m_D3D->D3DGC->EnableFXAA = Hud->GetButtonState(3);
@@ -2341,18 +2252,20 @@ m_Camera->Render();
 //			char Str[25];// = new char [25];
 //			Profile->StartTimer();
 		// Измеряем быстродействие
-		m_D3D->BlurScene(MyManager->GetComputeShader(0), MyManager->GetComputeShader(1), 2);
+		m_D3D->BlurScene(MyManager->GetComputeShader( m_D3D->BlureHorizComputeShaderIndex ), MyManager->GetComputeShader( m_D3D->BlureVertComputeShaderIndex ), 2);
 		// Измеряем быстродействие
 //			Profile->StopTimer(Str);
 //			m_Text->UpdateSentence(13, Str, m_Text->GetPosX( 13 ), m_Text->GetPosY( 13 ) );
+		MyManager->SetActiveShadersInProgramm ( MainMenu->ShaderForDraw );
 		MainMenu->Draw();
-		MyManager->SetActiveShadersInProgramm(1);
+		MyManager->SetActiveShadersInProgramm( m_Text->TextShaderIndex );
 		result = m_Text->Render( 1 );	// Рисуем текст для меню
-		MyManager->SetActiveShadersInProgramm(2);
+
 	}
 // ++++++++++++++++++++++++     Рисуем текст для меню     +++++++++++++++++++++++++++++
 
 		// Рисуем мышкин курсор
+		MyManager->SetActiveShadersInProgramm( m_Bitmap->ShaderIndex );
 		m_Bitmap->ChangeMousePosition( mouseX, mouseY );
 		m_Bitmap->Draw();
 		// Рисуем мышкин курсор
@@ -2404,19 +2317,25 @@ void GraphicsClass::UpdateConstantBuffer()
 	// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	// ++++++++++     Инициализируем массив матриц для всех шейдеров     ++++++++++
 	// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	KFModel::cbPerObject cbPerObj;
-	cbPerObj.World = XMMatrixTranspose( m_D3D->D3DGC->WorldMatrix );
-	cbPerObj.View = XMMatrixTranspose( m_D3D->D3DGC->ViewMatrix );
-	cbPerObj.Projection = XMMatrixTranspose( m_D3D->D3DGC->ProjectionMatrix );
-	cbPerObj.ViewProjection = XMMatrixTranspose( m_D3D->D3DGC->ViewProjection );
-	cbPerObj.Ortho = XMMatrixTranspose( m_D3D->D3DGC->OrthoMatrix );
+	ConstantBufferData cbPerObj;
+	// Расчёт матрицы для CubeMap
+	XMMATRIX Scale = XMMatrixScaling(5000.0f, 5000.0f, 5000.0f);
+	XMMATRIX Translation = XMMatrixTranslation(m_D3D->D3DGC->CameraPosition.x, m_D3D->D3DGC->CameraPosition.y, m_D3D->D3DGC->CameraPosition.z);
+	XMMATRIX mtr = Scale * Translation * m_D3D->D3DGC->ViewProjection;
+
+	cbPerObj.World = XMMatrixTranspose(m_D3D->D3DGC->WorldMatrix);
+	cbPerObj.View = XMMatrixTranspose(m_D3D->D3DGC->ViewMatrix);
+	cbPerObj.Projection = XMMatrixTranspose(m_D3D->D3DGC->ProjectionMatrix);
+	cbPerObj.ViewProjection = XMMatrixTranspose(m_D3D->D3DGC->ViewProjection);
+	cbPerObj.ScaleMatrix = XMMatrixTranspose(mtr);	// CubeMapMatrix
+	cbPerObj.Ortho = XMMatrixTranspose(m_D3D->D3DGC->OrthoMatrix);
 	cbPerObj.cameraPosition = m_D3D->D3DGC->CameraPosition;
 	RCube_VecFloat34 Temp;
-	Temp.Vec = XMQuaternionRotationMatrix( m_D3D->D3DGC->ViewMatrix );
+	Temp.Vec = XMQuaternionRotationMatrix(m_D3D->D3DGC->ViewMatrix);
 	cbPerObj.TransposedCameraRotation2 = Temp.Fl4;
 
-	m_D3D->D3DGC->D11_deviceContext->UpdateSubresource( cbPerObjectBuffer, 0, NULL, &cbPerObj, 0, 0 );
-	m_D3D->D3DGC->D11_deviceContext->VSSetConstantBuffers( 0, 1, &cbPerObjectBuffer );
+	m_D3D->D3DGC->D11_deviceContext->UpdateSubresource(GlobalShadersConstantsBuffer, 0, NULL, &cbPerObj, 0, 0);
+	m_D3D->D3DGC->D11_deviceContext->VSSetConstantBuffers(0, 1, &GlobalShadersConstantsBuffer);
 }
 
 

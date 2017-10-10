@@ -1,6 +1,14 @@
-cbuffer cbPerObject
+cbuffer MatrixBuffer : register(b0)
 {
-	float4x4 WVP;
+	matrix worldMatrix;
+	matrix viewMatrix;
+	matrix projectionMatrix;
+	matrix viewprojection;
+	matrix OrthoMatrix;
+	matrix ScaleMatrix;
+	float3 cameraPosition;
+	float padding;
+	float4 ViewTransQuat;
 };
 
 Texture2D ObjTexture;
@@ -19,7 +27,7 @@ SKYMAP_VS_OUTPUT SKYMAP_VS(float3 inPos : POSITION, float2 inTexCoord : TEXCOORD
 	SKYMAP_VS_OUTPUT output = (SKYMAP_VS_OUTPUT)0;
 
 	//Set Pos to xyww instead of xyzw, so that z will always be 1 (furthest from camera)
-	output.Pos = mul(float4(inPos, 1.0f), WVP);
+	output.Pos = mul(float4(inPos, 1.0f), ScaleMatrix);
 
 	output.texCoord = inPos;
 

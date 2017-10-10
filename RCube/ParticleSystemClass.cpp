@@ -13,7 +13,7 @@ ParticleSystemClass::ParticleSystemClass()
 	m_vertexBuffer	= nullptr;
 	m_indexBuffer	= nullptr;
 
-	m_sampleState	= nullptr;
+//	m_sampleState	= nullptr;
 	m_layout		= nullptr;
 	// +++++++++++++++++   Instancing   ++++++++++++++++++++++++++++++++
 	m_instanceBuffer= nullptr;
@@ -29,7 +29,7 @@ ParticleSystemClass::~ParticleSystemClass()
 }
 
 
-bool ParticleSystemClass::Initialize(HWND hwnd, D3DGlobalContext *D3DGC, ID3D10Blob* Blob, ID3D11ShaderResourceView* texture, LightClass *_EngineLight )
+bool ParticleSystemClass::Initialize(HWND hwnd, D3DGlobalContext *D3DGC, ID3D10Blob* Blob, ID3D11ShaderResourceView* texture, D3DClass *_EngineLight )
 {
 	bool result;
 
@@ -53,7 +53,7 @@ bool ParticleSystemClass::Initialize(HWND hwnd, D3DGlobalContext *D3DGC, ID3D10B
 		return false;
 	}
 
-	TempLight = new LightClass::PointLight;
+	TempLight = new PointLight;
 
 	TempLight->attenuationBegin = 0.1f;
 	TempLight->attenuationEnd = 0.5f;
@@ -190,7 +190,7 @@ bool ParticleSystemClass::InitializeBuffers(ID3D11Device* device, ID3D10Blob* Bl
 	m_indexCount = 6;
 
 	// Create the vertex array for the particles that will be rendered.
-	m_vertices = new BillBordVertexes[m_vertexCount];
+	m_vertices = new Vertex_FlatObject[m_vertexCount];
 
 
 	unsigned long indices[6] = { 0, 1, 2, 0, 3, 1 };
@@ -244,28 +244,28 @@ bool ParticleSystemClass::InitializeBuffers(ID3D11Device* device, ID3D10Blob* Bl
 	// -----------------   Instancing   --------------------------------
 
 	// Initialize vertex array to zeros at first.
-	memset(m_vertices, 0, (sizeof( BillBordVertexes ) * m_vertexCount));
+	memset(m_vertices, 0, (sizeof( Vertex_FlatObject ) * m_vertexCount));
 
 	// Top left.
-	m_vertices[0].position = XMFLOAT3 ( -1.0f * m_particleSize, 1.0f * m_particleSize, 0.0f );  // Top left
-	m_vertices[0].texture = XMFLOAT2 ( 0.0f, 0.0f );
+	m_vertices[0].Position = XMFLOAT3 ( -1.0f * m_particleSize, 1.0f * m_particleSize, 0.0f );  // Top left
+	m_vertices[0].TexCoord = XMFLOAT2 ( 0.0f, 0.0f );
 
 	// Bottom right.
-	m_vertices[1].position = XMFLOAT3 ( 1.0f * m_particleSize, -1.0f * m_particleSize, 0.0f );  // Bottom right
-	m_vertices[1].texture = XMFLOAT2 ( 1.0f, 1.0f );
+	m_vertices[1].Position = XMFLOAT3 ( 1.0f * m_particleSize, -1.0f * m_particleSize, 0.0f );  // Bottom right
+	m_vertices[1].TexCoord = XMFLOAT2 ( 1.0f, 1.0f );
 
 	// Bottom left.
-	m_vertices[2].position = XMFLOAT3 ( -1.0f * m_particleSize, -1.0f * m_particleSize, 0.0f );  // Bottom left.
-	m_vertices[2].texture = XMFLOAT2 ( 0.0f, 1.0f );
+	m_vertices[2].Position = XMFLOAT3 ( -1.0f * m_particleSize, -1.0f * m_particleSize, 0.0f );  // Bottom left.
+	m_vertices[2].TexCoord = XMFLOAT2 ( 0.0f, 1.0f );
 
 	// Top right.
-	m_vertices[3].position = XMFLOAT3 ( 1.0f * m_particleSize, 1.0f * m_particleSize, 0.0f );  // Top left.
-	m_vertices[3].texture = XMFLOAT2 ( 1.0f, 0.0f );
+	m_vertices[3].Position = XMFLOAT3 ( 1.0f * m_particleSize, 1.0f * m_particleSize, 0.0f );  // Top left.
+	m_vertices[3].TexCoord = XMFLOAT2 ( 1.0f, 0.0f );
 
 
 	// Set up the description of the dynamic vertex buffer.
     vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-    vertexBufferDesc.ByteWidth = sizeof( BillBordVertexes ) * m_vertexCount;
+    vertexBufferDesc.ByteWidth = sizeof( Vertex_FlatObject ) * m_vertexCount;
     vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
     vertexBufferDesc.CPUAccessFlags = 0;
     vertexBufferDesc.MiscFlags = 0;
@@ -306,7 +306,7 @@ bool ParticleSystemClass::InitializeBuffers(ID3D11Device* device, ID3D10Blob* Bl
 	{
 		return false;
 	}
-
+/*
 	D3D11_SAMPLER_DESC samplerDesc;
 
 	// Create a texture sampler state description.
@@ -331,7 +331,7 @@ bool ParticleSystemClass::InitializeBuffers(ID3D11Device* device, ID3D10Blob* Bl
 		return false;
 	}
 
-
+*/
 	return true;
 }
 
@@ -344,7 +344,7 @@ void ParticleSystemClass::ShutdownBuffers()
 	RCUBE_RELEASE ( m_indexBuffer );
 	RCUBE_RELEASE ( m_vertexBuffer );
 
-	RCUBE_RELEASE( m_sampleState);
+//	RCUBE_RELEASE( m_sampleState);
 	RCUBE_RELEASE( m_layout);
 
 	delete[] instances;
@@ -523,7 +523,7 @@ void ParticleSystemClass::RenderBuffers(ID3D11DeviceContext* deviceContext)
 	ID3D11Buffer* bufferPointers[2];
 
 	// Set vertex buffer stride and offset.
-	strides[0] = sizeof( BillBordVertexes );
+	strides[0] = sizeof( Vertex_FlatObject );
 	strides[1] = sizeof( ParticleShaderInstance_BASIC );
 
 	// Set the buffer offsets.
@@ -554,7 +554,7 @@ void ParticleSystemClass::RenderBuffers(ID3D11DeviceContext* deviceContext)
 	// deviceContext->PSSetShader(m_pixelShader, NULL, 0);
 
 	// Set the sampler state in the pixel shader.
-	deviceContext->PSSetSamplers( 0, 1, &m_sampleState );
+//	deviceContext->PSSetSamplers( 0, 1, &m_sampleState );
 
 	// Render the triangle.
 	deviceContext->DrawIndexedInstanced( 6, m_instanceCount, 0, 0, 0 );

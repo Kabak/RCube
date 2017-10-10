@@ -20,14 +20,13 @@ KFShadowWork::~KFShadowWork() {
 
 }
 
-void KFShadowWork::Init(HWND hwnd, D3DGlobalContext * D3DGC, KFResourceManager * Maneger, LightClass * Light, FrustumClass* Frustum
+void KFShadowWork::Init(HWND hwnd, D3DGlobalContext * D3DGC, D3DClass * Light, FrustumClass* Frustum
 	, ObjectUsingShadows  Objects) {
 
 	DrawShadowsObjects = Objects;
 	g_Frustum = Frustum;
 	g_Light = Light;
-	myManeger = Maneger;
-	g_D3DGC = D3DGC;
+	Local_D3DGC = D3DGC;
 	D3D11_BUFFER_DESC cbbd;
 	ZeroMemory(&cbbd, sizeof(D3D11_BUFFER_DESC));
 
@@ -37,7 +36,7 @@ void KFShadowWork::Init(HWND hwnd, D3DGlobalContext * D3DGC, KFResourceManager *
 	cbbd.CPUAccessFlags = 0;
 	cbbd.MiscFlags = 0;
 
-	HRESULT hr = g_D3DGC->D11_device->CreateBuffer(&cbbd, NULL, &cbShadowBuffer);
+	HRESULT hr = Local_D3DGC->D11_device->CreateBuffer(&cbbd, NULL, &cbShadowBuffer);
 
 	// ДЛЯ ТЕНИ
 	// Для отладки вынес в отдельную функцию
@@ -51,13 +50,13 @@ void KFShadowWork::Init(HWND hwnd, D3DGlobalContext * D3DGC, KFResourceManager *
 		desc.StencilEnable = false;
 		desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;//D3D11_COMPARISON_GREATER;//D3D11_COMPARISON_LESS;
 		desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-		g_D3DGC->D11_device->CreateDepthStencilState(&desc, &LightRender_DS);
+		Local_D3DGC->D11_device->CreateDepthStencilState(&desc, &LightRender_DS);
 	}
 
 	ZeroMemory(&DSD2, sizeof(DSD2));
 	DSD2.Flags = 0;
 	DSD2.Format = DXGI_FORMAT_D32_FLOAT;
-	if (g_D3DGC->MSAAQualityCount > 1)
+	if (Local_D3DGC->MSAAQualityCount > 1)
 	{
 		DSD2.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMSARRAY;
 		DSD2.Texture2DMSArray.ArraySize = 1;
@@ -82,18 +81,15 @@ void KFShadowWork::RenderSpotLightsSadowMaps(std::vector <int> SpotLightsWithSha
 
 	ID3D11ShaderResourceView * tab[1];
 	tab[0] = NULL;
-	g_D3DGC->D11_deviceContext->PSSetShaderResources(1, 1, tab);
-	g_D3DGC->D11_deviceContext->PSSetShader(0, 0, 0);
+	Local_D3DGC->D11_deviceContext->PSSetShaderResources(1, 1, tab);
+	Local_D3DGC->D11_deviceContext->PSSetShader(0, 0, 0);
 
-	g_D3DGC->D11_deviceContext->VSSetShader(myManeger->VertShaderArr[UsingShaderIndex], 0, 0);
-	g_D3DGC->D11_deviceContext->RSSetState(LightRender_RS);
-	g_D3DGC->D11_deviceContext->GSSetShader(0, 0, 0);
-	g_D3DGC->D11_deviceContext->OMSetDepthStencilState(LightRender_DS, 0);
-	g_D3DGC->D11_deviceContext->PSSetSamplers(0, 0, 0);
-	g_D3DGC->D11_deviceContext->PSSetSamplers(1, 0, 0);
-	g_D3DGC->D11_deviceContext->PSSetSamplers(2, 0, 0);
+//	Local_D3DGC->D11_deviceContext->VSSetShader(myManeger->VertShaderArr[ShaderFordraw], 0, 0);
+	Local_D3DGC->D11_deviceContext->RSSetState(LightRender_RS);
+	Local_D3DGC->D11_deviceContext->GSSetShader(0, 0, 0);
+	Local_D3DGC->D11_deviceContext->OMSetDepthStencilState(LightRender_DS, 0);
 	// Устанавливаем ViewPort для ShadowMap
-	g_D3DGC->D11_deviceContext->RSSetViewports(1, &g_Light->LightViewPort);
+	Local_D3DGC->D11_deviceContext->RSSetViewports(1, &g_Light->LightViewPort);
 //	g_D3DGC->D11_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	int Amount = (int)SpotLightsWithShadowsIndexes.size();
@@ -101,7 +97,7 @@ void KFShadowWork::RenderSpotLightsSadowMaps(std::vector <int> SpotLightsWithSha
 	{
 
 		// Для скорости убрал всё что не меняется в глобальную инициализацию
-		if (g_D3DGC->MSAAQualityCount > 1)
+		if (Local_D3DGC->MSAAQualityCount > 1)
 		{
 			DSD2.Texture2DMSArray.FirstArraySlice = i;
 		}
@@ -110,7 +106,7 @@ void KFShadowWork::RenderSpotLightsSadowMaps(std::vector <int> SpotLightsWithSha
 			DSD2.Texture2DArray.FirstArraySlice = i;
 		}
 
-		res = g_D3DGC->D11_device->CreateDepthStencilView(g_Light->ShadowMap3D, &DSD2, &DSV_ShadowMap3D);
+		res = Local_D3DGC->D11_device->CreateDepthStencilView(g_Light->ShadowMap3D, &DSD2, &DSV_ShadowMap3D);
 		//if (FAILED(res))
 		//{
 		//	return false;
@@ -121,7 +117,7 @@ void KFShadowWork::RenderSpotLightsSadowMaps(std::vector <int> SpotLightsWithSha
 #endif
 		// Для скорости создаём указатель
 		int* Point = &SpotLightsWithShadowsIndexes[i];
-		LightClass::PointLight* Point1 = g_Light->mPointLightParameters[*Point];
+		PointLight* Point1 = g_Light->mPointLightParameters[*Point];
 
 			LightPosition.Fl3 = Point1->position;
 //			LightPosition.Fl4.w = 0.0f;
@@ -133,8 +129,8 @@ void KFShadowWork::RenderSpotLightsSadowMaps(std::vector <int> SpotLightsWithSha
 // http://www.codinglabs.net/article_world_view_projection_matrix.aspx
 		XMMATRIX LightView = XMMatrixLookToLH(LightPosition.Vec, LightTarget.Vec, Up); //XMVector3Normalize  / XMVector3NormalizeEst
 
-		XMMATRIX LightProjection = XMMatrixPerspectiveFovLH(XM_PIDIV4, g_D3DGC->ScreenRatio,
-			g_D3DGC->NearPlane, Point1->attenuationEnd); //m_Light->D3DGC_Light->FarPlane * 10
+		XMMATRIX LightProjection = XMMatrixPerspectiveFovLH(XM_PIDIV4, Local_D3DGC->ScreenRatio,
+			Local_D3DGC->NearPlane, Point1->attenuationEnd); //m_Light->D3DGC_Light->FarPlane * 10
 //		LightProjection = XMMatrixOrthographicLH( g_D3DGC->ScreenWidth, g_D3DGC->ScreenHeight, g_D3DGC->NearPlane, Point1->attenuationEnd );
 
 		XMMATRIX LightViewProj = LightView * LightProjection;
@@ -143,8 +139,8 @@ void KFShadowWork::RenderSpotLightsSadowMaps(std::vector <int> SpotLightsWithSha
 
 		cbPerObj.ViewProjection = XMMatrixTranspose(LightViewProj);
 
-		g_D3DGC->D11_deviceContext->UpdateSubresource(cbShadowBuffer, 0, NULL, &cbPerObj, 0, 0);
-		g_D3DGC->D11_deviceContext->VSSetConstantBuffers(1, 1, &cbShadowBuffer);
+		Local_D3DGC->D11_deviceContext->UpdateSubresource(cbShadowBuffer, 0, NULL, &cbPerObj, 0, 0);
+		Local_D3DGC->D11_deviceContext->VSSetConstantBuffers(1, 1, &cbShadowBuffer);
 		// Создаём матрицу поворота
 		RCubeMatrix Mat;
 		Mat.XMM = cbPerObj.ViewProjection;
@@ -157,8 +153,8 @@ void KFShadowWork::RenderSpotLightsSadowMaps(std::vector <int> SpotLightsWithSha
 
 //		cbPerObj.ViewProjection = XMMatrixRotationQuaternion(LightTarget.Vec);
 // ----------------------------------------------------------------------------------
-		g_D3DGC->D11_deviceContext->OMSetRenderTargets(0, 0, DSV_ShadowMap3D);
-		g_D3DGC->D11_deviceContext->ClearDepthStencilView(DSV_ShadowMap3D, D3D11_CLEAR_DEPTH, 1.0f, 0);
+		Local_D3DGC->D11_deviceContext->OMSetRenderTargets(0, 0, DSV_ShadowMap3D);
+		Local_D3DGC->D11_deviceContext->ClearDepthStencilView(DSV_ShadowMap3D, D3D11_CLEAR_DEPTH, 1.0f, 0);
 		DrawObjectUsingShadows(LightPosition.Vec, true);
 
 		// Сохраняем в световом массиве индекс куска Shadow Map
@@ -168,7 +164,7 @@ void KFShadowWork::RenderSpotLightsSadowMaps(std::vector <int> SpotLightsWithSha
 
 	}
 	// Устанавливаем ViewPort для RCube
-	g_D3DGC->D11_deviceContext->RSSetViewports(1, &g_Light->viewport);
+	Local_D3DGC->D11_deviceContext->RSSetViewports(1, &g_Light->viewport);
 }
 
 void KFShadowWork::DrawObjectUsingShadows(XMVECTOR DrawPosition, bool ReplaseData) {
@@ -196,5 +192,5 @@ void KFShadowWork::InitRasterizerState( int DepthBias, float SlopeScaledDepthBia
 	desc.DepthBias = DepthBias;//1.e5;//0.0f;//1.e5;
 	desc.SlopeScaledDepthBias = SlopeScaledDepthBias;// 1.0f;//8.0;//0.0f;//8.0;
 	desc.DepthBiasClamp = 1.0f;
-	g_D3DGC->D11_device->CreateRasterizerState( &desc, &LightRender_RS );
+	Local_D3DGC->D11_device->CreateRasterizerState( &desc, &LightRender_RS );
 }

@@ -57,7 +57,7 @@ KFTextureOnTextureDrawing::~KFTextureOnTextureDrawing(){
 HRESULT KFTextureOnTextureDrawing::Init(HWND hwnd, D3DGlobalContext* D3DGC, UINT StTextureWidth, UINT StTextureHeigth, 
 	int screenPosX, int ScreenPosY, ID3D11ShaderResourceView * BackGroundTexture,
 	ID3D11RenderTargetView * ActiveRenderTargetView, float PosX, float PosY,
-	ID3D11DepthStencilView * ActiveDepthStensil, ID3D10Blob * WorkBlob){
+	ID3D11DepthStencilView * ActiveDepthStensil){
 
 	m_ActiveDepthStensil = ActiveDepthStensil;
 	D3D11_TEXTURE2D_DESC textureDesc;
@@ -120,12 +120,12 @@ HRESULT KFTextureOnTextureDrawing::Init(HWND hwnd, D3DGlobalContext* D3DGC, UINT
 
 	XMFLOAT4 ObjData = { 0.0f, 0.0f, (float)StTextureWidth,	(float)StTextureHeigth };
 	
-	osnBackGroun->Init(D3DGC, ObjData, BackGroundTexture, 0, WorkBlob);
+	osnBackGroun->Init(D3DGC, ObjData, BackGroundTexture, 0);
 
 	ObjData = { PosX * D3DGC->ScreenWidth, PosY * D3DGC->ScreenHeight, (float)StTextureWidth, (float)StTextureHeigth };
 	
 	Obj = new SquareObjectClass;
-	Obj->Init(D3DGC, ObjData, m_shaderResourceView, 0, WorkBlob);
+	Obj->Init(D3DGC, ObjData, m_shaderResourceView, 0);
 
 	OsnTextureWidth = StTextureWidth;
 	OsnTextureHeigth = StTextureHeigth;
@@ -184,14 +184,14 @@ void KFTextureOnTextureDrawing::Draw(){
 }
 
 void KFTextureOnTextureDrawing::AddTexture(D3DGlobalContext* D3DGC, float TexPosX , float TexPosY , float texWidth , float texHeigth
-	, ID3D11ShaderResourceView * Texture , ID3D10Blob * WorkBlob){
+	, ID3D11ShaderResourceView * Texture ){
 
 	XMFLOAT4 ObjData = { TexPosX * OsnTextureWidth
 		, TexPosY * OsnTextureHeigth, texWidth, texHeigth };
 
 	SquareObjectClass * TimeObj;
 	TimeObj = new SquareObjectClass;
-	TimeObj->Init(D3DGC, ObjData, Texture, 0, WorkBlob);
+	TimeObj->Init(D3DGC, ObjData, Texture, 0);
 
 	ObjsArray.push_back(TimeObj);
 

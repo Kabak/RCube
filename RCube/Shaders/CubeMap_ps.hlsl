@@ -1,5 +1,5 @@
 Texture2D ObjTexture;
-SamplerState ObjSamplerState;
+SamplerState FlatObject : register (s3);
 TextureCube SkyMap;
 
 struct SKYMAP_VS_OUTPUT	//output structure for skymap vertex shader
@@ -10,5 +10,5 @@ struct SKYMAP_VS_OUTPUT	//output structure for skymap vertex shader
 
 float4 SKYMAP_PS(SKYMAP_VS_OUTPUT input) : SV_Target
 {
-	return SkyMap.Sample(ObjSamplerState, input.texCoord);
+	return SkyMap.Sample( FlatObject, input.texCoord);
 }

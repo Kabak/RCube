@@ -15,7 +15,7 @@
 #include "FontShaderClass.h"
 #include "DirectXMath.h"
 #include "FPSTimers.h"
-#include "KFResourceManager.h"
+#include "ResourceManager.h"
 #include <vector>
 
 using namespace std;
@@ -75,8 +75,8 @@ private:
 // Количество созданных предложений
 // Если = -1 , значит предложений в списке нет
 	int SentecesCounter;
-// The VertexType must match the one in the FontClass.
 
+// The VertexType must match the one in the FontClass.
 	struct VertexType
 	{
 		XMFLOAT3 position;
@@ -87,6 +87,8 @@ public:
 	TextClass();
 	TextClass(const TextClass&);
 	~TextClass();
+
+	int TextShaderIndex = -1;	// Индекс шейдера для рисования текста в массиве шейдеров
 
 	FPSTimers fpstimers;
 // Переопределяем операторы New и delete для правильного размещения XMMATRIX в памяти
@@ -101,7 +103,7 @@ public:
     }
 // ------------------------------------
 
-	bool Initialize(D3DGlobalContext* D3DGC, vector < FontOnTextureData* > FontList, KFResourceManager *ResManager );
+	bool Initialize(D3DGlobalContext* D3DGC, vector < FontOnTextureData* > FontList );
 	void Shutdown();
 
 	// Добавляет предложение и возвращает его номер в списке или -1 если не удалось добавить предложение
@@ -179,8 +181,7 @@ private:
 	void ShowGlowing (int Number);
 	void ShowScrolling( int Number );
 
-	ID3D11Device* Device;
-	ID3D11DeviceContext* Device_Context;
+	D3DGlobalContext* Local_D3DGC;
 
 	FontShaderClass* m_FontShader;
 	int m_screenWidth, m_screenHeight;

@@ -33,16 +33,15 @@
 // ++++++++++++   Измеряем быстродействие кода   +++++++++++++
 #include "RCubeProfiling.h"
 // ++++++++++++   Свет сцены   +++++++++++
-#include "LightClass.h"
+//#include "LightClass.h"
 // ++++++++++++   Ландшафт   +++++++++++++
-#include "KFTerrain.h"
+#include "Terrain.h"
 // +++++++++++++++++++++++++мои классы++++++++++++++++++
 #include "ScrollBarClass.h"
 #include "MenuControler.h"
-//#include "KFSkyDomesClass.h"
-#include "KFCubeMappingClass.h"
+#include "CubeMappingClass.h"
 #include "KFModel.h"
-#include "KFResourceManager.h"
+#include "ResourceManager.h"
 #include "KFModelList.h"
 #include "KFClusterMap.h"
 #include "FontCustomFromFileClass.h"
@@ -124,7 +123,7 @@ public:
 	D3DGlobalContext *GraphicsClass::GetD3DGC();
 
 //    KFButtons_OutPut ButtonsOut[5] ;
-	KFResourceManager * MyManager;
+	ResourceManager * MyManager;
 	KFModelList * ModelList;
 	KFShadowWork * ShadowWork;
 
@@ -154,7 +153,7 @@ public:
 
 			RCubeProfiling* Profile;
 			  FrustumClass* m_Frustum;
-				LightClass* m_Light;
+//				LightClass* m_Light;
 
 // +++++++++++++++   Свой курсор мыши   ++++++++++++++
 		 SquareObjectClass* m_Bitmap;
@@ -163,7 +162,7 @@ public:
 	   MenuControrerClass * Hud;
 
 // ++++++++++++   Ландшафт   +++++++++++++
-				 KFTerrain* Terrain;
+				 Terrain* KFTerrain;
 // +++++++++++++++++++  Текстовые классы для вывода текста на экран  +++++++++++++++++++++++
 				 TextClass* m_Text;
    FontCustomFromFileClass* m_TextFromFile;
@@ -174,7 +173,7 @@ public:
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++ то чо надо для меню
 		RenderTextureClass* m_RenderTexture;
 	//--------------------------------------------------- то чо надо для меню
-			KFCubeMapping * Mapping ;
+			CubeMapping * Mapping ;
 
 	int Exp;
 
@@ -191,7 +190,7 @@ public:
 	KFModel * Sphere;
 	KFModel * Scene;
 
-	ID3D11Buffer* cbPerObjectBuffer;
+	ID3D11Buffer* GlobalShadersConstantsBuffer;
 	KFClusterMap * ClusterMap;
 };
 #endif

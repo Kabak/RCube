@@ -9,7 +9,10 @@
 #include "DirectXMath.h"
 #include "InputClass.h"
 #include <vector>
-//#include "KFResourceManager.h"
+
+#ifdef RCube_DX11
+#include "DX11Buffers.h"
+#endif //RCube_DX11
 
 using namespace DirectX;
 
@@ -69,15 +72,16 @@ ID3D11ShaderResourceView* sharedTex11_SRV;
 					UINT MSAAQualityCount;
 // ответное значение для 2x 4x 8x
 					UINT MSAAQualityChoosen;
-	  ID3D11BlendState * m_alphaEnableBlendingState ;
+	   ID3D11BlendState* m_alphaEnableBlendingState ;
 	   ID3D11BlendState* m_alphaDisableBlendingState;
-ID3D11DepthStencilView * m_depthStencilView;
+ ID3D11DepthStencilView* m_depthStencilView;
 // Для Clustering
 		ID3D11Texture2D* m_depthStencilBuffer;
-  ID3D11RasterizerState* m_rasterState;
+  ID3D11RasterizerState* DefaultRasterizerState;
 ID3D11DepthStencilState* m_depthStencilState;
  	   ID3D11BlendState* mGeometryBlendState;
 // Для системы частиц, чтобы был эффект кристаликов
+	   ID3D11RasterizerState* RasterStateCullNone;
 	   ID3D11BlendState* m_alphaParticleBlendingState;
 // Для рисования текстурой с текстом на текстуре
 	   ID3D11BlendState* m_alpha_TOnT_BlendingState;
@@ -89,11 +93,12 @@ ID3D11DepthStencilState* m_depthStencilState;
 					float ShadowCLAMP;
 					float Shadow_Divider;
 
-	  ID3D11SamplerState* CLight_DiffuseSampler;
-	  ID3D11SamplerState* CLight_SampleTypeClamp;
-	  ID3D11SamplerState* CLight_cmpSampler;
+// Engine default samplers
+	  ID3D11SamplerState* Wrap_Model_Texture;
+	  ID3D11SamplerState* CLight_ShadowMap_Sampler;
+	  ID3D11SamplerState* CLight_SM_PCF_Sampler;
+	  ID3D11SamplerState* FlatObject_Sampler;
 
-   ID3D11RasterizerState* mRasterizerState;
 //  ------------------   Для Shadows   -------------------------
 
 // ++++    FXAA сглаживание  и те  ++++
@@ -105,16 +110,12 @@ ID3D11ShaderResourceView* BackBuffer_ProxyTextureSRV;		// Например , StringsList
 	     ID3D11Texture2D* BackBuffer_CopyResolveTexture;
 ID3D11ShaderResourceView* BackBuffer_CopyResolveTextureSRV;
 ID3D11UnorderedAccessView*BackBuffer_CopyResolveTextureUAV; // Невозможно создать при использовании MSAA ( нужно создавать для ResolveSubresources .  ЧТО МЫ И СДЕЛАЛИ)
-//	  ID3D11SamplerState* g_pSamPointMirror;     // Sampler for rotation texture
-//	  ID3D11SamplerState* g_pSamLinearWrap;      // Sampler for diffuse texture
-//	  ID3D11SamplerState* g_pSamPointCmpClamp;   // Comparison sampler for shadowmap
-	  ID3D11SamplerState* g_pSamBilinear;        // Sampler for FXAA input texture
+	  ID3D11SamplerState* FXAA_Sampler;						// Sampler for FXAA input texture
 // Для скриншотов
 	     ID3D11Texture2D* ScreenShootTexture;
 //	   ID3D11ShaderResourceView* SRV_ScreenShootTexture;
 
 // ----------    FXAA    ----------
-
 
 // ++++++++++ DirectX 10 , DirectWrite , FONTS    ++++++++++++++++
 	   const float ZeroColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f }; // Используется классом StringsList для очистки текстуры для написания строк текста
@@ -123,7 +124,22 @@ ID3D11UnorderedAccessView*BackBuffer_CopyResolveTextureUAV; // Невозможно создат
 // ---------- DirectX 10 , DirectWrite , FONTS    ----------------
 
 			 InputClass* m_EngineInputClass;	// Нужно для MenuControllerClass для управления вводом при назначении клавиш в игре 
-//	 KFResourceManager* ShaderManager;
+
+	};
+
+// Global Constant Buffer Structure
+	struct ConstantBufferData
+	{
+		XMMATRIX World;
+		XMMATRIX View;
+		XMMATRIX Projection;
+		XMMATRIX ViewProjection;
+		XMMATRIX Ortho;
+		XMMATRIX ScaleMatrix;
+		XMFLOAT3 cameraPosition;
+		float padding;
+		XMFLOAT4 TransposedCameraRotation2;
+
 	};
 
 // Используется для передачи массива данных при рисовании текстом на текстуре
@@ -269,7 +285,6 @@ enum {
 		ID3D11ShaderResourceView * IsClickTexture;
 		ID3D11ShaderResourceView * IsMouseOnButtonTexture;
 		ID3D11ShaderResourceView * IsNotEnalbledTexture;
-		ID3D10Blob * Blob;
 	};
 
 	struct KFButtons_OutPut {
@@ -299,17 +314,10 @@ enum {
 
 		ID3D11ShaderResourceView * ButtonPressTexture;
 		ID3D11ShaderResourceView * TravellerPressTexture;
-
-
-		ID3D10Blob * Blob;
 	};
 
 	struct StringsList_Elements
 	{
-//		StringsList_Elements()
-//		{
-//			Strings;
-//		};
 			bool	_ShowStringsList;
 			bool	Enabled;
 		XMFLOAT4	ObjParam;		// Координаты объекта X,Y, и размеры Z - Width, W - Height
@@ -320,7 +328,6 @@ enum {
 			 int	StringsMAXLength;// Максимальное количество char в строках
 			 int	ScrollSpeed;	// Скорость прокрутки
   vector <char*>    Strings;		// массив строк из которого берутся отображаемые строки
-	  ID3D10Blob*   Blob;
 	};
 
 
@@ -355,4 +362,52 @@ struct Model_data
    bool InFrustum;	// В зоне видимости камеры
 // bool Ocluded;	// Закрыт другим объектом
 };
+
+struct CustomSampler
+{
+#ifdef RCube_DX11
+	ID3D11SamplerState* Sampler;
+
+#endif
+#ifdef RCube_DX12
+
+#endif // RCube_DX12
+		
+			   wchar_t* Name;
+};
+
+
+struct CustomRasterizer
+{
+#ifdef RCube_DX11
+	ID3D11RasterizerState * Rasterizer;
+
+#endif
+#ifdef RCube_DX12
+
+#endif // RCube_DX12
+
+	wchar_t* Name;
+};
+
+
+struct CustomDepthStencil
+{
+#ifdef RCube_DX11
+	ID3D11DepthStencilState * DepthStencilState;
+
+#endif
+#ifdef RCube_DX12
+
+#endif // RCube_DX12
+
+	wchar_t* Name;
+};
+
+
+enum DirectXInitVer{
+	DX11,
+	DX12
+};
+
 #endif

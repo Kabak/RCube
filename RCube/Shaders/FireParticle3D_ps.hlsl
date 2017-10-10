@@ -7,7 +7,7 @@
 // GLOBALS //
 /////////////
 Texture2D shaderTexture;
-SamplerState SampleType;
+SamplerState FlatObject : register (s3);
 
 
 //////////////
@@ -33,7 +33,7 @@ float4 finalColor = 0.0f;
 	if (input.Draw > 0.0f)
 	{
 		// Sample the pixel color from the texture using the sampler at this texture coordinate location.
-		textureColor = shaderTexture.Sample(SampleType, input.tex);
+		textureColor = shaderTexture.Sample( FlatObject, input.tex);
 
 		// Combine the texture color and the particle color to get the final color result.
 		//	textureColor.a = length( textureColor.rgb);

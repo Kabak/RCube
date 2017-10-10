@@ -127,10 +127,6 @@ private:
 	// фиксатор нажатия ESCAPE для меню
 	bool IsEscapeDown;
 
-//	bool SphereHit[25];
-	std::vector<XMFLOAT3> bottleVertPosArray;
-	std::vector<DWORD> bottleVertIndexArray ;
-
 	LPCWSTR m_applicationName;
 	HINSTANCE m_hinstance;
 	HWND m_hwnd;

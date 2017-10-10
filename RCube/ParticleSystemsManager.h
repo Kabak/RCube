@@ -6,7 +6,7 @@
 #include "D3DGlobalContext.h"
 #include "ParticleSystemDefinitions.h"
 #include "FPSTimers.h"
-#include "LightClass.h"
+#include "D3DClass.h"
 #include <vector>
 
 using namespace std;
@@ -20,7 +20,7 @@ public:
 	 ParticleSystemsManager();
 	~ParticleSystemsManager();
 
-	bool Initialize( HWND hwnd, D3DGlobalContext *D3DGC_Local, LightClass *_EngineLight );
+	bool Initialize( HWND hwnd, D3DGlobalContext *D3DGC_Local, D3DClass *_EngineLight );
 	void Shutdown();
 	void Frame( FPSTimers &Timers );
 	void Render();

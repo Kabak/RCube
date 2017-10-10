@@ -8,8 +8,6 @@ TextClass::TextClass()
 {
 	FontsNumber	= 0;
    FontsCreated = 0;
-		Device	= nullptr;
-Device_Context	= nullptr;
 
    m_FontShader = nullptr;
 
@@ -52,19 +50,12 @@ TextClass::~TextClass()
 }
 
 
-bool TextClass::Initialize(D3DGlobalContext* D3DGC,
-						   vector < FontOnTextureData* > FontList,
-    					   KFResourceManager *ResManager
-						   )
+bool TextClass::Initialize(D3DGlobalContext* D3DGC, vector < FontOnTextureData* > FontList )
 {
 	bool result;
 
-	Device			= D3DGC->D11_device;
-	Device_Context	= D3DGC->D11_deviceContext;
+	Local_D3DGC = D3DGC;
 
-// Store the screen size and the base view matrix, these will be used for rendering 2D text.
-
-	// Store the screen width and height.
 	m_screenWidth = D3DGC->ScreenWidth;
 	m_screenHeight = D3DGC->ScreenHeight;
 
@@ -75,7 +66,7 @@ bool TextClass::Initialize(D3DGlobalContext* D3DGC,
 	{
 		m_Font1 = new FontClass;
 	// Initialize the font object.
-		result = m_Font1->Initialize(D3DGC , FontList[i], ResManager );
+		result = m_Font1->Initialize(D3DGC , FontList[i] );
 		if(!result)
 		{
 			MessageBox( D3DGC->hwnd, L"Could not initialize the font object in TextClass.", L"Error", MB_OK);
@@ -91,7 +82,7 @@ bool TextClass::Initialize(D3DGlobalContext* D3DGC,
 	m_FontShader = new FontShaderClass;
 
 	// Initialize the font shader object.
-	result = m_FontShader->Initialize(D3DGC->D11_device, D3DGC->hwnd , ResManager->BlobsArr[2] );
+	result = m_FontShader->Initialize( D3DGC );
 	if(!result)
 	{
 		MessageBox( D3DGC->hwnd, L"Could not initialize the font shader object.", L"Error", MB_OK);
@@ -155,8 +146,9 @@ bool TextClass::Render( int Level )
 	SetFps(fpstimers.FpsRate);
 	SetCpu(fpstimers.CpuVal);
 
-	Device_Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	m_FontShader->SetFontLayoutSempler(Device_Context);
+	Local_D3DGC->D11_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	m_FontShader->SetFontLayoutSempler( Local_D3DGC->D11_deviceContext );
 
 	for (UINT i = 0, j = (UINT)Sentences.size(); i < j ; ++i)
 	{
@@ -254,7 +246,7 @@ bool TextClass::InitializeSentence( SentenceType* sentence, int& maxLength )
 	vertexData.SysMemSlicePitch = 0;
 
 	// Create the vertex buffer.
-	result = Device->CreateBuffer(&vertexBufferDesc, &vertexData, &sentence->vertexBuffer);
+	result = Local_D3DGC->D11_device->CreateBuffer(&vertexBufferDesc, &vertexData, &sentence->vertexBuffer);
 	if(FAILED(result))
 	{
 		return false;
@@ -276,7 +268,7 @@ bool TextClass::InitializeSentence( SentenceType* sentence, int& maxLength )
 	indexData.SysMemSlicePitch = 0;
 
 	// Create the index buffer.
-	result = Device->CreateBuffer(&indexBufferDesc, &indexData, &sentence->indexBuffer);
+	result = Local_D3DGC->D11_device->CreateBuffer(&indexBufferDesc, &indexData, &sentence->indexBuffer);
 	if(FAILED(result))
 	{
 		return false;
@@ -334,7 +326,7 @@ bool TextClass::UpdateSentence(int SentenceNumber, char* text, int positionX, in
 	m_Font[Source->FontType]->BuildVertexArray((void*)vertices, text, drawX, drawY, RenderFontSize);
 
 	// Copy the vertex array information into the sentence vertex buffer.
-	Device_Context->UpdateSubresource( Source->vertexBuffer, NULL, NULL, (void*)vertices, NULL, NULL);
+	Local_D3DGC->D11_deviceContext->UpdateSubresource( Source->vertexBuffer, NULL, NULL, (void*)vertices, NULL, NULL);
 	// Release the vertex array as it is no longer needed.
 	delete [] vertices;
 	vertices = nullptr;
@@ -356,13 +348,13 @@ bool TextClass::RenderSentence( SentenceType* sentence )
 	offset = 0;
 
 	// Set the vertex buffer to active in the input assembler so it can be rendered.
-	Device_Context->IASetVertexBuffers(0, 1, &sentence->vertexBuffer, &stride, &offset);
+	Local_D3DGC->D11_deviceContext->IASetVertexBuffers(0, 1, &sentence->vertexBuffer, &stride, &offset);
 
 	// Set the index buffer to active in the input assembler so it can be rendered.
-	Device_Context->IASetIndexBuffer(sentence->indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	Local_D3DGC->D11_deviceContext->IASetIndexBuffer(sentence->indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
 	// Render the text using the font shader.
-	m_FontShader->Render(Device_Context, sentence->indexCount, m_Font[sentence->FontType]->GetTexture(),
+	m_FontShader->Render( Local_D3DGC->D11_deviceContext, sentence->indexCount, m_Font[sentence->FontType]->GetTexture(),
 		sentence->Colour);
 
 	return true;

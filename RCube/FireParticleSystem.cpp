@@ -15,7 +15,7 @@ FireParticleSystem::FireParticleSystem()
 	  m_vertexBuffer = nullptr;
 	   m_indexBuffer = nullptr;
 
-	   m_sampleState = nullptr;
+//	   m_sampleState = nullptr;
 			m_layout = nullptr;
 	// +++++++++++++++++   Instancing   ++++++++++++++++++++++++++++++++
 	m_instanceBuffer = nullptr;
@@ -47,7 +47,7 @@ bool FireParticleSystem::Initialize( HWND hwnd,
 								 int _VY_Amount,							// Количестко столбцов в текстуре анимации
 								 int FramesAmount,						// Реальное количество анимаций в текстуре с верха , слева направо
 
-					  LightClass *_EngineLight
+						D3DClass *_EngineLight
 									)
 {
 	bool result;
@@ -110,7 +110,7 @@ bool FireParticleSystem::Initialize( HWND hwnd,
 //	RCubeMatrix MyMat;
 //	MyMat.XMM = XMMatrixIdentity();
 
-	TempLight = new LightClass::PointLight;
+	TempLight = new  PointLight;
 
 	TempLight->attenuationBegin = 0.1f;
 	TempLight->attenuationEnd = 10.5f;
@@ -190,7 +190,7 @@ void FireParticleSystem::Render()
 	ID3D11Buffer* bufferPointers[2];
 
 	// Set vertex buffer stride and offset.
-	strides[0] = sizeof( BillBordVertexes );
+	strides[0] = sizeof( Vertex_FlatObject );
 	strides[1] = sizeof( ParticleShaderInstance_FIRE );
 
 	// Set the buffer offsets.
@@ -221,7 +221,7 @@ void FireParticleSystem::Render()
 	// deviceContext->PSSetShader(m_pixelShader, NULL, 0);
 
 	// Set the sampler state in the pixel shader.
-	D3DGC_Local->D11_deviceContext->PSSetSamplers( 0, 1, &m_sampleState );
+//	D3DGC_Local->D11_deviceContext->PSSetSamplers( 0, 1, &m_sampleState );
 
 	// Render the triangle.
 	D3DGC_Local->D11_deviceContext->DrawIndexedInstanced( 6, m_instanceCount/*m_currentParticleCount/*m_instanceCount*/, 0, 0, 0 );
@@ -300,7 +300,7 @@ bool FireParticleSystem::InitializeBuffers( ID3D11Device* device, ID3D10Blob* Bl
 	// -----------------   Instancing   --------------------------------
 
 	// Create the vertex array for the particles that will be rendered.
-	m_vertices = new BillBordVertexes[4];
+	m_vertices = new Vertex_FlatObject[4];
 
 
 	unsigned long indices[6] = { 0, 1, 2, 0, 3, 1 };
@@ -354,28 +354,28 @@ bool FireParticleSystem::InitializeBuffers( ID3D11Device* device, ID3D10Blob* Bl
 	// -----------------   Instancing   --------------------------------
 
 	// Initialize vertex array to zeros at first.
-	memset( m_vertices, 0, ( sizeof( BillBordVertexes ) * 4 ) );
+	memset( m_vertices, 0, ( sizeof( Vertex_FlatObject ) * 4 ) );
 
 	// Top left.
-	m_vertices[0].position = XMFLOAT3( -1.0f * m_particleSize, 1.0f * m_particleSize, 0.0f );  // Top left
-	m_vertices[0].texture = XMFLOAT2( 0.0f, 0.0f );
+	m_vertices[0].Position = XMFLOAT3( -1.0f * m_particleSize, 1.0f * m_particleSize, 0.0f );  // Top left
+	m_vertices[0].TexCoord = XMFLOAT2( 0.0f, 0.0f );
 
 	// Bottom right.
-	m_vertices[1].position = XMFLOAT3( 1.0f * m_particleSize, -1.0f * m_particleSize, 0.0f );  // Bottom right
-	m_vertices[1].texture = XMFLOAT2( 1.0f, 1.0f );
+	m_vertices[1].Position = XMFLOAT3( 1.0f * m_particleSize, -1.0f * m_particleSize, 0.0f );  // Bottom right
+	m_vertices[1].TexCoord = XMFLOAT2( 1.0f, 1.0f );
 
 	// Bottom left.
-	m_vertices[2].position = XMFLOAT3( -1.0f * m_particleSize, -1.0f * m_particleSize, 0.0f );  // Bottom left.
-	m_vertices[2].texture = XMFLOAT2( 0.0f, 1.0f );
+	m_vertices[2].Position = XMFLOAT3( -1.0f * m_particleSize, -1.0f * m_particleSize, 0.0f );  // Bottom left.
+	m_vertices[2].TexCoord = XMFLOAT2( 0.0f, 1.0f );
 
 	// Top right.
-	m_vertices[3].position = XMFLOAT3( 1.0f * m_particleSize, 1.0f * m_particleSize, 0.0f );  // Top right.
-	m_vertices[3].texture = XMFLOAT2( 1.0f, 0.0f );
+	m_vertices[3].Position = XMFLOAT3( 1.0f * m_particleSize, 1.0f * m_particleSize, 0.0f );  // Top right.
+	m_vertices[3].TexCoord = XMFLOAT2( 1.0f, 0.0f );
 
 
 	// Set up the description of the dynamic vertex buffer.
 	BillBordVertBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	BillBordVertBufferDesc.ByteWidth = sizeof( BillBordVertexes ) * 4;
+	BillBordVertBufferDesc.ByteWidth = sizeof( Vertex_FlatObject ) * 4;
 	BillBordVertBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	BillBordVertBufferDesc.CPUAccessFlags = 0;
 	BillBordVertBufferDesc.MiscFlags = 0;
@@ -396,53 +396,15 @@ bool FireParticleSystem::InitializeBuffers( ID3D11Device* device, ID3D10Blob* Bl
 	// Release the index array since it is no longer needed.
 	delete[] m_vertices;
 
-	// LAYOUT
-	D3D11_INPUT_ELEMENT_DESC BASIC_Layout[5] =
-	{
-		{ "POSITION"	, 0 , DXGI_FORMAT_R32G32B32_FLOAT	, 0 , 0							   , D3D11_INPUT_PER_VERTEX_DATA   , 0 },
-		{ "TEXCOORD"	, 0 , DXGI_FORMAT_R32G32_FLOAT		, 0 , D3D11_APPEND_ALIGNED_ELEMENT , D3D11_INPUT_PER_VERTEX_DATA   , 0 },
-		{ "POSITION"	, 1 , DXGI_FORMAT_R32G32B32A32_FLOAT, 1 , D3D11_APPEND_ALIGNED_ELEMENT , D3D11_INPUT_PER_INSTANCE_DATA , 1 },
-//		{ "POSITION2"	, 0 , DXGI_FORMAT_R32_FLOAT			, 1 , D3D11_APPEND_ALIGNED_ELEMENT , D3D11_INPUT_PER_INSTANCE_DATA , 1 },
-		{ "COLOR"		, 0 , DXGI_FORMAT_R32G32B32A32_FLOAT, 1 , D3D11_APPEND_ALIGNED_ELEMENT , D3D11_INPUT_PER_INSTANCE_DATA , 1 },
-	    { "InsTEXCOORD" , 0 , DXGI_FORMAT_R32G32B32A32_FLOAT, 1 , D3D11_APPEND_ALIGNED_ELEMENT , D3D11_INPUT_PER_INSTANCE_DATA , 1 }
-	};
-
-	unsigned int numElements;
-	// Get a count of the elements in the layout.
-	numElements = sizeof( BASIC_Layout ) / sizeof( BASIC_Layout[0] );
+	int numElements = ARRAYSIZE ( ParticlesBASIC_Layout );
 
 	// Create the vertex input layout.
-	result = device->CreateInputLayout( BASIC_Layout, numElements, Blob->GetBufferPointer(), Blob->GetBufferSize(),
+	result = device->CreateInputLayout( ParticlesBASIC_Layout, numElements, Blob->GetBufferPointer(), Blob->GetBufferSize(),
 										&m_layout );
 	if ( FAILED( result ) )
 	{
 		return false;
 	}
-
-	D3D11_SAMPLER_DESC samplerDesc;
-
-	// Create a texture sampler state description.
-	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.MipLODBias = 0.0f;
-	samplerDesc.MaxAnisotropy = 1;
-	samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-	samplerDesc.BorderColor[0] = 0;
-	samplerDesc.BorderColor[1] = 0;
-	samplerDesc.BorderColor[2] = 0;
-	samplerDesc.BorderColor[3] = 0;
-	samplerDesc.MinLOD = 0;
-	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-	// Create the texture sampler state.
-	result = device->CreateSamplerState( &samplerDesc, &m_sampleState );
-	if ( FAILED( result ) )
-	{
-		return false;
-	}
-
 
 	return true;
 }
@@ -456,7 +418,7 @@ void FireParticleSystem::ShutdownBuffers()
 	RCUBE_RELEASE( m_indexBuffer );
 	RCUBE_RELEASE( m_vertexBuffer );
 
-	RCUBE_RELEASE( m_sampleState );
+//	RCUBE_RELEASE( m_sampleState );
 	RCUBE_RELEASE( m_layout );
 
 	RCUBE_ARR_DELETE ( instances );

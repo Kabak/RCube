@@ -2,18 +2,6 @@
 #include "KFModel.h"
 #include <math.h>
 
-D3D11_INPUT_ELEMENT_DESC layout[] =
-{
-	{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },  //DXGI_FORMAT_R32G32B32A32_FLOAT
-	{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	{ "NORMAL",	 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
-	{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
-	{ "ObjPOSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT,    1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
-	{ "ObjROTATION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT,    1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 }
-//	{ "SV_VertexID", 0, DXGI_FORMAT_R8_UINT, 1,D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 }
-};
-
-UINT numElements = ARRAYSIZE(layout);
 
 KFModel::KFModel(){
 
@@ -48,16 +36,15 @@ bool KFModel::LoadKFObject(std::wstring FileName){
 	int TextureSize = NULL; // размер тектуры которую € буду читать
 	unsigned char * TextuteFile = nullptr; // это файл текстуры который € читаю из общей кучи
 	int g = 0;
-	Vertex Temp;
 
 	// цикл заполнени€ мэшей
 	while (c < ThisObjDesc.MeshesCount ) {
 
 		file.read((unsigned char*)&tempMesh->VertexBufferSize, sizeof(int)); // читаю размер следующего вертексного буфера
-		ThisObjDesc.ObjectVertexesCout += tempMesh->VertexBufferSize; // нахожу сумму вершин все ранне созданныъ мной обьектов
-		tempMesh->VertArr = new Vertex[tempMesh->VertexBufferSize]; // вфдел€ю пам€ть под конкреный мверт буф
+		ThisObjDesc.ObjectVertexesCout += tempMesh->VertexBufferSize; // нахожу сумму вершин всех ранее созданных мной обьектов
+		tempMesh->VertArr = new Vertex_Model3D[tempMesh->VertexBufferSize]; // выдел€ю пам€ть под конкреный мверт буф
 
-		file.read((unsigned char*)&tempMesh->VertArr[0] , sizeof(Vertex) * tempMesh->VertexBufferSize);//чтение одним махом
+		file.read((unsigned char*)&tempMesh->VertArr[0] , sizeof( Vertex_Model3D ) * tempMesh->VertexBufferSize);//чтение одним махом
 
 
 		file.read((unsigned char*)&TextureSize , sizeof(int));
@@ -69,11 +56,11 @@ bool KFModel::LoadKFObject(std::wstring FileName){
 
 			file.read( TextuteFile, TextureSize * sizeof( unsigned char ) );
 
-			hr = DirectX::CreateWICTextureFromMemory( d3d11Device, d3d11DevCon, &TextuteFile[0], ( size_t ) TextureSize, &tempMesh->TextureResurse
+			hr = DirectX::CreateWICTextureFromMemory( d3d11Device, d3d11DevCon, &TextuteFile[0], ( size_t ) TextureSize, &tempMesh->TextureResurce
 													  , &tempMesh->Texture, NULL );
 			if ( hr == E_FAIL )
 			{
-				MessageBox( g_hwnd, L"файл записаный в KAF поврежден.KFResourceManager", L"Error", MB_OK );
+				MessageBox( g_hwnd, L"файл записаный в KAF поврежден.ResourceManager", L"Error", MB_OK );
 			}
 
 			delete[] TextuteFile;
@@ -83,7 +70,7 @@ bool KFModel::LoadKFObject(std::wstring FileName){
 		hr = S_OK;
 		// Set up the description of the static vertex buffer.
 		bd.Usage = D3D11_USAGE_DYNAMIC;
-		bd.ByteWidth = sizeof(Vertex) * tempMesh->VertexBufferSize;
+		bd.ByteWidth = sizeof( Vertex_Model3D ) * tempMesh->VertexBufferSize;
 		bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 		bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 		bd.MiscFlags = 0;
@@ -126,23 +113,16 @@ bool KFModel::LoadKFObject(std::wstring FileName){
 }
 
 HRESULT KFModel::Init(HWND hwnd, std::wstring filename, ID3D11Device *d3d11Device
-	, ID3D11DeviceContext * DevCon, ID3D10Blob * Blob, UINT Shaders, int m_instanceCount,  LightClass * ActiveLightClass){
+	, ID3D11DeviceContext * DevCon, UINT Shaders, int m_instanceCount, D3DClass * ActiveLightClass){
 
 	HRESULT hr = 0;
 	g_ActiveLightClass = ActiveLightClass;
 	g_hwnd = hwnd;
 	//ID3DXEffect * 
 
-	ThisObjDesc.instanceCount = m_instanceCount;
+	ThisObjDesc.InstanceCount = m_instanceCount;
 	d3d11DevCon = DevCon ;
 	KFModel::d3d11Device = d3d11Device ;
-	
-	hr = d3d11Device->CreateInputLayout( layout, numElements, Blob->GetBufferPointer(),
-		Blob->GetBufferSize(), &vertLayout );
-
-	if (FAILED(hr))
-		return E_FAIL;
-
 	
 	LoadKFObject(filename) ;
 
@@ -252,13 +232,7 @@ KFModel::~KFModel(){
 }
 
 
-KFModel::RCudeObjDesc::~RCudeObjDesc() {
 
-	RCUBE_ARR_DELETE(Meshes);//  удал€ю мэши все атрубуты удал€ютс€ автоматически в деконструкторе класса
-	RCUBE_ARR_DELETE(Positions);
-	RCUBE_ARR_DELETE(PositionsDraw);
-
-}
 
 bool KFModel::UpdateInstancingPos() {
 
@@ -285,7 +259,7 @@ bool KFModel::UpdateInstancingPos() {
 	int help = sizeof(PositionType);
 	help = sizeof(XMFLOAT4);
 
-	if(ThisObjDesc.instanceCount > 1)
+	if(ThisObjDesc.InstanceCount > 1)
 	    memcpy(IndexPtr, (void*)ThisObjDesc.PositionsDraw, (sizeof(PositionType) * Instance));
 	else
 		memcpy(IndexPtr, (void*)ThisObjDesc.PositionsDraw, sizeof(PositionType));
@@ -310,7 +284,7 @@ void KFModel::LightRender() {
 		d3d11DevCon->IASetInputLayout(vertLayout);
 
 		// Set vertex buffer stride and offset.
-		strides[0] = sizeof(Vertex);
+		strides[0] = sizeof( Vertex_Model3D );
 		strides[1] = sizeof(PositionType);
 
 		// Set the buffer offsets.
@@ -355,7 +329,7 @@ void KFModel::Render() {
 		d3d11DevCon->IASetInputLayout(vertLayout);
 
 		// Set vertex buffer stride and offset.
-		strides[0] = sizeof(Vertex);
+		strides[0] = sizeof( Vertex_Model3D );
 		strides[1] = sizeof(PositionType);
 
 		// Set the buffer offsets.
@@ -396,11 +370,11 @@ void KFModel::UpdateInstancingDrawData() {
 
 	int c = 0 , CounterInstanceNeedDraw = 0;
 
-	KFModel::PositionType *Dest = &ThisObjDesc.PositionsDraw[0];
-	KFModel::PositionType *Source = &ThisObjDesc.Positions[0];
+	PositionType *Dest = &ThisObjDesc.PositionsDraw[0];
+	PositionType *Source = &ThisObjDesc.Positions[0];
 
 	//ThisObjDesc.IsObjDraw[1] = false;
-	while (c < ThisObjDesc.instanceCount) {
+	while (c < ThisObjDesc.InstanceCount) {
 
 		if (ThisObjDesc.IsObjDraw) {
 
@@ -421,55 +395,7 @@ void KFModel::UpdateInstancingDrawData() {
 }
 
 
-/*
-void KFModel::MapLight() {
-	LightBufferType* dataPtr2 ;
-	LightBufferType* Source;
-
-//	CameraBufferType *dataPtr3;
-	D3D11_MAPPED_SUBRESOURCE mappedResource;
-
-	// Lock the light constant buffer so it can be written to.
-	HRESULT result = d3d11DevCon->Map(cbPerlightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	if (FAILED(result))
-	{
-	
-	}
-
-	// Get a pointer to the data in the constant buffer.
-	dataPtr2 = (LightBufferType*)mappedResource.pData;
-	Source = &ThisObjDesc.LightBuffer;
-	
-	*dataPtr2 = *Source;
-
-
-	// Copy the lighting variables into the constant buffer.
-//	dataPtr2->ambientColor = ThisObjDesc.LightBuffer.ambientColor;
-//	dataPtr2->diffuseColor = ThisObjDesc.LightBuffer.diffuseColor;
-//	dataPtr2->lightDirection = ThisObjDesc.LightBuffer.lightDirection;
-	//dataPtr2->padding = ThisObjDesc.LightBuffer.padding;
-//	dataPtr2->specularPower = ThisObjDesc.LightBuffer.specularPower;
-//	dataPtr2->specularColor = ThisObjDesc.LightBuffer.specularColor;
-
-
-	// Unlock the constant buffer.
-	d3d11DevCon->Unmap(cbPerlightBuffer, 0);
-}
-*/
-
-KFModel::MeshData::~MeshData() {
-
-	RCUBE_RELEASE(TextureResurse);
-	RCUBE_RELEASE(Texture);
-	RCUBE_RELEASE(VertBuff);
-	
-	RCUBE_ARR_DELETE(VertArr);
-	
-    RCUBE_ARR_DELETE(Indexes);
-
-}
-
-void KFModel::BoundingBox::CreateBoundStruct(RCube_VecFloat34 minValues, RCube_VecFloat34 maxValues) {
+void BoundingBox::CreateBoundStruct(RCube_VecFloat34 minValues, RCube_VecFloat34 maxValues) {
 
 	MinValues.Fl4 = minValues.Fl4;
 	MaxValues.Fl4 = maxValues.Fl4;

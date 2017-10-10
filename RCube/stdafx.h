@@ -9,6 +9,22 @@
 #include <DirectXMath.h>
 #include <cmath>
 
+//RCube_DX11, RCube_DX12
+#define RCube_DX11
+
+//RCube_English, RCube_Russian
+#define RCube_English
+
+/*
+// https://msdn.microsoft.com/en-us/library/hh973459.aspx
+// Windows Runtime Library for managing COM objects without pain
+#include <wrl.h>
+
+using namespace ABI::Windows::Foundation;
+using namespace Microsoft::WRL;
+using namespace Microsoft::WRL::Wrappers;
+*/
+
 using namespace DirectX;
 
 union RCube_VecFloat34
