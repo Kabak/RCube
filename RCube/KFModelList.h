@@ -17,7 +17,7 @@ public:
 	KFModelList();
 	~KFModelList();
 
-	HRESULT Init(HWND g_Hwnd, D3DGlobalContext * D3DGC, ResourceManager * ResourceManeger
+	HRESULT Init(HWND g_Hwnd, D3DGlobalContext * D3DGC
 		, D3DClass * ActiveLightClass ,  FrustumClass * ActiveFrustum);
 
 	void AddObject(wstring FileNameKFO, UINT BolobIndex, UINT Shaders, int InstCout);
@@ -48,6 +48,7 @@ public:
 
 private:
  
+	D3DGlobalContext * Local_D3DGC;
 	FrustumClass * gActiveFrustum;
 	vector<bool> IsObjUseClustering; //массив описывающий использует ли тип модели кластеринг true использует false не использует формат заполнения [индекс типа модели]
 	vector <int> PreviosFrameIndexes;// эта фигня нужна для оптимизации проверять предыдущий кадр

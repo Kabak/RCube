@@ -70,7 +70,7 @@ HRESULT CubeMapping::Init( D3DGlobalContext *D3DGC, ID3D11ShaderResourceView * T
 
 	ZeroMemory( &vertexBufferData, sizeof(vertexBufferData) );
 	vertexBufferData.pSysMem = &vertices[0];
-	HRESULT hr = Local_D3DGC->D11_device->CreateBuffer( &vertexBufferDesc, &vertexBufferData, &sphereVertBuffer);
+	HRESULT hr = Local_D3DGC->DX_device->CreateBuffer( &vertexBufferDesc, &vertexBufferData, &sphereVertBuffer);
 
 	
 	std::vector<DWORD> indices(NumSphereFaces * 3);
@@ -139,7 +139,7 @@ HRESULT CubeMapping::Init( D3DGlobalContext *D3DGC, ID3D11ShaderResourceView * T
 	D3D11_SUBRESOURCE_DATA iinitData;
 
 	iinitData.pSysMem = &indices[0];
-	Local_D3DGC->D11_device->CreateBuffer(&indexBufferDesc, &iinitData, &sphereIndexBuffer);
+	Local_D3DGC->DX_device->CreateBuffer(&indexBufferDesc, &iinitData, &sphereIndexBuffer);
 	// סמחהאםטו בופונמג ספונû-------------------------------------------------
 
 
@@ -149,7 +149,7 @@ HRESULT CubeMapping::Init( D3DGlobalContext *D3DGC, ID3D11ShaderResourceView * T
 	dssDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
 	dssDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
 
-	Local_D3DGC->D11_device->CreateDepthStencilState(&dssDesc, &DSLessEqual);
+	Local_D3DGC->DX_device->CreateDepthStencilState(&dssDesc, &DSLessEqual);
 	
 	return S_OK ;
 
@@ -159,20 +159,20 @@ void CubeMapping::Render(){
 
 	UINT stride = sizeof( Vertex_FlatObject );
 	UINT offset = 0;
-	Local_D3DGC->D11_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	Local_D3DGC->DX_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	//Set the spheres index buffer
-	Local_D3DGC->D11_deviceContext->IASetIndexBuffer( sphereIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	Local_D3DGC->DX_deviceContext->IASetIndexBuffer( sphereIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 	//Set the spheres vertex buffer
-	Local_D3DGC->D11_deviceContext->IASetVertexBuffers( 0, 1, &sphereVertBuffer, &stride, &offset );
+	Local_D3DGC->DX_deviceContext->IASetVertexBuffers( 0, 1, &sphereVertBuffer, &stride, &offset );
 
 	//Send our skymap resource view to pixel shader
-	Local_D3DGC->D11_deviceContext->PSSetShaderResources( 0, 1, &smrv );
-//	Local_D3DGC->D11_deviceContext->PSSetSamplers( 0, 1, &CubesTexSamplerState );
+	Local_D3DGC->DX_deviceContext->PSSetShaderResources( 0, 1, &smrv );
+//	Local_D3DGC->DX_deviceContext->PSSetSamplers( 0, 1, &CubesTexSamplerState );
 
 	//Set the new depth/stencil and RS states
-	Local_D3DGC->D11_deviceContext->OMSetDepthStencilState(DSLessEqual, 0);
-	Local_D3DGC->D11_deviceContext->DrawIndexed( NumSphereFaces * 3, 0, 0 );
+	Local_D3DGC->DX_deviceContext->OMSetDepthStencilState(DSLessEqual, 0);
+	Local_D3DGC->DX_deviceContext->DrawIndexed( NumSphereFaces * 3, 0, 0 );
 
 //	d3d11DevCon->OMSetDepthStencilState(NULL, 0);
 

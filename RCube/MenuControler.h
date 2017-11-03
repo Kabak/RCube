@@ -1,45 +1,28 @@
 #pragma once
 #include "stdafx.h"
 
-#ifndef _HYUNA_H_
-#define _HYUNA_H_
+#ifndef _MENUCONTROLER_H_
+#define _MENUCONTROLER_H_
 
 #include "D3DGlobalContext.h"
-#include "SquareObjectClass.h"
-#include "KF2DTextureAnimation.h"
-#include "KFButton.h"
-#include "ScrollBarClass.h"
-#include "StringsListClass.h"
+
 #include "FPSTimers.h"
 #include "InputClass.h"
-//#include <conio.h>
+#include "Menu.h"
+#include "ResourceManager.h"
+
 
 using namespace std;
 
-class MenuControrerClass{
+class MenuControrerClass : public Menu {
 
 private :
 
-	vector<KFButton*> Buttons;
-	vector<ScrollBarClass*> ScrollBars;
-	vector<StringsListClass*> StringsList;
-
 	D3DGlobalContext* McD3DGC;
-	ID3D11Device * g_Device ;
-	int g_NumOfButtons; 
-	int	g_NumOfScrollBars;
-	int g_NumOfStringsLists;
+	ResourceManager * GlobalResourceManager;
 
-	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
-	ID3D11Texture2D* m_renderTargetTexture;
-	ID3D11ShaderResourceView* m_shaderResourceView;
-    HWND g_hwnd ;
-	ID3D11DeviceContext * g_DeviceContext ;
-	SquareObjectClass * Background ;
-	ID3D11RenderTargetView * g_ActiveRenderTarget ;
-	KF2DTextureAnimation *Animation;
-
-	void ElementsRender();
+	TextClass* G_Text;
+	InputClass* GlobalInput;
 
 	// Зачем-то задаётся размер который меню считает основням и в него разворачивается при открытии
 	int MWidth;
@@ -48,11 +31,17 @@ private :
 	int g_WindowPosX;
 	int g_WindowPosY;
 
-	ID3D11DepthStencilView * m_depthStens;
+	// Позиция и размеры фона окна меню
+	//	x - X в % , y - Y в % , Width в % к оригинальному размеру текстуры,
+	// Height в % к оригинальному размеру текстуры
+	XMFLOAT4 BackGroundCoord;	// Позиция фона 
 
-	TextClass* G_Text;
-	InputClass* GlobalInput;
-	ID3D11BlendState * Disable;
+								// Позиция меню во время анимации
+	float g_MenuPosX;
+	float g_MenuPosY;
+	// Размеры меню во время анимации
+	int g_Width;
+	int g_Heigth;
 
 	// тригер для отображения курсора в Edit
 	bool CursorOn_Off;
@@ -98,27 +87,6 @@ private :
 
 public :
 
-	// Активно ли меню - в нём работают кнопки
-	bool IsMenuActive;
-	// Рисовать ли меню
-	bool IsMenuDraw;
-
-	int ShaderForDraw = -1;
-	// Позиция и размеры фона окна меню
-	//	x - X в % , y - Y в % , Width в % к оригинальному размеру текстуры,
-	// Height в % к оригинальному размеру текстуры
-	XMFLOAT4 BackGroundCoord;	// Позиция фона 
-	
-	// Позиция меню во время анимации
-	float g_MenuPosX;
-	float g_MenuPosY;
-	// Размеры меню во время анимации
-	int g_Width;
-	int g_Heigth;
-
-	// переменная показывающая надобность анимации из точки
-	float ConstWindSize;
-
 	// Переопределяем операторы New и delete для правильного размещения XMMATRIX в памяти
     void* operator new(size_t i)
     {
@@ -142,15 +110,11 @@ public :
 		KF2DTextureAnimation *_Animation,			// Указатель на анимацию в фоне, если NULL, то нет анимации
 		XMFLOAT4 BackGroundCoord,					// Фактически размеры меню и позиция на экране
 		ID3D11ShaderResourceView* BackgroundTexture,// Указатель на текстуру фона
+		ResourceManager * GlobalResManager,			// Указатель на класс менеджера текстур и буферов объектов
 		TextClass * GolobalText						// Указатель на класс текста в движке, для создания строк в Label, Edit
 		);
 
-	void Draw();
-
 	HRESULT Frame( InputClass* InputClass, int UTF16_KeyCODE, FPSTimers& fpstimers);
-
-
-
 
 	// Конвертер UTF16 кода нажатой клавиши в ASCII Cyrillic char
 	char UTF16toCHAR ( int UTF16_KeyPressed );

@@ -8,13 +8,13 @@ StringsListClass::StringsListClass()
 			Scroll_Y_Pos = 0;
 	 First_Visible_Index = 0;
 	  Last_Visible_Index = 0;
-					 Obj = nullptr;
+//					 Obj = nullptr;
 }
 
 
 StringsListClass::~StringsListClass()
 {
-	RCUBE_DELETE( Obj );
+//	RCUBE_DELETE( Obj );
 }
 
 
@@ -36,7 +36,8 @@ HRESULT StringsListClass::Init(
 	XMFLOAT4& _ScreenCoords,
 	XMFLOAT4& _FormCoord,
 	StringsList_Elements& StringsListClassInit,
-	TextClass* g_text
+	TextClass* g_text,
+	Flat_Obj_Buffers* _Buffers
 	)
 {
 	HRESULT Result = S_OK;
@@ -45,6 +46,8 @@ HRESULT StringsListClass::Init(
 	 Default_RTV  = D3DGC->BackBuffer_RTV;
 	 StrList_RTV  = D3DGC->BackBuffer_ProxyTextureRTV;
 	 StrList_SRV  = D3DGC->BackBuffer_ProxyTextureSRV;
+
+		  Buffers = _Buffers;
 
 	 Global_text  = g_text;
 
@@ -125,15 +128,18 @@ Result = SetInitFrameData();
 	vertices[3].TexCoord = TextureRightTop;
 //	vertices[3].texture = XMFLOAT2( 1.0f, 0.0f );
 
-	unsigned long indices[6] = { 0, 1, 2, 0, 3, 1 };
-
+//	unsigned int indices[6] = { 0, 1, 2, 0, 3, 1 };
+	Buffers->FlatObjectVB->Update ( vertices );
+	Buffers->IndexBs->Update ( (Index_Type*)FlatObjectIndices );
+	Buffers->RenderTexture = StrList_SRV;
+/*
 	Obj = new KF2DObjClass;
-	Result = Obj->Init( D3DGC, vertices, indices, StrList_SRV, 4, 6 );
+	Result = Obj->Init( D3DGC, vertices, FlatObjectIndices, StrList_SRV, 4, 6 );
 	if ( FAILED( Result ) )
 	{
 		MessageBox( NULL, L"StringsList Obj creation Error", 0, 0 );
 	}
-
+*/
 	delete[] vertices;
 
 return Result;
@@ -335,8 +341,8 @@ void StringsListClass::UpdateVisibleSentance()
 void StringsListClass::Draw()
 {
 	// Подставляем текстуру для отрисовки строк StrinsList
-	Local_D3DGC->D11_deviceContext->ClearRenderTargetView( StrList_RTV, Local_D3DGC->ZeroColor );
-	Local_D3DGC->D11_deviceContext->OMSetRenderTargets( 1, &StrList_RTV, NULL );
+	Local_D3DGC->DX_deviceContext->ClearRenderTargetView( StrList_RTV, Local_D3DGC->ZeroColor );
+	Local_D3DGC->DX_deviceContext->OMSetRenderTargets( 1, &StrList_RTV, NULL );
 
 	// Рисуем строки в текстуру для скролинга
 	Global_text->Render( SentencesIndex );
@@ -345,10 +351,10 @@ void StringsListClass::Draw()
 //	SaveTextureToPNG( StrList_SRV );
 
 	// Восстанавливае BackBuffer для отрисовки по умолчанию
-	Local_D3DGC->D11_deviceContext->OMSetRenderTargets( 1, &Local_D3DGC->BackBuffer_RTV, Local_D3DGC->m_depthStencilView );
+	Local_D3DGC->DX_deviceContext->OMSetRenderTargets( 1, &Local_D3DGC->BackBuffer_RTV, Local_D3DGC->m_depthStencilView );
 
 	// Рисуем StringsList на реальном экране
-	Obj->Render();
+//	Obj->Render();
 }
 
 
@@ -442,7 +448,7 @@ bool StringsListClass::SaveTextureToPNG( ID3D11ShaderResourceView* Texture )
 	// Сохранение возможно только для текстуры без MSAA 
 	// Нужно делать ResolveSubresource
 
-	hr = Local_D3DGC->D11_device->CreateTexture2D( desc, 0, &Local_D3DGC->ScreenShootTexture );
+	hr = Local_D3DGC->DX_device->CreateTexture2D( desc, 0, &Local_D3DGC->ScreenShootTexture );
 	if ( FAILED( hr ) )
 	{
 		MessageBox( NULL, L"Can't create ScreenShotTexture", 0, 0 );
@@ -453,16 +459,16 @@ bool StringsListClass::SaveTextureToPNG( ID3D11ShaderResourceView* Texture )
 	// Если текстура MSAA, то делаем ResolveSubresurces
 	if ( InputTextureDesc->SampleDesc.Count > 1 )
 	{
-		Local_D3DGC->D11_deviceContext->ResolveSubresource( Local_D3DGC->BackBuffer_CopyResolveTexture, 0, tempResource, 0, DXGI_FORMAT_R8G8B8A8_UNORM );
+		Local_D3DGC->DX_deviceContext->ResolveSubresource( Local_D3DGC->BackBuffer_CopyResolveTexture, 0, tempResource, 0, DXGI_FORMAT_R8G8B8A8_UNORM );
 		// D3DGC->BackBuffer_CopyResolveTextureSRV
 		ID3D11Resource* Resource;
 		Local_D3DGC->BackBuffer_CopyResolveTextureSRV->GetResource( &Resource );
-		Local_D3DGC->D11_deviceContext->CopyResource( Local_D3DGC->ScreenShootTexture, Resource );
+		Local_D3DGC->DX_deviceContext->CopyResource( Local_D3DGC->ScreenShootTexture, Resource );
 		Resource->Release();
 	}
 	else
 	{
-		Local_D3DGC->D11_deviceContext->CopyResource( Local_D3DGC->ScreenShootTexture, tempResource );
+		Local_D3DGC->DX_deviceContext->CopyResource( Local_D3DGC->ScreenShootTexture, tempResource );
 	}
 
 	union _block
@@ -472,12 +478,12 @@ bool StringsListClass::SaveTextureToPNG( ID3D11ShaderResourceView* Texture )
 	} block;
 
 	D3D11_MAPPED_SUBRESOURCE  mapResource;
-	hr = Local_D3DGC->D11_deviceContext->Map( Local_D3DGC->ScreenShootTexture, 0, D3D11_MAP_READ, NULL, &mapResource );
+	hr = Local_D3DGC->DX_deviceContext->Map( Local_D3DGC->ScreenShootTexture, 0, D3D11_MAP_READ, NULL, &mapResource );
 
 	unsigned int amount = mapResource.DepthPitch; // RowPitch * Height;
 	block.data = new byte[amount];
 	memcpy( block.data, mapResource.pData, amount );
-	Local_D3DGC->D11_deviceContext->Unmap( Local_D3DGC->ScreenShootTexture, 0 );
+	Local_D3DGC->DX_deviceContext->Unmap( Local_D3DGC->ScreenShootTexture, 0 );
 
 	Image img;
 	img.height = desc->Height;

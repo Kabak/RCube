@@ -9,7 +9,7 @@
 #include <fstream>
 #include "D3DClass.h"
 #include "D3DGlobalContext.h"
-#include "VertexBuffers_def.h"
+#include "Buffers_def.h"
 
 using namespace DirectX;
 
@@ -50,12 +50,6 @@ public:
 	int g_Rows, g_Columns;
 
 private :
-	struct MatrixBufferType
-	{
-		XMMATRIX world;
-		XMMATRIX view;
-		XMMATRIX projection;
-	};
 
 	struct PositionType
 	{
@@ -64,24 +58,13 @@ private :
 		XMFLOAT4 rotation;
 	};
 
-	struct LightBufferType
-	{
-		XMFLOAT4 ambientColor;
-		XMFLOAT4 diffuseColor;
-		XMFLOAT3 lightDirection;
-		float padding;
-	};
-
 	struct VectorType
 	{
 		float x, y, z;
 	};
 
 	D3DGlobalContext* Local_D3DGC;
-	ID3D11InputLayout* m_layout;
-//	ID3D11SamplerState* m_sampleState;
-	//ID3D11Buffer* m_matrixBuffer;
-	ID3D11Buffer* m_lightBuffer;
+
 	ID3D11Buffer* m_posesBuffer;
 	D3DClass* g_ActiveLight;
 
@@ -130,7 +113,6 @@ public:
 
 	ID3D11DeviceContext *  g_deviceContext;
 	ID3D11ShaderResourceView * g_Texture;
-	LightBufferType LightDesc;
 	HeightMapType * m_heightMap; // двумерный массив высот [x кордината][y кордината]
 	ID3D11Buffer * m_vertexBuffer , *m_indexBuffer;
 	float g_VertixesIndent;

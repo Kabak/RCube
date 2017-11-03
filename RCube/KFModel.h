@@ -8,12 +8,12 @@
 #include "DirectXMath.h"
 #include <sstream>
 #include <d3d11.h>
-#include "D3Dcompiler.h"
+#include "D3DGlobalContext.h"
 #include <WICTextureLoader.h>
 #include "D3dClass.h"
 #include "DirectXMath.h"
 #include "Material.h"
-#include "VertexBuffers_def.h"	// Описание типов вертексных буферов
+#include "Buffers_def.h"	// Описание типов вертексных буферов
 #include "SceneObject.h"
 
 using std::ios;
@@ -39,13 +39,11 @@ public :
 
 	RCudeObjDesc ThisObjDesc;
 
-	HRESULT Init ( HWND hwnd, std::wstring filename, ID3D11Device *d3d11Device,
-	ID3D11DeviceContext * DevCon, UINT Shaders, int m_instanceCount, D3DClass * ActiveLightClass );
+	HRESULT Init ( std::wstring filename, D3DGlobalContext * D3DGC,
+		UINT Shaders, int m_instanceCount, D3DClass * ActiveLightClass );
 
 	void LightRender ();
 	void Render ();
-	HRESULT Frame ( int frames );
-
 
 	bool UpdateInstancingPos ();
 	void UpdateInstancingDrawData ();
@@ -67,8 +65,6 @@ D3DClass * g_ActiveLightClass; // лайт класс он необходим для орисовки со свотом
 ID3D11DeviceContext * d3d11DevCon ; // девайс контекст движка
 
 ID3D11Device *d3d11Device; // девайс движка
-
-ID3D11InputLayout* vertLayout; // лэйаут обьекта для передачи данных
 
 ID3D11Buffer* m_posesBuffer; // позиции инстэнсов
 

@@ -4,11 +4,11 @@
 MenuControrerClass::MenuControrerClass(){
 
 //	memset(this, 0, sizeof(MenuControrerClass));
-				g_Device = nullptr;
-		 g_DeviceContext = nullptr;
+//				g_Device = nullptr;
+//		 g_DeviceContext = nullptr;
 				 McD3DGC = nullptr;
 			  Background = nullptr;
-	// Активно ли меню - в нём работают кнопки
+	// Активно ли меню - в нём работают кнопки и его рисуем
 			IsMenuActive = false;
 	// Рисовать ли меню
 			  IsMenuDraw = false;
@@ -27,6 +27,7 @@ HRESULT MenuControrerClass::Init(D3DGlobalContext* D3DGC,
 	KF2DTextureAnimation *_Animation,
 	XMFLOAT4 BackGroundCoord,
 	ID3D11ShaderResourceView* BackgroundTexture,
+	ResourceManager * GlobalResManager,
 	TextClass* GolobalText 
 	)
 {
@@ -35,14 +36,11 @@ HRESULT MenuControrerClass::Init(D3DGlobalContext* D3DGC,
 		McD3DGC = D3DGC;
 		 G_Text = GolobalText;
 	GlobalInput = D3DGC->m_EngineInputClass;
-	
+	GlobalResourceManager = GlobalResManager;
 	g_WindowPosX = D3DGC->WindowsPosX;
 	g_WindowPosY = D3DGC->WindowsPosY;
 	MWidth = (int)BackGroundCoord.z;
 	MHeigth = (int)BackGroundCoord.w;
-//	g_hwnd = hwnd ;
-	
-	m_depthStens = D3DGC->m_depthStencilView;
 
 	g_NumOfButtons = NumOfButtons ;
 	// резервируем место под кнопки
@@ -53,14 +51,18 @@ HRESULT MenuControrerClass::Init(D3DGlobalContext* D3DGC,
 
 	g_NumOfStringsLists = NumOfStringsList;
 
-	g_Device = D3DGC->D11_device;
-	g_DeviceContext = D3DGC->D11_deviceContext ;
+//	g_Device = D3DGC->DX_device;
+//	g_DeviceContext = D3DGC->DX_deviceContext ;
 
 	Animation = _Animation;
 
-	Background = new SquareObjectClass;
-	Background->Init(McD3DGC, BackGroundCoord,
-		BackgroundTexture, 0);
+	int TempIndex = GlobalResourceManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 1, 6, BackgroundTexture );
+	Background = new FlatObjectClass;
+	Background->Init( D3DGC->ScreenWidth, D3DGC->ScreenHeight, BackGroundCoord,
+		BackgroundTexture, 
+		NO_FLIP,
+		GlobalResourceManager->Get_Flat_ObjectBuffers_ByIndex ( TempIndex )
+	);
 
 	// Устанавливаем анимацию на фон меню
 	if ( Animation )
@@ -82,8 +84,8 @@ HRESULT MenuControrerClass::Init(D3DGlobalContext* D3DGC,
 
 		TempButton = new KFButton ;
 		Buttons.emplace_back (TempButton);
-
 		KFButton_Elements* ButtonInitData = &ButtonsData[c];
+		TempButton->BuffersIndex = GlobalResourceManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 1, 6, ButtonsData[c].OsnTexture );
 
 		// Если к Button присоединен текст, то смотрим его длинну для создания текстовой строки
 		// Которая будет рисоваться поверх кнопки
@@ -114,12 +116,14 @@ HRESULT MenuControrerClass::Init(D3DGlobalContext* D3DGC,
 			D3DGC,
 			ScrCoords, 
 			BackGroundCoord,
-			*ButtonInitData
+			*ButtonInitData,
+			GlobalResourceManager->Get_Flat_ObjectBuffers_ByIndex( TempButton->BuffersIndex )
 			);
 
 		TempButton->SetIfButtonPressTexture( ButtonInitData->IsClickTexture);
 		TempButton->SetIfMouseOnButtonTexture( ButtonInitData->IsMouseOnButtonTexture );
 		TempButton->SetIfButtonNotEnalbledTexture( ButtonInitData->IsNotEnalbledTexture );
+		TempButton->SetOsnTexture ( ButtonInitData->OsnTexture );
 			
 		++c ;
 	}
@@ -134,13 +138,20 @@ HRESULT MenuControrerClass::Init(D3DGlobalContext* D3DGC,
 		ScrollBars.emplace_back ( TempScrollBar );
 
 		KFScrollBar_Elements* TempScrollBarData = &ScrollBarData[c];
-
+		int IndexMinButton = GlobalResourceManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 1, 6, TempScrollBarData->ButtonsTexture );
+		int IndexMaxButton = GlobalResourceManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 1, 6, TempScrollBarData->ButtonsTexture );
+		int IndexMinTraveler = GlobalResourceManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 1, 6, TempScrollBarData->TravellerTexture );
+		int Body = GlobalResourceManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 1, 6, TempScrollBarData->BodyTexture );
 
 			TempScrollBar->Init(
 			D3DGC,
 			ScrCoords,
 			BackGroundCoord,
-			*TempScrollBarData
+			*TempScrollBarData,
+			GlobalResourceManager->Get_Flat_ObjectBuffers_ByIndex( IndexMinButton ),
+			GlobalResourceManager->Get_Flat_ObjectBuffers_ByIndex ( IndexMaxButton ),
+			GlobalResourceManager->Get_Flat_ObjectBuffers_ByIndex ( IndexMinTraveler ),
+			GlobalResourceManager->Get_Flat_ObjectBuffers_ByIndex ( Body )
 			);
 
 			TempScrollBar->SetMouseOnButtonTexture( TempScrollBarData->MouseOnButtonTexture);
@@ -164,13 +175,15 @@ HRESULT MenuControrerClass::Init(D3DGlobalContext* D3DGC,
 		StringsList.push_back( TempStringsList );
 
 		StringsList_Elements* TempStringsListData = &StringsLists[c];
+		int TempIndex = GlobalResourceManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 1, 6, nullptr );
 
 		TempStringsList->Init(
 			D3DGC,
 			ScrCoords,
 			BackGroundCoord,
 			*TempStringsListData,
-			G_Text
+			G_Text,
+			GlobalResourceManager->Get_Flat_ObjectBuffers_ByIndex ( TempIndex )
 		);
 		
 		++c;
@@ -182,47 +195,12 @@ HRESULT MenuControrerClass::Init(D3DGlobalContext* D3DGC,
 	g_Width = MWidth ;
 	g_Heigth = MHeigth ;
 
-	Disable = D3DGC->m_alphaDisableBlendingState;
-
 	return result;
 }
 
 
-void MenuControrerClass::Draw()
+MenuControrerClass::~MenuControrerClass()
 {
-		ElementsRender();
-}
-
-
-MenuControrerClass::~MenuControrerClass(){
-	int c = 0;
-
-	RCUBE_DELETE ( Background );
-
-	// Удаляем все кнопки
-	int size = (int)ScrollBars.size();
-	for (int c = 0; c < size; ++c)
-	{
-		delete ScrollBars[c];
-	}
-	ScrollBars.clear();
-
-	// Удаляем все кнопки
-	size = (int)Buttons.size();
-	for(int c = 0 ; c < size ; ++c )
-	{
-		delete Buttons[c];
-	}
-	Buttons.clear();
-
-	// Удаляем все StringLists
-	size = ( int ) StringsList.size();
-	for ( int c = 0; c < size; ++c )
-	{
-		delete StringsList[c];
-	}
-	StringsList.clear();
-	// --------------------------------------------------
 
 }
 
@@ -263,7 +241,7 @@ HRESULT MenuControrerClass::Frame( InputClass* InputClass, int UTF16_KeyCODE, FP
 		{
 			TempButton = Buttons[c];
 				 // FRAME для каждого BUTTON
-			if ( TempButton->Frame( InputClass->DxInputStruct, ObjectActiveBUSY ) )
+			if ( TempButton->Frame( InputClass->DxInputStruct, ObjectActiveBUSY ))
 			{
 				if (LastActiveButtonIndex > -1 )
 				// Вырубаем курсор в предыдущем активном Edit, если он там включён
@@ -497,44 +475,11 @@ void MenuControrerClass::ChangeActiveEdit( int ActiveNumber )
 
 
 void MenuControrerClass::SetButtonAnimation(int NumOfVerses , int NumofColom , ID3D11ShaderResourceView * KF2DTextureFileName
-	, int IndexOfButton , int FramesSpead){
+	, int IndexOfButton , int FramesSpead)
+{
 
 //	Buttons[IndexOfButton]->SetIsMouseOnButtonAnimation(NumOfVerses , NumofColom , KF2DTextureFileName , 20) ;
 
-}
-
-void MenuControrerClass::ElementsRender(){
-
-	if ( Animation )
-		Animation->Draw();
-
-
-	// если есть задний фон 
-	if (Background != nullptr)
-	{
-		Background->Draw();
-	}
-
-	int c = 0 ;
-	while (c < g_NumOfButtons)
-	{
-		Buttons[c]->Draw();	
-		++c ;
-	}
-	 
-	c = 0;
-	while (c < g_NumOfScrollBars)
-	{
-		ScrollBars[c]->Draw() ;
-		++c ;
-	}
-	
-	c = 0;
-	while ( c < g_NumOfStringsLists )
-	{
-		StringsList[c]->Draw();
-		++c;
-	}
 }
 
 

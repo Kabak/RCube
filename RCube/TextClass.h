@@ -12,10 +12,8 @@
 ///////////////////////
 #include "D3DGlobalContext.h"
 #include "FontClass.h"
-#include "FontShaderClass.h"
 #include "DirectXMath.h"
 #include "FPSTimers.h"
-#include "ResourceManager.h"
 #include <vector>
 
 using namespace std;
@@ -182,8 +180,8 @@ private:
 	void ShowScrolling( int Number );
 
 	D3DGlobalContext* Local_D3DGC;
+//	ResourceManager * GlobalResourceManager;
 
-	FontShaderClass* m_FontShader;
 	int m_screenWidth, m_screenHeight;
 
 	char *mouseString;

@@ -218,8 +218,8 @@ bool EngineKernel::Initialize()
 	m_Graphics->ModelList->SetPositon( 1, 0, 0.0f, 5.0f, 0.0f );
 
 
-//	m_Graphics->ModelList->AddObject(L"Models/stones.kfo", BlobIndex, BunchShaderIndex, 1);//2
-//	m_Graphics->ModelList->SetPositon(2 , 0 , XMFLOAT3(0.0f , 4.0f , 0.0f ));
+	m_Graphics->ModelList->AddObject(L"Models/Dragon.kfo", BlobIndex, BunchShaderIndex, 1);//2
+	m_Graphics->ModelList->SetPositon(2 , 0 , XMFLOAT3(-100.0f , 4.0f , 20.0f ));
 	//m_Graphics->ModelList->SetRotation(2, 0, XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f));
 	// ********************** ÄÎÁÀÂËÅÍÈÅ ÎÄÍÎÃÎ ÎÁÜÅÊÒÀ ÎÁÜÅÊÒÀ  ********************************************
 	//========================
@@ -282,11 +282,11 @@ bool EngineKernel::Initialize()
 		Shutdown();
 		return false;
 	}
+
+	m_Graphics->MyManager->InitSounds ( L"Sounds/sounds.kaf", m_Sound );
+
 	KF3DObjectData * Data = new KF3DObjectData[26];
 	int c = 0;
-
-//	m_Graphics->MyManager->InitSounds(L"Sounds/sounds.kaf", m_Sound);
-
 	/*while (c < 26){
 	for (int j = 0; j < 24; ++j)
 	{

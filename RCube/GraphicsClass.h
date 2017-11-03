@@ -21,12 +21,13 @@
 #include "FPSTimers.h"
 #include "D3DClass.h"
 #include "CameraClass.h"
+#include "ResourceManager.h"
 #include "TextClass.h"
 #include "dinput.h"
 #include "FrustumClass.h"
 #include "RenderTextureClass.h"
+#include "Light_def.h"
 // ++++++++++++++++++++++++  PARTICLE SYSTEM  ++++++++++
-//#include "ParticleSystemClass.h"
 #include "FireParticleSystem.h"
 #include "SnowFallParticles.h"
 #include "TorchFireParticles.h"
@@ -41,12 +42,12 @@
 #include "MenuControler.h"
 #include "CubeMappingClass.h"
 #include "KFModel.h"
-#include "ResourceManager.h"
 #include "KFModelList.h"
-#include "KFClusterMap.h"
-#include "FontCustomFromFileClass.h"
+//#include "KFClusterMap.h"
 #include "KF2DTextureAnimation.h"
 #include "KFShadowWork.h"
+
+#include "RenderClass.h"
 // -------------------------мои классы-------------------
 #include <thread>
 #include <process.h>
@@ -127,7 +128,9 @@ public:
 	KFModelList * ModelList;
 	KFShadowWork * ShadowWork;
 
-//	SquareObjectClass *Picture;
+	RenderClass * RCubeRender;
+
+//	FlatObjectClass *Picture;
 private:
 	HRESULT hr;
 
@@ -156,7 +159,7 @@ public:
 //				LightClass* m_Light;
 
 // +++++++++++++++   Свой курсор мыши   ++++++++++++++
-		 SquareObjectClass* m_Bitmap;
+		 FlatObjectClass* m_Bitmap;
 	  
 		MenuControrerClass* MainMenu ;
 	   MenuControrerClass * Hud;
@@ -165,7 +168,6 @@ public:
 				 Terrain* KFTerrain;
 // +++++++++++++++++++  Текстовые классы для вывода текста на экран  +++++++++++++++++++++++
 				 TextClass* m_Text;
-   FontCustomFromFileClass* m_TextFromFile;
 // ----------------------------------------------------------------------------------------
 // +++++++++++++++++++     Анимация     ++++++++++++++++++++++++++++++		
 	  KF2DTextureAnimation* AnimTexture;
@@ -190,7 +192,7 @@ public:
 	KFModel * Sphere;
 	KFModel * Scene;
 
-	ID3D11Buffer* GlobalShadersConstantsBuffer;
-	KFClusterMap * ClusterMap;
+
+//	KFClusterMap * ClusterMap;
 };
 #endif

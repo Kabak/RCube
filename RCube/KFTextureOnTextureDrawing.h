@@ -2,11 +2,11 @@
 #include "stdafx.h"
 
 #include <Windows.h>
-#include "SquareObjectClass.h"
+#include "FlatObjectClass.h"
 #include <D2D1.h>
 #include <dwrite.h>
 #include "D3Dcompiler.h"
-#include "SquareObjectClass.h"
+#include "FlatObjectClass.h"
 #include "D3DGlobalContext.h"
 
 #ifndef _KFTEXTUREONTEXTURE_H_
@@ -18,13 +18,13 @@ private:
 	ID3D11RenderTargetView* m_renderTargetView,* g_ActiveRenderTargetView;
 	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
 	ID3D11ShaderResourceView* m_shaderResourceView;
-	SquareObjectClass * osnBackGroun;
-	SquareObjectClass * Obj;
+	FlatObjectClass * osnBackGroun;
+	FlatObjectClass * Obj;
 	ID3D11DeviceContext * g_deviceContext;
 	void DrawTextres();
 	bool IsSomeStingreset;
 	ID3D11DepthStencilView * m_ActiveDepthStensil;
-	std::vector<SquareObjectClass*> ObjsArray;
+	std::vector<FlatObjectClass*> ObjsArray;
 	HWND g_hwnd;
 	int g_ScreenWidth, g_ScreenHeigth;
 	int g_ScreenX, g_ScreenY;

@@ -14,15 +14,17 @@ ResourceManager::~ResourceManager()
 
 void ResourceManager::ShutDown()
 {
+
+// Textures
 	int c = 0;
-	while ( c < TexturesNum )
+	size_t i = TexturesArr.size ();
+	while ( c < i )
 	{
-		RCUBE_RELEASE( ShaderResourceArr[c] );
-		RCUBE_RELEASE( ResourceArr[c] );
+		RCUBE_DELETE ( TexturesArr[c] );
 		++c;
 	}
-	ShaderResourceArr.clear();
-	ResourceArr.clear();
+	TexturesArr.clear ();
+
 
 	c = 0;
 
@@ -116,14 +118,26 @@ void ResourceManager::ShutDown()
 		++c;
 	}
 	ComeputeShaderNames.clear();
-	
+
+	c = 0;
+	while (c < FlatObjectBuffers.size ())
+	{
+		RCUBE_DELETE ( FlatObjectBuffers[c] );
+		++c;
+	}
+	FlatObjectBuffers.clear ();
+
+
+	UnUsedBuffersIndex.clear ();	// Удаляем свободные индексы буферов
+	UnusedTextures.clear ();		// Удаляем свободные индексы текстур
+	Menus.clear ();					// Удаляем меню
 }
 
 
 HRESULT ResourceManager::InitTextures(WCHAR * kafFilename){
 
 	unsigned char * Buff = nullptr , * temp;
-	decodeFile(&Buff, kafFilename  , active_hwnd);
+	decodeFile(&Buff, kafFilename  , 0);
 	int DescStart;
 	unsigned char IsKaf[4];
 //	unsigned char IntBuff[4];
@@ -137,7 +151,7 @@ HRESULT ResourceManager::InitTextures(WCHAR * kafFilename){
 	temp += 4;
 
 	if (IsKaf[0] != ' ' && IsKaf[1] != 'K' && IsKaf[2] != 'A' && IsKaf[3] != 'F'){
-		MessageBox(active_hwnd, L"Данный файл не является kaf файлом.", Error, MB_OK);
+		MessageBox(0, L"Данный файл не является kaf файлом.", Error, MB_OK);
 		return E_FAIL;
 	}
 
@@ -148,8 +162,8 @@ HRESULT ResourceManager::InitTextures(WCHAR * kafFilename){
 	memcpy((unsigned char*)&TexturesNum, temp, sizeof(int));
 	temp += sizeof(int);
 
-	ID3D11ShaderResourceView * ShaderRes;
-	ID3D11Resource * LoadedTextureRes;
+	ID3D11ShaderResourceView * ShaderRes = nullptr;
+	ID3D11Resource * LoadedTextureRes = nullptr;
 
 	while (c < TexturesNum)
 	{
@@ -172,11 +186,11 @@ HRESULT ResourceManager::InitTextures(WCHAR * kafFilename){
 			|| (ObjFormat[0] == 'p' && ObjFormat[1] == 'n' && ObjFormat[2] == 'g'))
 		{
 
-//			hr = DirectX::CreateWICTextureFromMemory(active_D3DGC->D11_device, active_D3DGC->D11_deviceContext, &buffer[0], (size_t)readFileSize, &LoadedTextureRes
+//			hr = DirectX::CreateWICTextureFromMemory(Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, &buffer[0], (size_t)readFileSize, &LoadedTextureRes
 //			 , &ShaderRes, NULL);
 // https://github.com/Microsoft/DirectXTK/wiki/WICTextureLoader
 			hr = DirectX::CreateWICTextureFromMemoryEx( 
-			active_D3DGC->D11_device , 
+			Local_D3DGC->DX_device , 
 			&buffer[0],
 			( size_t ) readFileSize,
 			0,
@@ -192,19 +206,25 @@ HRESULT ResourceManager::InitTextures(WCHAR * kafFilename){
 		else if ((ObjFormat[0] == 'd' && ObjFormat[1] == 'd' && ObjFormat[2] == 's'))
 		{
 
-			hr = DirectX::CreateDDSTextureFromMemory(active_D3DGC->D11_device, active_D3DGC->D11_deviceContext, &buffer[0], (size_t)readFileSize, &LoadedTextureRes
+			hr = DirectX::CreateDDSTextureFromMemory(Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, &buffer[0], (size_t)readFileSize, &LoadedTextureRes
 				, &ShaderRes, NULL);
 		}
 
 		if ( FAILED( hr ) )
 		{
-			MessageBox( active_hwnd, L"Файл записаный в KAF поврежден.", Error, MB_OK );
+			MessageBox( 0, L"Файл записаный в KAF поврежден.", Error, MB_OK );
 			return E_FAIL;
 		}
 		else
 		{
-			ShaderResourceArr.push_back( ShaderRes );
-			ResourceArr.push_back( LoadedTextureRes );
+			Texture* NewTexture = new Texture;
+			NewTexture->Resource = LoadedTextureRes;
+			NewTexture->SRV = ShaderRes;
+			
+			TexturesArr.push_back ( NewTexture );
+			int Index = (int)(TexturesArr.size () - 1);
+			TexturesArr[Index]->Index = Index;	// Сохраняем собственный индекс в своём теле
+
 		}
 
 		delete [] buffer;
@@ -220,7 +240,7 @@ HRESULT ResourceManager::InitTextures(WCHAR * kafFilename){
 HRESULT ResourceManager::InitShaders( WCHAR * kafFilename) {
 
 	unsigned char * Buff = nullptr, *temp;
-	decodeFile(&Buff, kafFilename, active_hwnd);
+	decodeFile(&Buff, kafFilename, 0);
 	unsigned char IsKaf[4];
 	unsigned char ObjFormat[3];
 	int DescStart;	// адрес имён файлов
@@ -234,7 +254,7 @@ HRESULT ResourceManager::InitShaders( WCHAR * kafFilename) {
 	temp += 4;
 
 	if (IsKaf[0] != ' ' && IsKaf[1] != 'K' && IsKaf[2] != 'A' && IsKaf[3] != 'F') {
-		MessageBox(active_hwnd, L"Данный файл не является kaf файлом.", L"ResourceManager Error", MB_OK);
+		MessageBox(0, L"Данный файл не является kaf файлом.", L"ResourceManager Error", MB_OK);
 		return E_FAIL;
 	}
 
@@ -265,7 +285,7 @@ HRESULT ResourceManager::InitShaders( WCHAR * kafFilename) {
 		hr = D3DCreateBlob(readFileSize, &Blob);
 		if ( FAILED( hr ) )
 		{
-			MessageBox(active_hwnd, L"Неизвестная ошибка при созданиие блоба.", Error, MB_OK);
+			MessageBox(0, L"Неизвестная ошибка при созданиие блоба.", Error, MB_OK);
 			return hr;
 		}
 
@@ -278,10 +298,10 @@ HRESULT ResourceManager::InitShaders( WCHAR * kafFilename) {
 		if (ObjFormat[0] == 'v' && ObjFormat[1] == 's' && ObjFormat[2] == ' ') 
 		{
 			// Create the vertex shader from the buffer.
-			hr = active_D3DGC->D11_device->CreateVertexShader(Blob->GetBufferPointer(), Blob->GetBufferSize(), NULL, &m_vertexShader);
+			hr = Local_D3DGC->DX_device->CreateVertexShader(Blob->GetBufferPointer(), Blob->GetBufferSize(), NULL, &m_vertexShader);
 			if (FAILED( hr ))
 			{
-				MessageBox(active_hwnd, L"Ошибка в создании VS шейдера.", Error, MB_OK);
+				MessageBox(0, L"Ошибка в создании VS шейдера.", Error, MB_OK);
 				return hr;
 			}
 
@@ -294,16 +314,16 @@ HRESULT ResourceManager::InitShaders( WCHAR * kafFilename) {
 			BunchArr.push_back(temp); // с каждого нового вертекного шейдера добавляю новую связку шейдеров
 
 			BunchArr[BunchArr.size() - 1].VS = m_vertexShader;
+			BunchArr[BunchArr.size () - 1].VSBlobIndex = c; // Сохраняем индекс VS Shader для получения его Blob по запросу
 
-			VertexShadreBlobIndexes.push_back((int)BlobsArr.size() - 1);
 		}
 		if (ObjFormat[0] == 'p' && ObjFormat[1] == 's' && ObjFormat[2] == ' ') 
 		{
 			// Create the vertex shader from the buffer.
-			hr = active_D3DGC->D11_device->CreatePixelShader(Blob->GetBufferPointer(), Blob->GetBufferSize(), NULL, &m_pixelShader);
+			hr = Local_D3DGC->DX_device->CreatePixelShader(Blob->GetBufferPointer(), Blob->GetBufferSize(), NULL, &m_pixelShader);
 			if (FAILED( hr ))
 			{
-				MessageBox(active_hwnd, L"Ошибка в создании PS шейдера.", Error, MB_OK);
+				MessageBox(0, L"Ошибка в создании PS шейдера.", Error, MB_OK);
 				return hr;
 			}
 
@@ -315,10 +335,10 @@ HRESULT ResourceManager::InitShaders( WCHAR * kafFilename) {
 		if (ObjFormat[0] == 'g' && ObjFormat[1] == 's' && ObjFormat[2] == ' ') 
 		{
 			// Create the vertex shader from the buffer.
-			hr = active_D3DGC->D11_device->CreateGeometryShader(Blob->GetBufferPointer(), Blob->GetBufferSize(), NULL, &m_geomShader);
+			hr = Local_D3DGC->DX_device->CreateGeometryShader(Blob->GetBufferPointer(), Blob->GetBufferSize(), NULL, &m_geomShader);
 			if (FAILED( hr ))
 			{
-				MessageBox(active_hwnd, L"Ошибка в создании GS шейдера.", Error, MB_OK);
+				MessageBox(0, L"Ошибка в создании GS шейдера.", Error, MB_OK);
 				return hr;
 			}
 
@@ -331,10 +351,10 @@ HRESULT ResourceManager::InitShaders( WCHAR * kafFilename) {
 		if (ObjFormat[0] == 'h' && ObjFormat[1] == 's' && ObjFormat[2] == ' ') 
 		{
 			// Create the vertex shader from the buffer.
-			hr = active_D3DGC->D11_device->CreateHullShader(Blob->GetBufferPointer(), Blob->GetBufferSize(), NULL, &m_hullShader);
+			hr = Local_D3DGC->DX_device->CreateHullShader(Blob->GetBufferPointer(), Blob->GetBufferSize(), NULL, &m_hullShader);
 			if (FAILED( hr ))
 			{
-				MessageBox(active_hwnd, L"Ошибка в создании HS шейдера.", Error, MB_OK);
+				MessageBox(0, L"Ошибка в создании HS шейдера.", Error, MB_OK);
 				return hr;
 			}
 
@@ -347,10 +367,10 @@ HRESULT ResourceManager::InitShaders( WCHAR * kafFilename) {
 		if (ObjFormat[0] == 'd' && ObjFormat[1] == 's' && ObjFormat[2] == ' ')
 		{
 			// Create the vertex shader from the buffer.
-			hr = active_D3DGC->D11_device->CreateDomainShader ( Blob->GetBufferPointer (), Blob->GetBufferSize (), NULL, &m_domainShader );
+			hr = Local_D3DGC->DX_device->CreateDomainShader ( Blob->GetBufferPointer (), Blob->GetBufferSize (), NULL, &m_domainShader );
 			if (FAILED ( hr ))
 			{
-				MessageBox ( active_hwnd, L"Ошибка в создании DS шейдера.", Error, MB_OK );
+				MessageBox ( 0, L"Ошибка в создании DS шейдера.", Error, MB_OK );
 				return hr;
 			}
 
@@ -363,10 +383,10 @@ HRESULT ResourceManager::InitShaders( WCHAR * kafFilename) {
 		if (ObjFormat[0] == 'c' && ObjFormat[1] == 's' && ObjFormat[2] == ' ') 
 		{
 			// Create the vertex shader from the buffer.
-			hr = active_D3DGC->D11_device->CreateComputeShader(Blob->GetBufferPointer(), Blob->GetBufferSize(), NULL, &m_ComputeShader );
+			hr = Local_D3DGC->DX_device->CreateComputeShader(Blob->GetBufferPointer(), Blob->GetBufferSize(), NULL, &m_ComputeShader );
 			if (FAILED( hr ))
 			{
-				MessageBox(active_hwnd, L"Ошибка при создании CS шейдера.", Error, MB_OK);
+				MessageBox(0, L"Ошибка при создании CS шейдера.", Error, MB_OK);
 				return hr;
 			}
 
@@ -445,10 +465,7 @@ void ResourceManager::ApplyLayoutsToShaderBunches ()
 	size_t j = BunchArr.size ();
 	for (size_t i = 0; i < j; ++i)
 	{
-		if (ShaderLayoutBind[i] > -1)
-			BunchArr[i].Layout = Layouts[ShaderLayoutBind[i]];
-		else
-			BunchArr[i].Layout = nullptr; // если нет Layout
+			BunchArr[i].Layout = ShaderLayoutBind[i];
 	}
 }
 
@@ -461,11 +478,11 @@ bool ResourceManager::CreateLayouts ()
 
 	ID3D10Blob* TempBlob = GetShaderBlobByName ( L"ClusteredSM" );
 
-	hr = active_D3DGC->D11_device->CreateInputLayout ( Model3D_Layout, numElements, TempBlob->GetBufferPointer (),
+	hr = Local_D3DGC->DX_device->CreateInputLayout ( Model3D_Layout, numElements, TempBlob->GetBufferPointer (),
 		TempBlob->GetBufferSize (), &TempLayout );
 	if (FAILED ( hr ))
 	{
-		MessageBox ( active_D3DGC->hwnd, L"CreateLayouts N0 ошибка в создании лайаута.", L"Error", MB_OK );
+		MessageBox ( Local_D3DGC->hwnd, L"Model3D_Layout ошибка в создании лайаута.", L"Error", MB_OK );
 		return 0;
 	}
 
@@ -476,11 +493,44 @@ bool ResourceManager::CreateLayouts ()
 	TempBlob = GetShaderBlobByName ( L"Font" );
 	numElements = ARRAYSIZE ( FlatObject_Layout );
 
-	hr = active_D3DGC->D11_device->CreateInputLayout ( Model3D_Layout, numElements, TempBlob->GetBufferPointer (),
+	hr = Local_D3DGC->DX_device->CreateInputLayout ( FlatObject_Layout, numElements, TempBlob->GetBufferPointer (),
 		TempBlob->GetBufferSize (), &TempLayout );
 	if (FAILED ( hr ))
 	{
-		MessageBox ( active_D3DGC->hwnd, L"CreateLayouts N1 ошибка в создании лайаута.", L"Error", MB_OK );
+		MessageBox ( Local_D3DGC->hwnd, L"FlatObject_Layout ошибка в создании лайаута.", L"Error", MB_OK );
+		return 0;
+	}
+
+	// Сохраняем Layout
+	Layouts.push_back ( TempLayout );
+
+
+
+	numElements = ARRAYSIZE ( FireParticles_Layout );
+
+	TempBlob = GetShaderBlobByName ( L"FireParticle3D" );
+
+	hr = Local_D3DGC->DX_device->CreateInputLayout ( FireParticles_Layout, numElements, TempBlob->GetBufferPointer (),
+		TempBlob->GetBufferSize (), &TempLayout );
+	if (FAILED ( hr ))
+	{
+		MessageBox ( Local_D3DGC->hwnd, L"FireParticles_Layout ошибка в создании лайаута.", L"Error", MB_OK );
+		return 0;
+	}
+
+	// Сохраняем Layout
+	Layouts.push_back ( TempLayout );
+
+
+	numElements = ARRAYSIZE ( TorchFire_Layout );
+
+	TempBlob = GetShaderBlobByName ( L"TorchFire3D" );
+
+	hr = Local_D3DGC->DX_device->CreateInputLayout ( TorchFire_Layout, numElements, TempBlob->GetBufferPointer (),
+		TempBlob->GetBufferSize (), &TempLayout );
+	if (FAILED ( hr ))
+	{
+		MessageBox ( Local_D3DGC->hwnd, L"TorchFire_Layout ошибка в создании лайаута.", L"Error", MB_OK );
 		return 0;
 	}
 
@@ -524,48 +574,65 @@ int ResourceManager::GetShaderIndexByName(wchar_t* Name)
 }
 
 
+ID3D11InputLayout* ResourceManager::GetLayoutByIndex ( int LayoutNumber )
+{
+	if (LayoutNumber > (int)Layouts.size ())
+		return NULL;
+
+	return Layouts[LayoutNumber];
+}
+
+
 ID3D10Blob* ResourceManager::GetShaderBlobByName ( wchar_t* Name )
 {
 	int Bunchsize = (int)BunchArr.size ();
 	for (int i = 0; i < Bunchsize; ++i)
 	{
 		if (!wcscmp ( Name, BunchArr[i].BunchName ))
-			return BlobsArr[i*2]; // Возвращаем индекс VS шейдера
+			return BlobsArr[BunchArr[i].VSBlobIndex]; // Возвращаем индекс VS шейдера
 	}
 	return nullptr;
 }
 
 
-void ResourceManager::SetActiveShadersInProgramm(int ShadersIndex) {
+void ResourceManager::SetActiveShadersInProgramm(int ShadersIndex) 
+{
+	if (BunchArr[ShadersIndex].PS != NULL)
+		Local_D3DGC->DX_deviceContext->PSSetShader ( BunchArr[ShadersIndex].PS, NULL, 0 );
+	else
+		 Local_D3DGC->DX_deviceContext->PSSetShader( NULL, NULL, NULL );
 
-	if(BunchArr[ShadersIndex].PS != nullptr)
-		active_D3DGC->D11_deviceContext->PSSetShader(BunchArr[ShadersIndex].PS, NULL, 0);
+	if (BunchArr[ShadersIndex].VS != NULL)
+		Local_D3DGC->DX_deviceContext->VSSetShader ( BunchArr[ShadersIndex].VS, NULL, 0 );
+	else
+		Local_D3DGC->DX_deviceContext->VSSetShader( NULL, NULL, NULL );
 
-	if(BunchArr[ShadersIndex].VS != nullptr)
-		active_D3DGC->D11_deviceContext->VSSetShader(BunchArr[ShadersIndex].VS, NULL, 0);
+	if (BunchArr[ShadersIndex].GS != NULL)
+		Local_D3DGC->DX_deviceContext->GSSetShader ( BunchArr[ShadersIndex].GS, NULL, 0 );
+	else
+		Local_D3DGC->DX_deviceContext->GSSetShader ( NULL, NULL, NULL );
 
-	if (BunchArr[ShadersIndex].GS != nullptr)
-		active_D3DGC->D11_deviceContext->GSSetShader(BunchArr[ShadersIndex].GS, NULL, 0);
+	if (BunchArr[ShadersIndex].DS != NULL)
+		Local_D3DGC->DX_deviceContext->DSSetShader ( BunchArr[ShadersIndex].DS, NULL, 0 );
+	else
+		Local_D3DGC->DX_deviceContext->DSSetShader ( NULL, NULL, NULL );
 
-	if (BunchArr[ShadersIndex].DS != nullptr)
-		active_D3DGC->D11_deviceContext->DSSetShader(BunchArr[ShadersIndex].DS, NULL, 0 );
+	if (BunchArr[ShadersIndex].HS != NULL)
+		Local_D3DGC->DX_deviceContext->HSSetShader ( BunchArr[ShadersIndex].HS, NULL, 0 );
+	else
+		Local_D3DGC->DX_deviceContext->HSSetShader ( NULL, NULL, NULL );
 
-	if (BunchArr[ShadersIndex].HS != nullptr)
-		active_D3DGC->D11_deviceContext->HSSetShader(BunchArr[ShadersIndex].HS, NULL, 0);
-
-	if (BunchArr[ShadersIndex].Layout != nullptr)
-		active_D3DGC->D11_deviceContext->IASetInputLayout ( BunchArr[ShadersIndex].Layout );
-/*
-	if (BunchArr[ShadersIndex].CS != nullptr)
-		active_D3DGC->D11_deviceContext->CSSetShader(BunchArr[ShadersIndex].CS, NULL, 0);
-*/
+	if (BunchArr[ShadersIndex].Layout > -1)
+		Local_D3DGC->DX_deviceContext->IASetInputLayout ( Layouts[(BunchArr[ShadersIndex].Layout)] );
+	else
+		Local_D3DGC->DX_deviceContext->IASetInputLayout ( NULL );
 }
 
 int ResourceManager::InitOneShader( WCHAR * CSOFileName) {
 	std::basic_ifstream<unsigned char> Readfile(CSOFileName, std::ios::in | std::ios::binary);
 	if (!Readfile) {
 
-		MessageBox(active_hwnd, L"ResourceManager. не могу найти шейдер.", Error, MB_OK);
+		MessageBox(0, L"ResourceManager. не могу найти шейдер.", Error, MB_OK);
 		return hr;
 	}
 
@@ -577,11 +644,9 @@ int ResourceManager::InitOneShader( WCHAR * CSOFileName) {
 
 	ID3D10Blob * Blob;
 	
-//	ShadersForRenderDecs TimeDesc;
-
 	hr = D3DCreateBlob(readNowFileSize, &Blob);
 	if ( FAILED( hr ) ) {
-		MessageBox(active_hwnd, L"неизвестная ошибка присозданиие блоба.ResourceManager", Error, MB_OK);
+		MessageBox(0, L"неизвестная ошибка присозданиие блоба.ResourceManager", Error, MB_OK);
 		return hr;
 	}
 
@@ -599,10 +664,10 @@ int ResourceManager::InitOneShader( WCHAR * CSOFileName) {
 
 		BunchArr.push_back(temp); // с каждого нового пиксельного шейдера добавляю новую связку шейдеров
 
-		hr = active_D3DGC->D11_device->CreateVertexShader(Blob->GetBufferPointer(), Blob->GetBufferSize(), NULL, &m_vertexShader);
+		hr = Local_D3DGC->DX_device->CreateVertexShader(Blob->GetBufferPointer(), Blob->GetBufferSize(), NULL, &m_vertexShader);
 		if ( FAILED( hr ) )
 		{
-			MessageBox(active_hwnd, L"ResourceManager. ошибка в создании вертексного шейдера.", Error, MB_OK);
+			MessageBox(0, L"ResourceManager. ошибка в создании вертексного шейдера.", Error, MB_OK);
 			return hr;
 		}
 
@@ -618,10 +683,10 @@ int ResourceManager::InitOneShader( WCHAR * CSOFileName) {
 
 		ID3D11PixelShader * m_pixelShader;
 
-		hr = active_D3DGC->D11_device->CreatePixelShader(Blob->GetBufferPointer(), Blob->GetBufferSize(), NULL, &m_pixelShader);
+		hr = Local_D3DGC->DX_device->CreatePixelShader(Blob->GetBufferPointer(), Blob->GetBufferSize(), NULL, &m_pixelShader);
 		if ( FAILED( hr ) )
 		{
-			MessageBox(active_hwnd, L"ResourceManager. ошибка в создании пиксельного шейдера.", Error, MB_OK);
+			MessageBox(0, L"ResourceManager. ошибка в создании пиксельного шейдера.", Error, MB_OK);
 			return hr;
 		}
 
@@ -637,10 +702,10 @@ int ResourceManager::InitOneShader( WCHAR * CSOFileName) {
 
 		ID3D11GeometryShader * m_geomShader;
 
-		hr = active_D3DGC->D11_device->CreateGeometryShader(Blob->GetBufferPointer(), Blob->GetBufferSize(), NULL, &m_geomShader);
+		hr = Local_D3DGC->DX_device->CreateGeometryShader(Blob->GetBufferPointer(), Blob->GetBufferSize(), NULL, &m_geomShader);
 		if ( FAILED( hr ) )
 		{
-			MessageBox(active_hwnd, L"ResourceManager. ошибка в создании геометрического шнйдера шейдера.", Error, MB_OK);
+			MessageBox(0, L"ResourceManager. ошибка в создании геометрического шнйдера шейдера.", Error, MB_OK);
 			return hr;
 		}
 
@@ -656,10 +721,10 @@ int ResourceManager::InitOneShader( WCHAR * CSOFileName) {
 
 		ID3D11HullShader * m_hullShader;
 
-		hr = active_D3DGC->D11_device->CreateHullShader(Blob->GetBufferPointer(), Blob->GetBufferSize(), NULL, &m_hullShader);
+		hr = Local_D3DGC->DX_device->CreateHullShader(Blob->GetBufferPointer(), Blob->GetBufferSize(), NULL, &m_hullShader);
 		if ( FAILED( hr ) )
 		{
-			MessageBox(active_hwnd, L"ResourceManager. ошибка в создании халл шейдера.", Error, MB_OK);
+			MessageBox(0, L"ResourceManager. ошибка в создании халл шейдера.", Error, MB_OK);
 			return hr;
 		}
 
@@ -675,10 +740,10 @@ int ResourceManager::InitOneShader( WCHAR * CSOFileName) {
 
 		ID3D11DomainShader * m_domainShader;
 
-		hr = active_D3DGC->D11_device->CreateDomainShader ( Blob->GetBufferPointer (), Blob->GetBufferSize (), NULL, &m_domainShader );
+		hr = Local_D3DGC->DX_device->CreateDomainShader ( Blob->GetBufferPointer (), Blob->GetBufferSize (), NULL, &m_domainShader );
 		if (FAILED ( hr ))
 		{
-			MessageBox ( active_hwnd, L"ResourceManager. ошибка в создании домаин шейдера.", Error, MB_OK );
+			MessageBox ( 0, L"ResourceManager. ошибка в создании домаин шейдера.", Error, MB_OK );
 			return hr;
 		}
 
@@ -694,10 +759,10 @@ int ResourceManager::InitOneShader( WCHAR * CSOFileName) {
 	{
 		ID3D11ComputeShader * m_ComShader;
 
-		hr = active_D3DGC->D11_device->CreateComputeShader(Blob->GetBufferPointer(), Blob->GetBufferSize(), NULL, &m_ComShader);
+		hr = Local_D3DGC->DX_device->CreateComputeShader(Blob->GetBufferPointer(), Blob->GetBufferSize(), NULL, &m_ComShader);
 		if ( FAILED( hr ) )
 		{
-			MessageBox(active_hwnd, L"ResourceManager. ошибка в создании расчетного шейдера шейдера.", Error, MB_OK);
+			MessageBox(0, L"ResourceManager. ошибка в создании расчетного шейдера шейдера.", Error, MB_OK);
 			return hr;
 		}
 
@@ -717,7 +782,7 @@ int ResourceManager::InitOneTexture( WCHAR * TextureFilename) {
 
 	int Result = 0, length;
 
-	ID3D11ShaderResourceView * ShaderResture;
+	ID3D11ShaderResourceView * ShaderResource;
 	ID3D11Resource * LoadedTextureResource;
 
 	length = (UINT)wcslen(TextureFilename);
@@ -728,34 +793,39 @@ int ResourceManager::InitOneTexture( WCHAR * TextureFilename) {
 	{
 
 
-		hr = DirectX::CreateWICTextureFromFile(active_D3DGC->D11_device, TextureFilename, &LoadedTextureResource, &ShaderResture, NULL);
+		hr = DirectX::CreateWICTextureFromFile(Local_D3DGC->DX_device, TextureFilename, &LoadedTextureResource, &ShaderResource, NULL);
 		if ( FAILED( hr ) ) {
-			MessageBox(active_hwnd, L"файл поврежден.ResourceManager", Error, MB_OK);
+			MessageBox(0, L"файл поврежден.ResourceManager", Error, MB_OK);
 			return hr;
 		}
 
-		ShaderResourceArr.push_back(ShaderResture);
-		ResourceArr.push_back(LoadedTextureResource);
+		Texture* NewTexture = new Texture;
+		NewTexture->Resource = LoadedTextureResource;
+		NewTexture->SRV = ShaderResource;
 
-		Result = (int)(ShaderResourceArr.size() - 1);
-		TexturesNum++;
+		TexturesArr.push_back ( NewTexture );
+		Result = (int)(TexturesArr.size () - 1);
+		TexturesArr[Result]->Index = Result;	// Сохраняем собственный индекс в своём теле
 
 	}
     if (TextureFilename[length - 3] == 'd' && TextureFilename[length - 2] == 'd' && TextureFilename[length - 1] == 's') 
 	{
 
 
-		hr = DirectX::CreateDDSTextureFromFile(active_D3DGC->D11_device, TextureFilename, &LoadedTextureResource, &ShaderResture, NULL);
+		hr = DirectX::CreateDDSTextureFromFile(Local_D3DGC->DX_device, TextureFilename, &LoadedTextureResource, &ShaderResource, NULL);
 		if ( FAILED( hr ) ) {
-			MessageBox(active_hwnd, L"файл поврежден.ResourceManager", Error, MB_OK);
+			MessageBox(0, L"файл поврежден.ResourceManager", Error, MB_OK);
 			return hr;
 		}
+		
+		Texture* NewTexture = new Texture;
+		NewTexture->Resource = LoadedTextureResource;
+		NewTexture->SRV = ShaderResource;
 
-		ShaderResourceArr.push_back(ShaderResture);
-		ResourceArr.push_back(LoadedTextureResource);
+		TexturesArr.push_back ( NewTexture );
+		Result = (int)(TexturesArr.size () - 1);
+		TexturesArr[Result]->Index = Result;	// Сохраняем собственный индекс в своём теле
 
-		Result = (int)(ShaderResourceArr.size() - 1);
-		TexturesNum++;
 	}
 
 	return Result;
@@ -806,7 +876,7 @@ void ResourceManager::CharKey(unsigned char * Check) {
 HRESULT ResourceManager::InitSounds( WCHAR * kafFilename, SoundClass * ActiveSound) {
 
 	unsigned char * Buff = nullptr, *temp, *DestPointer;
-	decodeFile(&Buff, kafFilename, active_hwnd);
+	decodeFile(&Buff, kafFilename, 0);
 	unsigned char IsKaf[4];
 	int DescStart, objNum;
 	unsigned char ObjFormat[3];
@@ -818,7 +888,7 @@ HRESULT ResourceManager::InitSounds( WCHAR * kafFilename, SoundClass * ActiveSou
 
 	if (IsKaf[0] != ' ' && IsKaf[1] != 'K' && IsKaf[2] != 'A' && IsKaf[3] != 'F') 
 	{
-		MessageBox(active_hwnd, L"данныйй файл не является kaf файлом.ResourceManager", Error, MB_OK);
+		MessageBox(0, L"данныйй файл не является kaf файлом.ResourceManager", Error, MB_OK);
 		return E_FAIL;
 	}
 
@@ -944,31 +1014,31 @@ HRESULT ResourceManager::InitSounds( WCHAR * kafFilename, SoundClass * ActiveSou
 	return S_OK;
 }
 
-void  ResourceManager::Init(D3DGlobalContext * g_D3DGC, HWND g_hwnd) 
+void  ResourceManager::Init(D3DGlobalContext * g_D3DGC) 
 {
 
-	active_D3DGC = g_D3DGC;
-	active_hwnd = g_hwnd;
+	Local_D3DGC	= g_D3DGC;
+//	active_hwnd = Local_D3DGC->hwnd;
 }
 
 void ResourceManager::SetActiveComeputeShader(int ShaderIndex) 
 {
 
-	active_D3DGC->D11_deviceContext->CSSetShader(ComeputeShaderArr[ShaderIndex] , NULL, 0);
+	Local_D3DGC->DX_deviceContext->CSSetShader(ComeputeShaderArr[ShaderIndex] , NULL, 0);
 
 }
 
 void ResourceManager::SetNullAllShaders() {
 
-	active_D3DGC->D11_deviceContext->PSSetShader(NULL, NULL, 0);
+	Local_D3DGC->DX_deviceContext->PSSetShader(NULL, NULL, 0);
 
-	active_D3DGC->D11_deviceContext->VSSetShader(NULL, NULL, 0);
+	Local_D3DGC->DX_deviceContext->VSSetShader(NULL, NULL, 0);
 
-	active_D3DGC->D11_deviceContext->GSSetShader(NULL, NULL, 0);
+	Local_D3DGC->DX_deviceContext->GSSetShader(NULL, NULL, 0);
 
-	active_D3DGC->D11_deviceContext->HSSetShader(NULL, NULL, 0);
+	Local_D3DGC->DX_deviceContext->HSSetShader(NULL, NULL, 0);
     
-	active_D3DGC->D11_deviceContext->CSSetShader(NULL, NULL, 0);
+	Local_D3DGC->DX_deviceContext->CSSetShader(NULL, NULL, 0);
 }
 
 ID3D11ComputeShader* ResourceManager::GetComputeShader(int ShaderIndex)
@@ -989,3 +1059,244 @@ ID3D11VertexShader*  ResourceManager::GetVertexShader ( int ShaderIndex )
 	return VertShaderArr[ShaderIndex];
 
 }
+
+
+// Создание буферов для объектов на сцене
+int ResourceManager::Create_Flat_Obj_Buffers (bool CPUAccess, UINT InstanceAmount, UINT IndexAmount = 0, DXTextureSRV* Texture = 0 )
+{
+//	VertexBuffer <Vertex_Model3D>* Model3DVB = nullptr;
+
+	VertexBuffer <Vertex_FlatObject>* FlatObjectVB = nullptr;
+
+	VertexBuffer <PositionType>* InstanceVB = nullptr;
+
+//	VertexBuffer <Colour_Particles_Instance>* Instances_Colour_Particles = nullptr;
+
+	IndexBuffer < Index_Type >* TempIB = nullptr;
+
+	Flat_Obj_Buffers *FlatObjBuffers = nullptr;
+
+//	void * Pointer;
+
+	// https://habrahabr.ru/company/xakep/blog/257891/
+	// http://www.quizful.net/post/Inheritance-in-C++
+	// https://habrahabr.ru/post/106294/  приведение типов
+	// http://www.cplusplus.com/reference/vector/vector/ VECTORS
+	int ReturnIndex;
+
+	if (!UnUsedBuffersIndex.empty ())
+	{
+		FlatObjBuffers = new Flat_Obj_Buffers ();
+		ReturnIndex = UnUsedBuffersIndex.back();
+		UnUsedBuffersIndex.pop_back ();
+		FlatObjectBuffers[ReturnIndex] = FlatObjBuffers;
+	}
+	else
+	{
+		ReturnIndex = (int)FlatObjectBuffers.size ();
+		FlatObjBuffers = new Flat_Obj_Buffers ();
+		FlatObjectBuffers.push_back ( FlatObjBuffers );
+	}
+
+		FlatObjectVB = new VertexBuffer <Vertex_FlatObject> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, CPUAccess, 4 );			// Создаём буфер вертексов FlatObject
+		FlatObjBuffers->FlatObjectVB = FlatObjectVB;
+
+
+	if (IndexAmount > 0)
+	{
+		TempIB = new IndexBuffer < Index_Type > ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, CPUAccess, IndexAmount );
+		FlatObjBuffers->IndexBs = TempIB;
+	}
+
+	FlatObjBuffers->RenderTexture = Texture;
+
+	FlatObjBuffers->ThisBufferIndex = ReturnIndex; // Сохраняем собственный индекс в своём теле
+
+	return ReturnIndex;
+
+}
+
+
+bool ResourceManager::Delete_Flat_ObjectBuffers ( int Index )
+{
+	int i = (int)FlatObjectBuffers.size ();
+	if (Index < i)
+	{
+		UnUsedBuffersIndex.push_back ( Index );
+		RCUBE_DELETE ( FlatObjectBuffers[Index] );
+		return true;
+	}
+
+	return false;
+}
+
+
+Flat_Obj_Buffers* ResourceManager::Get_Flat_ObjectBuffers_ByIndex ( int Index )
+{
+	int i = (int)FlatObjectBuffers.size ();
+
+	if (Index < i)
+		return FlatObjectBuffers[Index];
+	else
+		return nullptr;
+}
+
+
+bool ResourceManager::DeleteTexture ( int Index )
+{
+	int i = (int)TexturesArr.size ();
+	if (Index < i)
+	{
+		UnusedTextures.push_back ( Index );
+		RCUBE_DELETE ( TexturesArr[Index] );
+		return true;
+	}
+	else
+		return false;
+}
+
+
+bool ResourceManager::AddMenu ( Menu* NewMenu )
+{
+	Menus.push_back ( NewMenu );
+	return true;
+}
+
+
+int ResourceManager::CreateTexture ( TextureData _Data )
+{
+	int ReturnIndex;
+
+	ID3D11Texture2D* TempTexture2D = nullptr;
+	ID3D11ShaderResourceView* TempSRV = nullptr;
+	ID3D11DepthStencilView* TempDSV = nullptr;
+	ID3D11RenderTargetView*	TempRTV = nullptr;
+	ID3D11UnorderedAccessView* TempUAV = nullptr;
+
+	Texture* NewTexture = new Texture;
+
+	if (_Data.Type == _2D)
+	{
+
+		D3D11_TEXTURE2D_DESC sharedTexDesc;
+		ZeroMemory ( &sharedTexDesc, sizeof ( sharedTexDesc ) );
+
+		sharedTexDesc.Width = _Data.Width;
+		sharedTexDesc.Height = _Data.Height;
+		sharedTexDesc.Format = (DXGI_FORMAT)_Data.Format;// DXGI_FORMAT_R8G8B8A8_UNORM;
+		sharedTexDesc.MipLevels = _Data.MipMapLevels;
+		sharedTexDesc.ArraySize = _Data.ArraySize;
+		sharedTexDesc.SampleDesc.Count = _Data.SampleDesc.Count;
+		sharedTexDesc.SampleDesc.Quality = _Data.SampleDesc.Quality;
+		sharedTexDesc.Usage = (D3D11_USAGE)_Data.Usage;// D3D11_USAGE_DEFAULT; //D3D11_USAGE_IMMUTABLE;
+		
+		_Data.ShaderResource	? sharedTexDesc.BindFlags | D3D11_BIND_SHADER_RESOURCE : sharedTexDesc.BindFlags;
+		_Data.DepthStensil		? sharedTexDesc.BindFlags | D3D11_BIND_DEPTH_STENCIL   : sharedTexDesc.BindFlags;
+		_Data.RenderTarget		? sharedTexDesc.BindFlags | D3D11_BIND_RENDER_TARGET   : sharedTexDesc.BindFlags;
+		_Data.Unordered_Access	? sharedTexDesc.BindFlags | D3D11_BIND_UNORDERED_ACCESS: sharedTexDesc.BindFlags;
+
+		_Data.Shared_KeyMutex	? sharedTexDesc.MiscFlags | D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX	: sharedTexDesc.MiscFlags;
+		_Data.TextureCube		? sharedTexDesc.MiscFlags | D3D11_RESOURCE_MISC_TEXTURECUBE			: sharedTexDesc.MiscFlags;
+		_Data.GenerateMipMaps	? sharedTexDesc.MiscFlags | D3D11_RESOURCE_MISC_GENERATE_MIPS		: sharedTexDesc.MiscFlags;
+
+		hr = Local_D3DGC->DX_device->CreateTexture2D ( &sharedTexDesc, NULL, &TempTexture2D );
+		if (FAILED ( hr ))
+		{
+			MessageBox ( Local_D3DGC->hwnd, L"Could not create 2DTexture.", Error, MB_OK );
+			goto ERROR_END;
+		}
+
+		NewTexture->Texture2D = TempTexture2D;  // 2Dtexture created
+		NewTexture->Resource = dynamic_cast<ID3D11Resource*>(TempTexture2D); // Resource created
+
+	}
+
+	if (_Data.ShaderResource)
+	{
+		hr = Local_D3DGC->DX_device->CreateShaderResourceView ( NewTexture->Resource, NULL, &TempSRV );
+		if (FAILED ( hr ))
+		{
+			MessageBox ( Local_D3DGC->hwnd, L"Could not create ShaderResourceView", Error, MB_OK );
+			goto ERROR_END;
+		}
+
+		NewTexture->SRV = TempSRV; // Shader Resource View created
+	}
+
+	if (_Data.RenderTarget)
+	{
+		hr = Local_D3DGC->DX_device->CreateRenderTargetView ( NewTexture->Resource, NULL, &TempRTV );
+		if (FAILED ( hr ))
+		{
+			MessageBox ( Local_D3DGC->hwnd, L"Could not create RenderTargetView", Error, MB_OK );
+			goto ERROR_END;
+		}
+
+		NewTexture->RTV = TempRTV; // Shader Resource View created
+	}
+
+	if (_Data.DepthStensil)
+	{
+		hr = Local_D3DGC->DX_device->CreateDepthStencilView ( NewTexture->Resource, NULL, &TempDSV );
+		if (FAILED ( hr ))
+		{
+			MessageBox ( Local_D3DGC->hwnd, L"Could not create DepthStencilView", Error, MB_OK );
+			goto ERROR_END;
+		}
+
+		NewTexture->DSV = TempDSV; // Shader Resource View created
+	}
+
+	if (_Data.Unordered_Access )
+	{
+		hr = Local_D3DGC->DX_device->CreateUnorderedAccessView ( NewTexture->Resource, NULL, &TempUAV );
+		if (FAILED ( hr ))
+		{
+			MessageBox ( Local_D3DGC->hwnd, L"Could not create UnorderedAccessView", Error, MB_OK );
+			goto ERROR_END;
+		}
+
+		NewTexture->UAV = TempUAV; // Shader Resource View created
+	}
+
+// Сохраняем данные созданной текстуры в её описании
+	NewTexture->DepthStensil	= _Data.DepthStensil;
+	NewTexture->Format			= _Data.Format;
+	NewTexture->Height			= _Data.Height;
+	NewTexture->Width			= _Data.Width;
+	NewTexture->RenderTarget	= _Data.RenderTarget;
+	NewTexture->Shared_KeyMutex = _Data.Shared_KeyMutex;
+	NewTexture->TextureCube		= _Data.TextureCube;
+	NewTexture->Type			= _Data.Type;
+	NewTexture->Unordered_Access= _Data.Unordered_Access;
+	NewTexture->Usage			= _Data.Usage;
+
+// Сохраняем созданные ресурсы текстуры в ощем списке текстур и вызвращяем её индекс
+	if (!UnusedTextures.empty ())
+	{
+		ReturnIndex = UnusedTextures.back ();
+		UnusedTextures.pop_back ();
+		TexturesArr[ReturnIndex] = NewTexture;
+	}
+	else
+	{
+		ReturnIndex = (int)UnusedTextures.size ();
+		TexturesArr.push_back ( NewTexture );
+	}
+
+	NewTexture->Index = ReturnIndex;
+
+return ReturnIndex;
+
+ERROR_END:
+	RCUBE_DELETE  ( NewTexture );
+	RCUBE_RELEASE ( TempTexture2D );
+	RCUBE_RELEASE ( TempSRV );
+	RCUBE_RELEASE ( TempRTV );
+	RCUBE_RELEASE ( TempDSV );
+	RCUBE_RELEASE ( TempUAV );
+
+return -1;
+}
+
+

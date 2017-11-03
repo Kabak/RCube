@@ -25,9 +25,9 @@ D3DClass::D3DClass()
 	
 	D3DGC->hwnd							= nullptr;
 	D3DGC->Adapter						= nullptr;
-	D3DGC->D11_device					= nullptr;
-	D3DGC->D11_deviceContext			= nullptr;
-	D3DGC->D11_swapChain				= nullptr;
+	D3DGC->DX_device					= nullptr;
+	D3DGC->DX_deviceContext			= nullptr;
+	D3DGC->DX_swapChain				= nullptr;
 	D3DGC->D10_device					= nullptr;
 	D3DGC->BackBuffer2DT				= nullptr;
 	D3DGC->BackBuffer_SRV				= nullptr;
@@ -46,6 +46,7 @@ D3DClass::D3DClass()
 	D3DGC->m_EngineInputClass			= nullptr;
 	D3DGC->RasterStateCullNone			= nullptr;
 	m_depthDisabledStencilState			= nullptr;
+	D3DGC->Global_VS_ConstantsBuffer = nullptr;
 
 #if defined( DEBUG ) || defined( _DEBUG )
 	D3DGC->DebugDevice = nullptr;
@@ -53,6 +54,7 @@ D3DClass::D3DClass()
 
 // FXAA
 	D3DGC->g_pcbFXAA					= nullptr;
+	PerFrameConstants_Debug				= nullptr;
 	D3DGC->BackBuffer_ProxyTexture		= nullptr;
 	D3DGC->BackBuffer_ProxyTextureSRV	= nullptr;
 	D3DGC->BackBuffer_ProxyTextureRTV	= nullptr;
@@ -144,6 +146,7 @@ bool D3DClass::Initialize(HWND hwnd, int screenWidth, int screenHeight, bool vsy
 	D3DGC->hwnd							= hwnd;
 	D3DGC->ScreenWidth					= screenWidth;
 	D3DGC->ScreenHeight					= screenHeight;
+	D3DGC->ScreenDimentions				= { float ( screenWidth ), float ( screenHeight ) };
 	D3DGC->ScreenRatio = float(D3DGC->ScreenWidth / D3DGC->ScreenHeight);
 	D3DGC->FarPlane						= screenDepth;
 	D3DGC->NearPlane					= screenNear;
@@ -376,7 +379,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 #endif
 
 	// Try to Init D3DDivece for DX11 usage
-	result = D3D11CreateDevice(D3DGC->Adapter, D3D_DRIVER_TYPE_UNKNOWN, NULL, nDeviceFlags, featureLevels, 1, D3D11_SDK_VERSION, &D3DGC->D11_device, &featureLevelSuccess, &D3DGC->D11_deviceContext);
+	result = D3D11CreateDevice(D3DGC->Adapter, D3D_DRIVER_TYPE_UNKNOWN, NULL, nDeviceFlags, featureLevels, 1, D3D11_SDK_VERSION, &D3DGC->DX_device, &featureLevelSuccess, &D3DGC->DX_deviceContext);
 	if (FAILED(result))
 	{
 		MessageBox(hwnd, L"D3D11CreateDevice Failed.", 0, 0);
@@ -395,12 +398,12 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 #if defined( DEBUG ) || defined( _DEBUG )
 
 	const char c_szName[] = "MyDeViCe KAF";
-	D3DGC->D11_device->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof(c_szName) - 1, c_szName);
+	D3DGC->DX_device->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof(c_szName) - 1, c_szName);
 
 	const char c_szName1[] = "FIRST CONTEXT KAF";
-	D3DGC->D11_deviceContext->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof(c_szName1) - 1, c_szName1);
+	D3DGC->DX_deviceContext->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof(c_szName1) - 1, c_szName1);
 
-	result = D3DGC->D11_device->QueryInterface(__uuidof(ID3D11Debug), reinterpret_cast<void**>(&D3DGC->DebugDevice));
+	result = D3DGC->DX_device->QueryInterface(__uuidof(ID3D11Debug), reinterpret_cast<void**>(&D3DGC->DebugDevice));
 	if (FAILED(result))
 	{
 		MessageBox(hwnd, L"Could not initialize DebugDevice.", 0, MB_OK);
@@ -412,7 +415,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 #endif
 	UINT MSAAQualityNumber;
 	// Check MSAA Quality Levels supported
-	result = D3DGC->D11_device->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, D3DGC->MSAAQualityCount, &MSAAQualityNumber);
+	result = D3DGC->DX_device->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, D3DGC->MSAAQualityCount, &MSAAQualityNumber);
 	if (FAILED(result))
 	{
 		MessageBox(hwnd, L"Direct3D CheckMultisampleQualityLevels.", 0, 0);
@@ -451,7 +454,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	//    result = D3D11CreateDeviceAndSwapChain(m_adapter1, D3D_DRIVER_TYPE_UNKNOWN, NULL,0, &featureLevel, 1,
 	//                           D3D11_SDK_VERSION, &swapChainDesc, &m_swapChain, &m_device, NULL, &m_deviceContext);
 
-	result = Factory1->CreateSwapChain(D3DGC->D11_device, &swapChainDesc, &D3DGC->D11_swapChain);
+	result = Factory1->CreateSwapChain(D3DGC->DX_device, &swapChainDesc, &D3DGC->DX_swapChain);
 	if (FAILED(result))
 	{
 		MessageBox(hwnd, L"Direct3D CreateSwapChain.", 0, 0);
@@ -474,7 +477,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	// to our swap chain.
 
 	// Get the pointer to the back buffer.
-	result = D3DGC->D11_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&D3DGC->BackBuffer2DT );
+	result = D3DGC->DX_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&D3DGC->BackBuffer2DT );
 	if (FAILED(result))
 	{
 		MessageBox(hwnd, L"Direct3D m_swapChain->GetBuffer.", 0, 0);
@@ -483,7 +486,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	}
 
 	// Create the render target view with the back buffer pointer.
-	result = D3DGC->D11_device->CreateRenderTargetView(D3DGC->BackBuffer2DT, NULL, &D3DGC->BackBuffer_RTV );
+	result = D3DGC->DX_device->CreateRenderTargetView(D3DGC->BackBuffer2DT, NULL, &D3DGC->BackBuffer_RTV );
 	if (FAILED(result))
 	{
 		MessageBox(hwnd, L"Direct3D CreateRenderTargetView.", 0, 0);
@@ -491,7 +494,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 		return false;
 	}
 
-	result = D3DGC->D11_device->CreateShaderResourceView(D3DGC->BackBuffer2DT, NULL, &D3DGC->BackBuffer_SRV );
+	result = D3DGC->DX_device->CreateShaderResourceView(D3DGC->BackBuffer2DT, NULL, &D3DGC->BackBuffer_SRV );
 	if ( FAILED( result ) )
 	{
 		MessageBox( hwnd, L"Error CreateShaderResourceView BackBuffer_SRV.", 0, 0 );
@@ -499,7 +502,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 		return false;
 	}
 /*
-	result = D3DGC->D11_device->CreateUnorderedAccessView( D3DGC->BackBuffer2DT, NULL, &D3DGC->BackBuffer_UAV);
+	result = D3DGC->DX_device->CreateUnorderedAccessView( D3DGC->BackBuffer2DT, NULL, &D3DGC->BackBuffer_UAV);
 	if ( FAILED( result ) )
 	{
 		MessageBox( hwnd, L"Error CreateUnorderedAccessView BackBuffer_UAV.", 0, 0 );
@@ -530,7 +533,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	// The reason for this is that once your polygons are sorted and then rasterized they just end up being colored pixels in this 2D buffer. Then this 2D buffer is drawn to the screen.
 
 	// Create the texture for the depth buffer using the filled out description.
-	result = D3DGC->D11_device->CreateTexture2D(&depthBufferDesc, NULL, &D3DGC->m_depthStencilBuffer);
+	result = D3DGC->DX_device->CreateTexture2D(&depthBufferDesc, NULL, &D3DGC->m_depthStencilBuffer);
 	if (FAILED(result))
 	{
 		MessageBox(hwnd, L"Direct3D CreateTexture2D.", 0, 0);
@@ -567,7 +570,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	// With the description filled out we can now create a depth stencil state.
 
 	// Create the depth stencil state.
-	result = D3DGC->D11_device->CreateDepthStencilState(&depthStencilDesc, &D3DGC->m_depthStencilState);
+	result = D3DGC->DX_device->CreateDepthStencilState(&depthStencilDesc, &D3DGC->m_depthStencilState);
 	if (FAILED(result))
 	{
 		MessageBox(hwnd, L"Direct3D CreateDepthStencilState.", 0, 0);
@@ -578,7 +581,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	// With the created depth stencil state we can now set it so that it takes effect. Notice we use the device context to set it.
 
 	// Set the depth stencil state.
-	D3DGC->D11_deviceContext->OMSetDepthStencilState(D3DGC->m_depthStencilState, 1);
+	D3DGC->DX_deviceContext->OMSetDepthStencilState(D3DGC->m_depthStencilState, 1);
 
 	// The next thing we need to create is the description of the view of the depth stencil buffer. We do this so that Direct3D knows to use the depth buffer as a depth stencil texture.
 	// After filling out the description we then call the function CreateDepthStencilView to create it.
@@ -596,7 +599,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	// Create the depth stencil view.
 	// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	// 2-й параметр  поставил NULL вместо &depthStencilViewDesc и заработало сглаживание
-	result = D3DGC->D11_device->CreateDepthStencilView(D3DGC->m_depthStencilBuffer, &DSD, &D3DGC->m_depthStencilView);
+	result = D3DGC->DX_device->CreateDepthStencilView(D3DGC->m_depthStencilBuffer, &DSD, &D3DGC->m_depthStencilView);
 	if (FAILED(result))
 	{
 		MessageBox(hwnd, L"Direct3D CreateDepthStencilView.", 0, 0);
@@ -609,7 +612,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	// and display our graphics on the user's screen.
 
 	// Можно удалить следующую строку
-	D3DGC->D11_deviceContext->OMSetRenderTargets(1, &D3DGC->BackBuffer_RTV, D3DGC->m_depthStencilView);
+	D3DGC->DX_deviceContext->OMSetRenderTargets(1, &D3DGC->BackBuffer_RTV, D3DGC->m_depthStencilView);
 
 	// Now that the render targets are setup we can continue on to some extra functions that will give us more control over our scenes for future tutorials. First thing is we'll create is a
 	// rasterizer state. This will give us control over how polygons are rendered. We can do things like make our scenes render in wireframe mode or have DirectX draw both the front and back faces
@@ -628,7 +631,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	rasterDesc.SlopeScaledDepthBias = 0.0f;
 
 	// Create the rasterizer state from the description we just filled out.
-	result = D3DGC->D11_device->CreateRasterizerState(&rasterDesc, &D3DGC->DefaultRasterizerState );
+	result = D3DGC->DX_device->CreateRasterizerState(&rasterDesc, &D3DGC->DefaultRasterizerState );
 	if (FAILED(result))
 	{
 		MessageBox(hwnd, L"Direct3D CreateRasterizerState.", 0, 0);
@@ -638,7 +641,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	rasterDesc.FrontCounterClockwise = true;
 	rasterDesc.CullMode = D3D11_CULL_NONE;
 	rasterDesc.DepthClipEnable = false;
-	result = D3DGC->D11_device->CreateRasterizerState(&rasterDesc, &D3DGC->RasterStateCullNone );
+	result = D3DGC->DX_device->CreateRasterizerState(&rasterDesc, &D3DGC->RasterStateCullNone );
 	if (FAILED(result))
 	{
 		MessageBox(hwnd, L"Direct3D CreateRasterizerState CULLNONE.", 0, 0);
@@ -647,7 +650,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	}
 
 	// Now set the rasterizer state.
-	D3DGC->D11_deviceContext->RSSetState(D3DGC->DefaultRasterizerState );
+	D3DGC->DX_deviceContext->RSSetState(D3DGC->DefaultRasterizerState );
 
 	// The viewport also needs to be setup so that Direct3D can map clip space coordinates to the render target space. Set this to be the entire size of the window.
 
@@ -660,7 +663,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	viewport.TopLeftY = 0.0f;
 
 	// Create the viewport.
-	D3DGC->D11_deviceContext->RSSetViewports(1, &viewport);
+	D3DGC->DX_deviceContext->RSSetViewports(1, &viewport);
 
 	// Now we will create the projection matrix. The projection matrix is used to translate the 3D scene into the 2D viewport space that we previously created. We will need to keep a copy of
 	// this matrix so that we can pass it to our shaders that will be used to render our scenes.
@@ -712,7 +715,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	// Now create the new depth stencil.
 
 	// Create the state using the device.
-	result = D3DGC->D11_device->CreateDepthStencilState(&depthDisabledStencilDesc, &m_depthDisabledStencilState);
+	result = D3DGC->DX_device->CreateDepthStencilState(&depthDisabledStencilDesc, &m_depthDisabledStencilState);
 	if (FAILED(result))
 	{
 		MessageBox(hwnd, L"Direct3D CreateDepthStencilState.", 0, 0);
@@ -741,7 +744,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	// We then create an alpha enabled blending state using the description we just setup.
 
 	// Create the blend state using the description.
-	result = D3DGC->D11_device->CreateBlendState(&blendStateDescription, &D3DGC->m_alphaEnableBlendingState);
+	result = D3DGC->DX_device->CreateBlendState(&blendStateDescription, &D3DGC->m_alphaEnableBlendingState);
 	if (FAILED(result))
 	{
 		MessageBox(hwnd, L"Direct3D CreateBlendState.", 0, 0);
@@ -751,7 +754,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 
 	blendStateDescription.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
 
-	result = D3DGC->D11_device->CreateBlendState(&blendStateDescription, &D3DGC->m_alphaParticleBlendingState);
+	result = D3DGC->DX_device->CreateBlendState(&blendStateDescription, &D3DGC->m_alphaParticleBlendingState);
 	if (FAILED(result))
 	{
 		MessageBox(hwnd, L"Direct3D Create m_alphaParticleBlendingState.", 0, 0);
@@ -767,7 +770,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	blendStateDescription.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
 	blendStateDescription.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 	blendStateDescription.RenderTarget[0].RenderTargetWriteMask = 0x0f; // ВОТ ЭТО РАБОТАЕТ   НО НЕМНОГО  НЕ ТАК КАК НУЖНО НАМ  МОЖЕТ ПОТОМУ ЧТО В ТЕКСТУРАХ БЛЕНДИНГ УКАЗАН НЕ ТАК КАК НУЖНО НАМ
-	result = D3DGC->D11_device->CreateBlendState( &blendStateDescription, &D3DGC->m_alpha_TOnT_BlendingState);
+	result = D3DGC->DX_device->CreateBlendState( &blendStateDescription, &D3DGC->m_alpha_TOnT_BlendingState);
 	if ( FAILED( result ) )
 	{
 		MessageBox( hwnd, L"Direct3D Create m_alpha_TOnT_BlendingState.", 0, 0 );
@@ -783,7 +786,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	// We then create an alpha disabled blending state using the modified blend state description. We now have two blending states we can switch between to turn on and off alpha blending.
 
 	// Create the blend state using the description.
-	result = D3DGC->D11_device->CreateBlendState(&blendStateDescription, &D3DGC->m_alphaDisableBlendingState);
+	result = D3DGC->DX_device->CreateBlendState(&blendStateDescription, &D3DGC->m_alphaDisableBlendingState);
 	if (FAILED(result))
 	{
 		MessageBox(hwnd, L"Direct3D CreateBlendState for Particles.", 0, 0);
@@ -792,7 +795,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	}
 // Для кластеринга
 	CD3D11_BLEND_DESC desc(D3D11_DEFAULT);
-	result = D3DGC->D11_device->CreateBlendState(&desc, &D3DGC->mGeometryBlendState);
+	result = D3DGC->DX_device->CreateBlendState(&desc, &D3DGC->mGeometryBlendState);
 	if (FAILED(result))
 	{
 		MessageBox(hwnd, L"Direct3D CreateBlendState for Clustering Shading.", 0, 0);
@@ -811,28 +814,16 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	}
 
 	// +++++++++++++++++++++++++++     FXAA     ++++++++++++++++++++++++++++++++++
-	D3D11_BUFFER_DESC cbDesc;
-	ZeroMemory(&cbDesc, sizeof(cbDesc));
-	cbDesc.Usage = D3D11_USAGE_DYNAMIC;
-	cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	cbDesc.ByteWidth = sizeof(CB_FXAA);
-	result = D3DGC->D11_device->CreateBuffer(&cbDesc, NULL, &D3DGC->g_pcbFXAA);
-	if (FAILED(result))
-	{
-		MessageBox(hwnd, L"Could not initialize g_pcbFXAA.", 0, MB_OK);
-		Shutdown();
-		return false;
-	}
-
-	D3D11_MAPPED_SUBRESOURCE MappedResource;
-
-	hr = D3DGC->D11_deviceContext->Map( D3DGC->g_pcbFXAA, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource );
-	CB_FXAA* pFXAA = ( CB_FXAA* ) MappedResource.pData;
-
-	pFXAA->m_fxaa = XMVECTOR { 1.0f / D3DGC->ScreenWidth, 1.0f / D3DGC->ScreenHeight, 0.0f, 0.0f };
-	D3DGC->D11_deviceContext->Unmap( D3DGC->g_pcbFXAA, 0 );
-
+	D3DGC->g_pcbFXAA = new ConstantBuffer<CB_FXAA> ( D3DGC->DX_device, D3DGC->DX_deviceContext, D3D11_USAGE_DEFAULT );
+//  D3D11_USAGE_DYNAMIC & MAP
+//	CB_FXAA *pFXAA = D3DGC->g_pcbFXAA->MapDiscard ( D3DGC->DX_deviceContext );
+//	pFXAA->m_fxaa = XMVECTOR{ 1.0f / D3DGC->ScreenWidth, 1.0f / D3DGC->ScreenHeight, 0.0f, 0.0f };
+//	D3DGC->g_pcbFXAA->Unmap ( D3DGC->DX_deviceContext );
+//	D3D11_USAGE_DYNAMIC & MAP
+//  D3D11_USAGE_DEFAULT & UpdateSubresource
+	CB_FXAA pFXAA = { 1.0f / D3DGC->ScreenWidth, 1.0f / D3DGC->ScreenHeight, 0.0f, 0.0f };
+	D3DGC->g_pcbFXAA->Update ( &pFXAA );
+//  UpdateSubresource
 
 	DXGI_SAMPLE_DESC SDesc;
 	ZeroMemory(&SDesc, sizeof(DXGI_SAMPLE_DESC));
@@ -847,7 +838,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	pBackBufferSurfaceDesc.Height = swapChainDesc.BufferDesc.Height;
 	pBackBufferSurfaceDesc.SampleDesc = SDesc;
 
-	if ( !FxaaIntegrateResource(D3DGC->D11_device, &pBackBufferSurfaceDesc ) )
+	if ( !FxaaIntegrateResource(D3DGC->DX_device, &pBackBufferSurfaceDesc ) )
 	{
 		MessageBox( hwnd, L"Could not initialize FXAA.", 0, MB_OK );
 		Shutdown();
@@ -866,13 +857,14 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	// Create sampler state
 	{
 		// All Models Sampler
+		// FXAA
 		CD3D11_SAMPLER_DESC desc ( D3D11_DEFAULT );
 		desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 		desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
 		desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
 		desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
 		desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-		result = D3DGC->D11_device->CreateSamplerState ( &desc, &D3DGC->Wrap_Model_Texture );
+		result = D3DGC->DX_device->CreateSamplerState ( &desc, &D3DGC->Wrap_Model_Texture );
 		if (FAILED ( result ))
 		{
 			MessageBox ( hwnd, L"Could not initialize Wrap_Model_Texture sampler.", 0, MB_OK );
@@ -887,7 +879,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 		desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
 		desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
 		desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-		result = D3DGC->D11_device->CreateSamplerState(&desc, &D3DGC->CLight_ShadowMap_Sampler );
+		result = D3DGC->DX_device->CreateSamplerState(&desc, &D3DGC->CLight_ShadowMap_Sampler );
 		if (FAILED ( result ))
 		{
 			MessageBox ( hwnd, L"Could not initialize CLight_ShadowMap_Sampler sampler.", 0, MB_OK );
@@ -896,14 +888,13 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	}
 	{
 		// PCF Filter Sampler
-		// FXAA
 		CD3D11_SAMPLER_DESC desc(D3D11_DEFAULT);
 		desc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
 		desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
 		desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
 		desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
 		desc.ComparisonFunc = D3D11_COMPARISON_LESS;
-		result = D3DGC->D11_device->CreateSamplerState(&desc, &D3DGC->CLight_SM_PCF_Sampler );
+		result = D3DGC->DX_device->CreateSamplerState(&desc, &D3DGC->CLight_SM_PCF_Sampler );
 		if (FAILED ( result ))
 		{
 			MessageBox ( hwnd, L"Could not Initialize CLight_SM_PCF_Sampler.", 0, MB_OK );
@@ -918,7 +909,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 		desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
 		desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
 		desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-		result = D3DGC->D11_device->CreateSamplerState ( &desc, &D3DGC->FlatObject_Sampler );
+		result = D3DGC->DX_device->CreateSamplerState ( &desc, &D3DGC->FlatObject_Sampler );
 		if (FAILED ( result ))
 		{
 			MessageBox ( hwnd, L"Could not initialize FlatObject_Sampler sampler.", 0, MB_OK );
@@ -942,6 +933,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 
 	// Создаём константный буфер для базоого света Diffuse,Ambient,Specular
 	// cb_LightBuffer
+
 	Light = new PerFrameConstants;
 	ZeroMemory ( Light, sizeof ( PerFrameConstants ) );
 
@@ -961,20 +953,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	Light->mUI.ShadowCLAMP = 1.0f;
 	Light->mUI.Shadow_Divider = 1024.0f;
 	// Create constant buffers
-	{
-		CD3D11_BUFFER_DESC desc (
-			sizeof ( PerFrameConstants ),
-			D3D11_BIND_CONSTANT_BUFFER,
-			D3D11_USAGE_DEFAULT
-		);
-
-		hr = D3DGC->D11_device->CreateBuffer ( &desc, 0, &mPerFrameConstants );
-		if (FAILED ( hr ))
-		{
-			MessageBox ( hwnd, L"Could not initialize Clustering mPerFrameConstants.", L"Error", MB_OK );
-			return false;
-		}
-	}
+	PerFrameConstants_Debug = new ConstantBuffer<PerFrameConstants> ( D3DGC->DX_device, D3DGC->DX_deviceContext, D3D11_USAGE_DEFAULT );
 
 	// Set up macros
 	D3D10_SHADER_MACRO defines[] = {
@@ -986,7 +965,12 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 
 	SetAllLightDefault ();
 
-	mLightGridBuffer = new StructuredBuffer<LightGridEntry> ( D3DGC->D11_device, mLightGridBufferSize, D3D11_BIND_SHADER_RESOURCE, true );
+	mLightGridBuffer = new StructuredBuffer<LightGridEntry> ( D3DGC->DX_device, mLightGridBufferSize, D3D11_BIND_SHADER_RESOURCE, true );
+
+	// + Создаём константный буфер
+	D3DGC->Global_VS_ConstantsBuffer = new ConstantBuffer<ConstantBufferData> ( D3DGC->DX_device, D3DGC->DX_deviceContext, D3D11_USAGE_DEFAULT );
+	// - Создаём константный буфер
+
 /*
 // + Shadow Works
 	DrawShadowsObjects = Objects;
@@ -1003,7 +987,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	cbbd.CPUAccessFlags = 0;
 	cbbd.MiscFlags = 0;
 
-	HRESULT hr = Local_D3DGC->D11_device->CreateBuffer ( &cbbd, NULL, &cbShadowBuffer );
+	HRESULT hr = Local_D3DGC->DX_device->CreateBuffer ( &cbbd, NULL, &cbShadowBuffer );
 
 	// ДЛЯ ТЕНИ
 	// Для отладки вынес в отдельную функцию
@@ -1016,7 +1000,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 		desc.StencilEnable = false;
 		desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;//D3D11_COMPARISON_GREATER;//D3D11_COMPARISON_LESS;
 		desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-		Local_D3DGC->D11_device->CreateDepthStencilState ( &desc, &LightRender_DS );
+		Local_D3DGC->DX_device->CreateDepthStencilState ( &desc, &LightRender_DS );
 	}
 
 	ZeroMemory ( &DSD2, sizeof ( DSD2 ) );
@@ -1056,7 +1040,7 @@ void D3DClass::Shutdown()
 	DeleteAllLights ();
 	RCUBE_DELETE ( Light );
 	RCUBE_DELETE ( mLightGridBuffer );
-	RCUBE_RELEASE ( mPerFrameConstants );
+	RCUBE_DELETE ( PerFrameConstants_Debug );
 
 	for(int i=0, j = (int)ActualDisplayModes.size();  i < j; i++)
 	{
@@ -1098,7 +1082,7 @@ void D3DClass::Shutdown()
 	RCUBE_RELEASE( D3DGC->D2DFactory );
 
 // FXAA	
-	RCUBE_RELEASE( D3DGC->g_pcbFXAA );
+	RCUBE_DELETE ( D3DGC->g_pcbFXAA );
 	RCUBE_RELEASE( D3DGC->BackBuffer_ProxyTexture );
 	RCUBE_RELEASE( D3DGC->BackBuffer_ProxyTextureSRV );
 	RCUBE_RELEASE( D3DGC->BackBuffer_ProxyTextureRTV );
@@ -1129,15 +1113,16 @@ void D3DClass::Shutdown()
 	RCUBE_RELEASE( D3DGC->BackBuffer_SRV );
 	RCUBE_RELEASE( D3DGC->BackBuffer_UAV );
 	RCUBE_RELEASE( D3DGC->ScreenShootTexture );
+	RCUBE_DELETE ( D3DGC->Global_VS_ConstantsBuffer );
 //	RCUBE_RELEASE( D3DGC->SRV_ScreenShootTexture );
 
-	if (D3DGC->D11_swapChain){
-		D3DGC->D11_swapChain->SetFullscreenState(false, NULL);
-		RCUBE_RELEASE(D3DGC->D11_swapChain);
+	if (D3DGC->DX_swapChain){
+		D3DGC->DX_swapChain->SetFullscreenState(false, NULL);
+		RCUBE_RELEASE(D3DGC->DX_swapChain);
 	}
 
 	RCUBE_RELEASE( D3DGC->D10_device );
-	RCUBE_RELEASE(D3DGC->D11_deviceContext);
+	RCUBE_RELEASE(D3DGC->DX_deviceContext);
 	AdaptersRelease();
 
 #if defined( DEBUG ) || defined( _DEBUG )
@@ -1145,7 +1130,7 @@ void D3DClass::Shutdown()
 	D3DGC->DebugDevice->Release();
 #endif
 
-	RCUBE_RELEASE(D3DGC->D11_device);
+	RCUBE_RELEASE(D3DGC->DX_device);
 	//    if (D3DGC->Adapter)                        D3DGC->Adapter->Release();
 
 	RCUBE_ARR_DELETE ( m_videoCardDescription );
@@ -1168,10 +1153,10 @@ void D3DClass::BeginScene(XMFLOAT4& Colour)
 	color[3] = Colour.w;
 
 	// Clear the back buffer.
-	D3DGC->D11_deviceContext->ClearRenderTargetView(D3DGC->BackBuffer_RTV, color);
+	D3DGC->DX_deviceContext->ClearRenderTargetView(D3DGC->BackBuffer_RTV, color);
 
 	// Clear the depth buffer.
-	D3DGC->D11_deviceContext->ClearDepthStencilView(D3DGC->m_depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+	D3DGC->DX_deviceContext->ClearDepthStencilView(D3DGC->m_depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 	return;
 }
@@ -1183,12 +1168,12 @@ void D3DClass::EndScene()
 	if (m_vsync_enabled)
 	{
 		// Lock to screen refresh rate.
-		D3DGC->D11_swapChain->Present(1, 0);
+		D3DGC->DX_swapChain->Present(1, 0);
 	}
 	else
 	{
 		// Present as fast as possible.
-		D3DGC->D11_swapChain->Present(0, 0);
+		D3DGC->DX_swapChain->Present(0, 0);
 	}
 
 	return;
@@ -1223,14 +1208,14 @@ void D3DClass::GetOrthoMatrix(XMMATRIX &orthoMatrix)
 
 void D3DClass::TurnZBufferOn()
 {
-	D3DGC->D11_deviceContext->OMSetDepthStencilState(D3DGC->m_depthStencilState, 1);
+	D3DGC->DX_deviceContext->OMSetDepthStencilState(D3DGC->m_depthStencilState, 1);
 	return;
 }
 
 
 void D3DClass::TurnZBufferOff()
 {
-	D3DGC->D11_deviceContext->OMSetDepthStencilState(m_depthDisabledStencilState, 1);
+	D3DGC->DX_deviceContext->OMSetDepthStencilState(m_depthDisabledStencilState, 1);
 	return;
 }
 
@@ -1248,7 +1233,7 @@ void D3DClass::TurnOnAlphaBlending()
 	blendFactor[3] = 1.0f;
 
 	// Turn on the alpha blending.
-	D3DGC->D11_deviceContext->OMSetBlendState(D3DGC->m_alphaEnableBlendingState, blendFactor, 0xffffffff);
+	D3DGC->DX_deviceContext->OMSetBlendState(D3DGC->m_alphaEnableBlendingState, blendFactor, 0xffffffff);
 
 	return;
 }
@@ -1267,7 +1252,7 @@ void D3DClass::TurnOffAlphaBlending()
 	blendFactor[3] = 0.0f;
 
 	// Turn off the alpha blending.
-	D3DGC->D11_deviceContext->OMSetBlendState(D3DGC->m_alphaDisableBlendingState, blendFactor, 0xffffffff);
+	D3DGC->DX_deviceContext->OMSetBlendState(D3DGC->m_alphaDisableBlendingState, blendFactor, 0xffffffff);
 
 	return;
 }
@@ -1286,7 +1271,7 @@ void D3DClass::TurnOnParticleBlending()
 	blendFactor[3] = 1.0f;
 
 	// Turn on the alpha blending.
-	D3DGC->D11_deviceContext->OMSetBlendState(D3DGC->m_alphaParticleBlendingState, blendFactor, 0xffffffff);
+	D3DGC->DX_deviceContext->OMSetBlendState(D3DGC->m_alphaParticleBlendingState, blendFactor, 0xffffffff);
 
 	return;
 }
@@ -1304,7 +1289,7 @@ void D3DClass::TurnOnTextOnTextureBlending()
 	blendFactor[3] = 1.0f;
 
 	// Turn on the alpha blending.
-	D3DGC->D11_deviceContext->OMSetBlendState( D3DGC->m_alpha_TOnT_BlendingState, blendFactor, 0xffffffff );
+	D3DGC->DX_deviceContext->OMSetBlendState( D3DGC->m_alpha_TOnT_BlendingState, blendFactor, 0xffffffff );
 
 	return;
 }
@@ -1318,7 +1303,7 @@ ID3D11DepthStencilView* D3DClass::GetDepthStencilView()
 
 void D3DClass::SetBackBufferRenderTarget()
 {
-	D3DGC->D11_deviceContext->OMSetRenderTargets(1, &D3DGC->BackBuffer_RTV, D3DGC->m_depthStencilView);
+	D3DGC->DX_deviceContext->OMSetRenderTargets(1, &D3DGC->BackBuffer_RTV, D3DGC->m_depthStencilView);
 }
 
 
@@ -1343,13 +1328,13 @@ char* D3DClass::GetVideoCardString()
 
 void D3DClass::SetDefaultResterizeState()
 {
-	D3DGC->D11_deviceContext->RSSetState(D3DGC->DefaultRasterizerState );
+	D3DGC->DX_deviceContext->RSSetState(D3DGC->DefaultRasterizerState );
 }
 
 
 void D3DClass::SetCullNoneResterizeState ()
 {
-	D3DGC->D11_deviceContext->RSSetState( D3DGC->RasterStateCullNone );
+	D3DGC->DX_deviceContext->RSSetState( D3DGC->RasterStateCullNone );
 }
 
 
@@ -1434,30 +1419,29 @@ bool D3DClass::FxaaIntegrateResource(ID3D11Device* pd3dDevice, const DXGI_SURFAC
 
 void D3DClass::FXAAScene()
 {
+	D3DGC->DX_deviceContext->PSSetConstantBuffers ( 12, 1, &D3DGC->g_pcbFXAA->Buffer );
 
-		D3DGC->D11_deviceContext->PSSetConstantBuffers(12, 1, &D3DGC->g_pcbFXAA);
-
-		D3DGC->D11_deviceContext->OMSetRenderTargets(1, &D3DGC->BackBuffer_RTV, 0);
+		D3DGC->DX_deviceContext->OMSetRenderTargets(1, &D3DGC->BackBuffer_RTV, 0);
 
 		ID3D11Resource* MyresDest = nullptr;
 
 		if (D3DGC->EnableMSAA && D3DGC->MSAAQualityCount > 1)
 		{
 			// resolve first
-			D3DGC->D11_deviceContext->ResolveSubresource(D3DGC->BackBuffer_CopyResolveTexture, 0, D3DGC->BackBuffer2DT, 0, DXGI_FORMAT_R8G8B8A8_UNORM);
-			D3DGC->D11_deviceContext->PSSetShaderResources(0, 1, &D3DGC->BackBuffer_CopyResolveTextureSRV);
+			D3DGC->DX_deviceContext->ResolveSubresource(D3DGC->BackBuffer_CopyResolveTexture, 0, D3DGC->BackBuffer2DT, 0, DXGI_FORMAT_R8G8B8A8_UNORM);
+			D3DGC->DX_deviceContext->PSSetShaderResources(0, 1, &D3DGC->BackBuffer_CopyResolveTextureSRV);
 		}
 		else
 		{
 			D3DGC->BackBuffer_ProxyTextureSRV->GetResource( &MyresDest );
-			D3DGC->D11_deviceContext->CopyResource(MyresDest, D3DGC->BackBuffer2DT );
-			D3DGC->D11_deviceContext->PSSetShaderResources(0, 1, &D3DGC->BackBuffer_ProxyTextureSRV);
+			D3DGC->DX_deviceContext->CopyResource(MyresDest, D3DGC->BackBuffer2DT );
+			D3DGC->DX_deviceContext->PSSetShaderResources(0, 1, &D3DGC->BackBuffer_ProxyTextureSRV);
 		}
 
-		D3DGC->D11_deviceContext->IASetInputLayout(NULL);
-		D3DGC->D11_deviceContext->Draw(3, 0);
+		D3DGC->DX_deviceContext->IASetInputLayout(NULL);
+		D3DGC->DX_deviceContext->Draw(3, 0);
 /*
-		D3DGC->D11_deviceContext->CopyResource(D3DGC->ScreenShootTexture, D3DGC->backBufferPtr);
+		D3DGC->DX_deviceContext->CopyResource(D3DGC->ScreenShootTexture, D3DGC->backBufferPtr);
 		union _block
 		{
 			byte  *data;
@@ -1465,12 +1449,12 @@ void D3DClass::FXAAScene()
 		} block;
 
 		D3D11_MAPPED_SUBRESOURCE  mapResource;
-		hr = D3DGC->D11_deviceContext->Map(D3DGC->ScreenShootTexture, 0, D3D11_MAP_READ, NULL, &mapResource);
+		hr = D3DGC->DX_deviceContext->Map(D3DGC->ScreenShootTexture, 0, D3D11_MAP_READ, NULL, &mapResource);
 
 		unsigned int amount = mapResource.DepthPitch; // RowPitch * Height;
 		block.data = new byte[amount];
 		memcpy(block.data, mapResource.pData, amount);
-		D3DGC->D11_deviceContext->Unmap(D3DGC->ScreenShootTexture, 0);
+		D3DGC->DX_deviceContext->Unmap(D3DGC->ScreenShootTexture, 0);
 		Image img;
 		D3D11_TEXTURE2D_DESC* TextureDesc = new D3D11_TEXTURE2D_DESC;
 		D3DGC->ScreenShootTexture->GetDesc(TextureDesc);
@@ -1492,7 +1476,7 @@ void D3DClass::FXAAScene()
 */
 		RCUBE_RELEASE( MyresDest );
 		// Нужно вернуть DepthBuffer
-		D3DGC->D11_deviceContext->OMSetRenderTargets(1, &D3DGC->BackBuffer_RTV, D3DGC->m_depthStencilView);
+		D3DGC->DX_deviceContext->OMSetRenderTargets(1, &D3DGC->BackBuffer_RTV, D3DGC->m_depthStencilView);
 }
 
 
@@ -1523,7 +1507,7 @@ bool D3DClass::SaveTextureToPNG( ID3D11ShaderResourceView* Texture)
 	// Сохранение возможно только для текстуры без MSAA 
 	// Нужно делать ResolveSubresource
 
-	hr = D3DGC->D11_device->CreateTexture2D( desc, 0, &D3DGC->ScreenShootTexture );
+	hr = D3DGC->DX_device->CreateTexture2D( desc, 0, &D3DGC->ScreenShootTexture );
 	if ( FAILED( hr ) )
 	{
 		MessageBox( NULL, L"Can't create ScreenShotTexture", 0, 0 );
@@ -1534,16 +1518,16 @@ bool D3DClass::SaveTextureToPNG( ID3D11ShaderResourceView* Texture)
 	// Если текстура MSAA, то делаем ResolveSubresurces
 	if ( InputTextureDesc->SampleDesc.Count > 1 )
 	{
-		D3DGC->D11_deviceContext->ResolveSubresource( D3DGC->BackBuffer_CopyResolveTexture, 0, tempResource, 0, DXGI_FORMAT_R8G8B8A8_UNORM );
+		D3DGC->DX_deviceContext->ResolveSubresource( D3DGC->BackBuffer_CopyResolveTexture, 0, tempResource, 0, DXGI_FORMAT_R8G8B8A8_UNORM );
 	// D3DGC->BackBuffer_CopyResolveTextureSRV
 		ID3D11Resource* Resource;
 		D3DGC->BackBuffer_CopyResolveTextureSRV->GetResource( &Resource );
-		D3DGC->D11_deviceContext->CopyResource( D3DGC->ScreenShootTexture, Resource );
+		D3DGC->DX_deviceContext->CopyResource( D3DGC->ScreenShootTexture, Resource );
 		Resource->Release();
 	}
 	else
 	{
-		D3DGC->D11_deviceContext->CopyResource( D3DGC->ScreenShootTexture, tempResource );
+		D3DGC->DX_deviceContext->CopyResource( D3DGC->ScreenShootTexture, tempResource );
 	}
 
 	union _block
@@ -1553,12 +1537,12 @@ bool D3DClass::SaveTextureToPNG( ID3D11ShaderResourceView* Texture)
 	} block;
 
 	D3D11_MAPPED_SUBRESOURCE  mapResource;
-	hr = D3DGC->D11_deviceContext->Map( D3DGC->ScreenShootTexture, 0, D3D11_MAP_READ, NULL, &mapResource );
+	hr = D3DGC->DX_deviceContext->Map( D3DGC->ScreenShootTexture, 0, D3D11_MAP_READ, NULL, &mapResource );
 
 	unsigned int amount = mapResource.DepthPitch; // RowPitch * Height;
 	block.data = new byte[amount];
 	memcpy( block.data, mapResource.pData, amount );
-	D3DGC->D11_deviceContext->Unmap( D3DGC->ScreenShootTexture, 0 );
+	D3DGC->DX_deviceContext->Unmap( D3DGC->ScreenShootTexture, 0 );
 
 	Image img;
 	img.height = desc->Height;
@@ -1616,14 +1600,14 @@ bool D3DClass::InitD2D_D3D101_DWrite()
 	sharedTexDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
 	sharedTexDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;
 
-	hr = D3DGC->D11_device->CreateTexture2D( &sharedTexDesc, NULL, &D3DGC->sharedTex11 );
+	hr = D3DGC->DX_device->CreateTexture2D( &sharedTexDesc, NULL, &D3DGC->sharedTex11 );
 	if ( FAILED( hr ) )
 	{
 		MessageBox( NULL, L"Could not initialize sharedTex11.", 0, MB_OK );
 		return false;
 	}
 
-	hr = D3DGC->D11_device->CreateShaderResourceView( D3DGC->sharedTex11, NULL, &D3DGC->sharedTex11_SRV );
+	hr = D3DGC->DX_device->CreateShaderResourceView( D3DGC->sharedTex11, NULL, &D3DGC->sharedTex11_SRV );
 	if ( FAILED( hr ) )
 	{
 		MessageBox( NULL, L"Could not initialize ShaderResourceView sharedTex11.", 0, MB_OK );
@@ -1635,7 +1619,7 @@ bool D3DClass::InitD2D_D3D101_DWrite()
 	sharedTexDesc.MiscFlags = 0;
 	sharedTexDesc.Usage = D3D11_USAGE_STAGING;
 	sharedTexDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE | D3D11_CPU_ACCESS_READ;
-	hr = D3DGC->D11_device->CreateTexture2D( &sharedTexDesc, NULL, &D3DGC->sharedTex11_MAPED );
+	hr = D3DGC->DX_device->CreateTexture2D( &sharedTexDesc, NULL, &D3DGC->sharedTex11_MAPED );
 	if ( FAILED( hr ) )
 	{
 		MessageBox( NULL, L"Could not initialize sharedTex11_MAPED.", 0, MB_OK );
@@ -1723,41 +1707,41 @@ void D3DClass::BlurScene(ID3D11ComputeShader* Horizont, ID3D11ComputeShader* Ver
 	D3DGC->BackBuffer_ProxyTextureSRV->GetResource( &MyresDest );
 
 	// resolve first
-//		D3DGC->D11_deviceContext->ResolveSubresource(D3DGC->BackBuffer_CopyResolveTexture, 0, D3DGC->BackBuffer2DT, 0, DXGI_FORMAT_R8G8B8A8_UNORM );
-//		D3DGC->D11_deviceContext->CopyResource(MyresDest, D3DGC->BackBuffer_CopyResolveTexture);
+//		D3DGC->DX_deviceContext->ResolveSubresource(D3DGC->BackBuffer_CopyResolveTexture, 0, D3DGC->BackBuffer2DT, 0, DXGI_FORMAT_R8G8B8A8_UNORM );
+//		D3DGC->DX_deviceContext->CopyResource(MyresDest, D3DGC->BackBuffer_CopyResolveTexture);
 
-		D3DGC->D11_deviceContext->CopyResource( MyresDest, D3DGC->BackBuffer2DT );
+		D3DGC->DX_deviceContext->CopyResource( MyresDest, D3DGC->BackBuffer2DT );
 
-		D3DGC->D11_deviceContext->CSSetShaderResources(0, 1, &D3DGC->BackBuffer_ProxyTextureSRV);
-		D3DGC->D11_deviceContext->CSSetUnorderedAccessViews(0, 1, &D3DGC->BackBuffer_CopyResolveTextureUAV, 0);
+		D3DGC->DX_deviceContext->CSSetShaderResources(0, 1, &D3DGC->BackBuffer_ProxyTextureSRV);
+		D3DGC->DX_deviceContext->CSSetUnorderedAccessViews(0, 1, &D3DGC->BackBuffer_CopyResolveTextureUAV, 0);
 
 		int c = 0;
 		//	int BlurAmont = 1; // Сила Blur
 		do
 		{
-			D3DGC->D11_deviceContext->CSSetShader(Horizont, NULL, 0);
-			D3DGC->D11_deviceContext->Dispatch(D3DGC->ScreenWidth / 96, D3DGC->ScreenHeight, 1);
+			D3DGC->DX_deviceContext->CSSetShader(Horizont, NULL, 0);
+			D3DGC->DX_deviceContext->Dispatch(D3DGC->ScreenWidth / 96, D3DGC->ScreenHeight, 1);
 
-			D3DGC->D11_deviceContext->CopyResource(MyresDest, D3DGC->BackBuffer_CopyResolveTexture);
+			D3DGC->DX_deviceContext->CopyResource(MyresDest, D3DGC->BackBuffer_CopyResolveTexture);
 
-			D3DGC->D11_deviceContext->CSSetShader(Vertical, NULL, 0);
-			D3DGC->D11_deviceContext->Dispatch(D3DGC->ScreenWidth, D3DGC->ScreenHeight / 96, 1);
+			D3DGC->DX_deviceContext->CSSetShader(Vertical, NULL, 0);
+			D3DGC->DX_deviceContext->Dispatch(D3DGC->ScreenWidth, D3DGC->ScreenHeight / 96, 1);
 
-			D3DGC->D11_deviceContext->CopyResource(MyresDest, D3DGC->BackBuffer_CopyResolveTexture);
+			D3DGC->DX_deviceContext->CopyResource(MyresDest, D3DGC->BackBuffer_CopyResolveTexture);
 			++c;
 		} while (c < BlurAmont);
 
-		D3DGC->D11_deviceContext->CopyResource(D3DGC->BackBuffer2DT, D3DGC->BackBuffer_CopyResolveTexture);
+		D3DGC->DX_deviceContext->CopyResource(D3DGC->BackBuffer2DT, D3DGC->BackBuffer_CopyResolveTexture);
 
 		MyresDest->Release();
 	}
 
 	
 	ID3D11UnorderedAccessView* nullUAV = nullptr;
-	D3DGC->D11_deviceContext->CSSetUnorderedAccessViews(0, 1, &nullUAV, nullptr);
+	D3DGC->DX_deviceContext->CSSetUnorderedAccessViews(0, 1, &nullUAV, nullptr);
 
 	ID3D11ShaderResourceView* nullSRV[1] = { nullptr };
-	D3DGC->D11_deviceContext->CSSetShaderResources(0, 1, nullSRV);
+	D3DGC->DX_deviceContext->CSSetShaderResources(0, 1, nullSRV);
 	//  --------------------------    BLUR      ----------------------------------
 }
 
@@ -1766,7 +1750,7 @@ int D3DClass::CreateCustomRasterizerState ( D3D11_RASTERIZER_DESC& Desc )
 {
 // https://msdn.microsoft.com/query/dev15.query?appId=Dev15IDEF1&l=EN-US&k=k(D3D11%2FD3D11_RASTERIZER_DESC);k(D3D11_RASTERIZER_DESC);k(DevLang-C%2B%2B);k(TargetOS-Windows)&rd=true
 	ID3D11RasterizerState* RS;
-	hr = D3DGC->D11_device->CreateRasterizerState ( &Desc, &RS );
+	hr = D3DGC->DX_device->CreateRasterizerState ( &Desc, &RS );
 	if (FAILED ( hr ))
 	{
 		MessageBox ( NULL, L"Could not Create CustomRasterizerState.", 0, MB_OK );
@@ -1796,7 +1780,7 @@ bool D3DClass::ChangeCustomRasterizerState( int Number, D3D11_RASTERIZER_DESC& D
 
 	RCUBE_RELEASE ( CustomRasterizers[Number].Rasterizer );
 
-	hr = D3DGC->D11_device->CreateRasterizerState ( &Desc, &RS );
+	hr = D3DGC->DX_device->CreateRasterizerState ( &Desc, &RS );
 	if (FAILED ( hr ))
 	{
 		MessageBox ( NULL, L"Could not Update CustomRasterizerState.", 0, MB_OK );
@@ -2189,10 +2173,10 @@ void D3DClass::Frame ()
 	Light->mUI.ShadowCLAMP = D3DGC->ShadowCLAMP;
 	Light->mUI.Shadow_Divider = D3DGC->Shadow_Divider;
 
-	lightBufferSRV = FrameLights ( D3DGC->D11_deviceContext, &Light->mUI );
+	lightBufferSRV = FrameLights ( D3DGC->DX_deviceContext, &Light->mUI );
 
-	D3DGC->D11_deviceContext->UpdateSubresource ( mPerFrameConstants, NULL, NULL, Light, NULL, NULL );
-	D3DGC->D11_deviceContext->PSSetConstantBuffers ( 1, 1, &mPerFrameConstants );
+	PerFrameConstants_Debug->Update ( Light );
+	D3DGC->DX_deviceContext->PSSetConstantBuffers ( 1, 1, &PerFrameConstants_Debug->Buffer );
 
 }
 
@@ -2277,7 +2261,7 @@ void D3DClass::ResetLightsBuffer ()
 	// Удаляем буфер светов, чтобы добавить ещё один свет к существующим.
 	RCUBE_DELETE ( mLightBuffer );
 	// Создаём буфер светов передаваемый в шейдер
-	mLightBuffer = new StructuredBuffer<PointLight> ( D3DGC->D11_device, mActiveLights, D3D11_BIND_SHADER_RESOURCE, true );
+	mLightBuffer  = new StructuredBuffer<PointLight> ( D3DGC->DX_device, mActiveLights, D3D11_BIND_SHADER_RESOURCE, true );
 }
 
 
@@ -2514,15 +2498,15 @@ bool D3DClass::ChangeLightPos ( int LightNumber, XMVECTOR& pos )
 void D3DClass::RenderIndextedClustered ( ID3D11ShaderResourceView *ModelTexture,
 	int indexDrawAmount, int InstancCout ) {
 
-	D3DGC->D11_deviceContext->PSSetShaderResources ( 0, 1, &ModelTexture );
-	D3DGC->D11_deviceContext->PSSetShaderResources ( 1, 1, &SRV_ShadowMap3D );
-	D3DGC->D11_deviceContext->PSSetShaderResources ( 5, 1, &lightBufferSRV );
-	D3DGC->D11_deviceContext->PSSetShaderResources ( 6, 1, &LightGridBufferSRV );
+	D3DGC->DX_deviceContext->PSSetShaderResources ( 0, 1, &ModelTexture );
+	D3DGC->DX_deviceContext->PSSetShaderResources ( 1, 1, &SRV_ShadowMap3D );
+	D3DGC->DX_deviceContext->PSSetShaderResources ( 5, 1, &lightBufferSRV );
+	D3DGC->DX_deviceContext->PSSetShaderResources ( 6, 1, &LightGridBufferSRV );
 	// instance модель или нет ?  >1 = true
 	if (InstancCout > 1)
-		D3DGC->D11_deviceContext->DrawIndexedInstanced ( indexDrawAmount, InstancCout, 0, 0, 0 );
+		D3DGC->DX_deviceContext->DrawIndexedInstanced ( indexDrawAmount, InstancCout, 0, 0, 0 );
 	else
-		D3DGC->D11_deviceContext->DrawIndexed ( indexDrawAmount, 0, 0 );
+		D3DGC->DX_deviceContext->DrawIndexed ( indexDrawAmount, 0, 0 );
 
 
 }
@@ -2532,15 +2516,15 @@ void D3DClass::RenderClustered ( ID3D11ShaderResourceView *ModelTexture,
 	int vertexDrawAmount, int InstancCout )
 {
 
-	D3DGC->D11_deviceContext->PSSetShaderResources ( 0, 1, &ModelTexture );
-	D3DGC->D11_deviceContext->PSSetShaderResources ( 1, 1, &SRV_ShadowMap3D );
-	D3DGC->D11_deviceContext->PSSetShaderResources ( 5, 1, &lightBufferSRV );
-	D3DGC->D11_deviceContext->PSSetShaderResources ( 6, 1, &LightGridBufferSRV );
+	D3DGC->DX_deviceContext->PSSetShaderResources ( 0, 1, &ModelTexture );
+	D3DGC->DX_deviceContext->PSSetShaderResources ( 1, 1, &SRV_ShadowMap3D );
+	D3DGC->DX_deviceContext->PSSetShaderResources ( 5, 1, &lightBufferSRV );
+	D3DGC->DX_deviceContext->PSSetShaderResources ( 6, 1, &LightGridBufferSRV );
 	// instance модель или нет ?  >1 = true
 	if (InstancCout > 1)
-		D3DGC->D11_deviceContext->DrawInstanced ( vertexDrawAmount, InstancCout, 0, 0 );
+		D3DGC->DX_deviceContext->DrawInstanced ( vertexDrawAmount, InstancCout, 0, 0 );
 	else
-		D3DGC->D11_deviceContext->Draw ( vertexDrawAmount, 0 );
+		D3DGC->DX_deviceContext->Draw ( vertexDrawAmount, 0 );
 
 }
 
@@ -2580,7 +2564,7 @@ bool D3DClass::CreatingShadowMapsArray (
 	depthStencilDesc.SampleDesc.Count = MsaaCount;
 	depthStencilDesc.SampleDesc.Quality = MsaaQuality;
 
-	res = D3DGC->D11_device->CreateTexture2D ( &depthStencilDesc, NULL, &ShadowMap3D );
+	res = D3DGC->DX_device->CreateTexture2D ( &depthStencilDesc, NULL, &ShadowMap3D );
 	if (FAILED ( res ))
 	{
 		return false;
@@ -2605,7 +2589,7 @@ bool D3DClass::CreatingShadowMapsArray (
 	}
 
 
-	res = D3DGC->D11_device->CreateShaderResourceView ( ShadowMap3D, &srvDesc, &SRV_ShadowMap3D );
+	res = D3DGC->DX_device->CreateShaderResourceView ( ShadowMap3D, &srvDesc, &SRV_ShadowMap3D );
 	if (FAILED ( res ))
 	{
 		return false;
@@ -2648,16 +2632,16 @@ void D3DClass::RenderSpotLightsSadowMaps ( std::vector <int> SpotLightsWithShado
 
 	ID3D11ShaderResourceView * tab[1];
 	tab[0] = NULL;
-	Local_D3DGC->D11_deviceContext->PSSetShaderResources ( 1, 1, tab );
-	Local_D3DGC->D11_deviceContext->PSSetShader ( 0, 0, 0 );
+	Local_D3DGC->DX_deviceContext->PSSetShaderResources ( 1, 1, tab );
+	Local_D3DGC->DX_deviceContext->PSSetShader ( 0, 0, 0 );
 
-	Local_D3DGC->D11_deviceContext->VSSetShader ( ShadowMapShader, 0, 0 );
-	Local_D3DGC->D11_deviceContext->RSSetState ( LightRender_RS );
-	Local_D3DGC->D11_deviceContext->GSSetShader ( 0, 0, 0 );
-	Local_D3DGC->D11_deviceContext->OMSetDepthStencilState ( LightRender_DS, 0 );
+	Local_D3DGC->DX_deviceContext->VSSetShader ( ShadowMapShader, 0, 0 );
+	Local_D3DGC->DX_deviceContext->RSSetState ( LightRender_RS );
+	Local_D3DGC->DX_deviceContext->GSSetShader ( 0, 0, 0 );
+	Local_D3DGC->DX_deviceContext->OMSetDepthStencilState ( LightRender_DS, 0 );
 	// Устанавливаем ViewPort для ShadowMap
-	Local_D3DGC->D11_deviceContext->RSSetViewports ( 1, &LightViewPort );
-	//	g_D3DGC->D11_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	Local_D3DGC->DX_deviceContext->RSSetViewports ( 1, &LightViewPort );
+	//	g_D3DGC->DX_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	int Amount = (int)SpotLightsWithShadowsIndexes.size ();
 	for (int i = 0; i < Amount; i++)
@@ -2673,7 +2657,7 @@ void D3DClass::RenderSpotLightsSadowMaps ( std::vector <int> SpotLightsWithShado
 			DSD2.Texture2DArray.FirstArraySlice = i;
 		}
 
-		res = Local_D3DGC->D11_device->CreateDepthStencilView ( ShadowMap3D, &DSD2, &DSV_ShadowMap3D );
+		res = Local_D3DGC->DX_device->CreateDepthStencilView ( ShadowMap3D, &DSD2, &DSV_ShadowMap3D );
 		//if (FAILED(res))
 		//{
 		//	return false;
@@ -2706,8 +2690,8 @@ void D3DClass::RenderSpotLightsSadowMaps ( std::vector <int> SpotLightsWithShado
 
 		cbPerObj.ViewProjection = XMMatrixTranspose ( LightViewProj );
 
-		Local_D3DGC->D11_deviceContext->UpdateSubresource ( cbShadowBuffer, 0, NULL, &cbPerObj, 0, 0 );
-		Local_D3DGC->D11_deviceContext->VSSetConstantBuffers ( 1, 1, &cbShadowBuffer );
+		Local_D3DGC->DX_deviceContext->UpdateSubresource ( cbShadowBuffer, 0, NULL, &cbPerObj, 0, 0 );
+		Local_D3DGC->DX_deviceContext->VSSetConstantBuffers ( 1, 1, &cbShadowBuffer );
 		// Создаём матрицу поворота
 		RCubeMatrix Mat;
 		Mat.XMM = cbPerObj.ViewProjection;
@@ -2720,8 +2704,8 @@ void D3DClass::RenderSpotLightsSadowMaps ( std::vector <int> SpotLightsWithShado
 
 		//		cbPerObj.ViewProjection = XMMatrixRotationQuaternion(LightTarget.Vec);
 		// ----------------------------------------------------------------------------------
-		Local_D3DGC->D11_deviceContext->OMSetRenderTargets ( 0, 0, DSV_ShadowMap3D );
-		Local_D3DGC->D11_deviceContext->ClearDepthStencilView ( DSV_ShadowMap3D, D3D11_CLEAR_DEPTH, 1.0f, 0 );
+		Local_D3DGC->DX_deviceContext->OMSetRenderTargets ( 0, 0, DSV_ShadowMap3D );
+		Local_D3DGC->DX_deviceContext->ClearDepthStencilView ( DSV_ShadowMap3D, D3D11_CLEAR_DEPTH, 1.0f, 0 );
 		DrawObjectUsingShadows ( LightPosition.Vec, true );
 
 		// Сохраняем в световом массиве индекс куска Shadow Map
@@ -2731,7 +2715,7 @@ void D3DClass::RenderSpotLightsSadowMaps ( std::vector <int> SpotLightsWithShado
 
 	}
 	// Устанавливаем ViewPort для RCube
-	Local_D3DGC->D11_deviceContext->RSSetViewports ( 1, &viewport );
+	Local_D3DGC->DX_deviceContext->RSSetViewports ( 1, &viewport );
 }
 
 void D3DClass::DrawObjectUsingShadows ( XMVECTOR DrawPosition, bool ReplaseData ) {
@@ -2759,13 +2743,13 @@ void D3DClass::InitRasterizerState ( int DepthBias, float SlopeScaledDepthBias )
 	desc.DepthBias = DepthBias;//1.e5;//0.0f;//1.e5;
 	desc.SlopeScaledDepthBias = SlopeScaledDepthBias;// 1.0f;//8.0;//0.0f;//8.0;
 	desc.DepthBiasClamp = 1.0f;
-	Local_D3DGC->D11_device->CreateRasterizerState ( &desc, &LightRender_RS );
+	Local_D3DGC->DX_device->CreateRasterizerState ( &desc, &LightRender_RS );
 }
 // - Shadow Works
 */
 // Отображение текстуры
 /*
-D3DGC->D11_deviceContext->CopyResource(D3DGC->ScreenShootTexture, D3DGC->backBufferPtr);
+D3DGC->DX_deviceContext->CopyResource(D3DGC->ScreenShootTexture, D3DGC->backBufferPtr);
 union _block
 {
 byte  *data;
@@ -2773,12 +2757,12 @@ unsigned int *udata;
 } block;
 
 D3D11_MAPPED_SUBRESOURCE  mapResource;
-hr = D3DGC->D11_deviceContext->Map(D3DGC->ScreenShootTexture, 0, D3D11_MAP_READ, NULL, &mapResource);
+hr = D3DGC->DX_deviceContext->Map(D3DGC->ScreenShootTexture, 0, D3D11_MAP_READ, NULL, &mapResource);
 
 unsigned int amount = mapResource.DepthPitch; // RowPitch * Height;
 block.data = new byte[amount];
 memcpy(block.data, mapResource.pData, amount);
-D3DGC->D11_deviceContext->Unmap(D3DGC->ScreenShootTexture, 0);
+D3DGC->DX_deviceContext->Unmap(D3DGC->ScreenShootTexture, 0);
 Image img;
 D3D11_TEXTURE2D_DESC* TextureDesc = new D3D11_TEXTURE2D_DESC;
 D3DGC->ScreenShootTexture->GetDesc(TextureDesc);

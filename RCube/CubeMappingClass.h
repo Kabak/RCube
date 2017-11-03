@@ -10,7 +10,7 @@
 #include "D3Dcompiler.h"
 #include <DDSTextureLoader.h>
 #include "D3DGlobalContext.h"
-#include "VertexBuffers_def.h"	// Описание типов вертексных буферов
+#include "Buffers_def.h"	// Описание типов вертексных буферов
 
 using namespace DirectX ;
 

@@ -15,8 +15,6 @@ FireParticleSystem::FireParticleSystem()
 	  m_vertexBuffer = nullptr;
 	   m_indexBuffer = nullptr;
 
-//	   m_sampleState = nullptr;
-			m_layout = nullptr;
 	// +++++++++++++++++   Instancing   ++++++++++++++++++++++++++++++++
 	m_instanceBuffer = nullptr;
 	// -----------------   Instancing   --------------------------------
@@ -41,7 +39,6 @@ FireParticleSystem::~FireParticleSystem()
 
 bool FireParticleSystem::Initialize( HWND hwnd, 
 					   D3DGlobalContext *D3DGC, 
-							  ID3D10Blob* Blob, 
 		ID3D11ShaderResourceView* _FireTexture, 
 								 int _UX_Amount,							// Количество строк в текстуре анимации
 								 int _VY_Amount,							// Количестко столбцов в текстуре анимации
@@ -101,7 +98,7 @@ bool FireParticleSystem::Initialize( HWND hwnd,
 	}
 
 	// Create the buffers that will be used to render the particles with.
-	result = InitializeBuffers( D3DGC_Local->D11_device, Blob );
+	result = InitializeBuffers( D3DGC_Local->DX_device);
 	if ( !result )
 	{
 		return false;
@@ -161,7 +158,7 @@ void FireParticleSystem::Frame( FPSTimers& Timers )
 
 /*
 	D3D11_MAPPED_SUBRESOURCE  mapResource;
-	HRESULT result = D3DGC_Local->D11_deviceContext->Map( m_instanceBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapResource );
+	HRESULT result = D3DGC_Local->DX_deviceContext->Map( m_instanceBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapResource );
 	if ( FAILED( result ) )
 	{
 		MessageBox(0, L"Ошибка доступа к буферу частиц FireParticles.", L"Can't ->Map", 0);
@@ -177,9 +174,9 @@ void FireParticleSystem::Frame( FPSTimers& Timers )
 	   ++Sortedinstance;
 	}
 
-	D3DGC_Local->D11_deviceContext->Unmap( m_instanceBuffer, 0 );
+	D3DGC_Local->DX_deviceContext->Unmap( m_instanceBuffer, 0 );
 */
-	D3DGC_Local->D11_deviceContext->UpdateSubresource( m_instanceBuffer, NULL, NULL, instances, NULL, NULL );
+	D3DGC_Local->DX_deviceContext->UpdateSubresource( m_instanceBuffer, NULL, NULL, instances, NULL, NULL );
 }
 
 
@@ -202,29 +199,18 @@ void FireParticleSystem::Render()
 	bufferPointers[1] = m_instanceBuffer;
 
 	// Set the vertex buffer to active in the input assembler so it can be rendered.
-	D3DGC_Local->D11_deviceContext->IASetVertexBuffers( 0, 2, bufferPointers, strides, offsets );
+	D3DGC_Local->DX_deviceContext->IASetVertexBuffers( 0, 2, bufferPointers, strides, offsets );
 
 	// Set the index buffer to active in the input assembler so it can be rendered.
-	D3DGC_Local->D11_deviceContext->IASetIndexBuffer( m_indexBuffer, DXGI_FORMAT_R32_UINT, 0 );
+	D3DGC_Local->DX_deviceContext->IASetIndexBuffer( m_indexBuffer, DXGI_FORMAT_R32_UINT, 0 );
 
 	// Set the type of primitive that should be rendered from this vertex buffer.
-	D3DGC_Local->D11_deviceContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+	D3DGC_Local->DX_deviceContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
 
 	// Set shader texture resource in the pixel shader.
-	D3DGC_Local->D11_deviceContext->PSSetShaderResources( 0, 1, &FireTexture );
+	D3DGC_Local->DX_deviceContext->PSSetShaderResources( 0, 1, &FireTexture );
 
-	// Set the vertex input layout.
-	D3DGC_Local->D11_deviceContext->IASetInputLayout( m_layout );
-
-	// Set the vertex and pixel shaders that will be used to render this triangle.
-	// deviceContext->VSSetShader(m_vertexShader, NULL, 0);
-	// deviceContext->PSSetShader(m_pixelShader, NULL, 0);
-
-	// Set the sampler state in the pixel shader.
-//	D3DGC_Local->D11_deviceContext->PSSetSamplers( 0, 1, &m_sampleState );
-
-	// Render the triangle.
-	D3DGC_Local->D11_deviceContext->DrawIndexedInstanced( 6, m_instanceCount/*m_currentParticleCount/*m_instanceCount*/, 0, 0, 0 );
+	D3DGC_Local->DX_deviceContext->DrawIndexedInstanced( 6, m_instanceCount/*m_currentParticleCount/*m_instanceCount*/, 0, 0, 0 );
 }
 
 
@@ -287,7 +273,7 @@ void FireParticleSystem::ShutdownParticleSystem()
 }
 
 
-bool FireParticleSystem::InitializeBuffers( ID3D11Device* device, ID3D10Blob* Blob )
+bool FireParticleSystem::InitializeBuffers( ID3D11Device* device )
 {
 	HRESULT result;
 
@@ -396,16 +382,6 @@ bool FireParticleSystem::InitializeBuffers( ID3D11Device* device, ID3D10Blob* Bl
 	// Release the index array since it is no longer needed.
 	delete[] m_vertices;
 
-	int numElements = ARRAYSIZE ( ParticlesBASIC_Layout );
-
-	// Create the vertex input layout.
-	result = device->CreateInputLayout( ParticlesBASIC_Layout, numElements, Blob->GetBufferPointer(), Blob->GetBufferSize(),
-										&m_layout );
-	if ( FAILED( result ) )
-	{
-		return false;
-	}
-
 	return true;
 }
 
@@ -417,9 +393,6 @@ void FireParticleSystem::ShutdownBuffers()
 	// -----------------   Instancing   --------------------------------
 	RCUBE_RELEASE( m_indexBuffer );
 	RCUBE_RELEASE( m_vertexBuffer );
-
-//	RCUBE_RELEASE( m_sampleState );
-	RCUBE_RELEASE( m_layout );
 
 	RCUBE_ARR_DELETE ( instances );
 //	RCUBE_ARR_DELETE ( m_vertices);

@@ -10,8 +10,10 @@
 #include "InputClass.h"
 #include <vector>
 
+#include"Buffers_def.h"
 #ifdef RCube_DX11
 #include "DX11Buffers.h"
+typedef ID3D11Device D3D_device;
 #endif //RCube_DX11
 
 using namespace DirectX;
@@ -27,9 +29,9 @@ using namespace DirectX;
 	{
 					HWND  hwnd;
 		  IDXGIAdapter1*  Adapter;
-		   ID3D11Device*  D11_device;
-	ID3D11DeviceContext*  D11_deviceContext;
-		 IDXGISwapChain*  D11_swapChain;
+			 D3D_device*  DX_device;
+	ID3D11DeviceContext*  DX_deviceContext;
+		 IDXGISwapChain*  DX_swapChain;
 		  ID3D10Device1*  D10_device;
 		ID3D11Texture2D*  BackBuffer2DT;	// Собственно BackBuffer
  ID3D11RenderTargetView*  BackBuffer_RTV;	// RenderTargetView из backBuffer
@@ -59,6 +61,7 @@ ID3D11ShaderResourceView* sharedTex11_SRV;
 				   float ScreenRatio; // ScreenWidth / ScreenHeight
 				   float NearPlane;
 				   float FarPlane;
+				XMFLOAT2 ScreenDimentions;	// Width , Height
 				XMMATRIX WorldMatrix;
 			    XMMATRIX ViewMatrix;
 			    XMMATRIX OrthoMatrix;
@@ -103,7 +106,10 @@ ID3D11DepthStencilState* m_depthStencilState;
 
 // ++++    FXAA сглаживание  и те  ++++
  				     bool EnableFXAA;
-		    ID3D11Buffer* g_pcbFXAA;
+
+ ConstantBuffer<CB_FXAA>*				g_pcbFXAA;			// FXAA константы
+ ConstantBuffer<ConstantBufferData>*	Global_VS_ConstantsBuffer;	// Константы для вертексных шейдеров
+
 	     ID3D11Texture2D* BackBuffer_ProxyTexture;			// Временная текстура для рисования всего что нужно
 ID3D11ShaderResourceView* BackBuffer_ProxyTextureSRV;		// Например , StringsList сюда рисуется и скролится
   ID3D11RenderTargetView* BackBuffer_ProxyTextureRTV;
@@ -127,31 +133,6 @@ ID3D11UnorderedAccessView*BackBuffer_CopyResolveTextureUAV; // Невозможно создат
 
 	};
 
-// Global Constant Buffer Structure
-	struct ConstantBufferData
-	{
-		XMMATRIX World;
-		XMMATRIX View;
-		XMMATRIX Projection;
-		XMMATRIX ViewProjection;
-		XMMATRIX Ortho;
-		XMMATRIX ScaleMatrix;
-		XMFLOAT3 cameraPosition;
-		float padding;
-		XMFLOAT4 TransposedCameraRotation2;
-
-	};
-
-// Используется для передачи массива данных при рисовании текстом на текстуре
-// смотри D3DGlobalContext.h
-	struct TextOnTextureData
-	{
-	  IDWriteTextFormat* textFormat;
-				XMFLOAT4 fonColour;
-				XMFLOAT4 colour;
-				XMFLOAT4 rectSize;
-
-	};
 
 // Используется для рисования шрифтом на текстуре
 	struct FontOnTextureData
@@ -172,12 +153,6 @@ DWRITE_FONT_FACE_TYPE FontFaceType;
 			   float  OutlineWidth;	// Ширина окантовки вокруг символов
 //			XMFLOAT4 GradientPos;	// x,y - start point  z,w - end point 
 
-	};
-
-	// Constant buffer
-	struct CB_FXAA
-	{
-		XMVECTOR m_fxaa;
 	};
 
 // Используется в D3DClass для создания списка доступных и рабочих режимов системы отображения ( монитора, ТВ, LСD )

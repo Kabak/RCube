@@ -14,13 +14,16 @@
 #include "DirectXMath.h"
 #include <vector>
 
+#include "Buffers_def.h"
+#ifdef RCube_DX11
+#include "DX11Buffers.h"
+#endif
+
 #include "Light_def.h"
 #include "ClusterShadingFragmentFactory.h"
 #include "LightGrid.h"
-#include "Buffer.h"
 #include "FrustumClass.h"
-//#include "LayoutTypes.h"
-
+ 
 //#include "KFModelList.h"
 //#include "Terrain.h"
 
@@ -177,8 +180,8 @@ public:
 	StructuredBuffer<PointLight>* mLightBuffer;
 	// ћассив сетки светов передаваемый в шейдер
 	StructuredBuffer<LightGridEntry>* mLightGridBuffer;
-
-	ID3D11Buffer* mPerFrameConstants;
+	//  онстанты дл€ отладки шейдеров
+	ConstantBuffer<PerFrameConstants>* PerFrameConstants_Debug;
 
 	inline	void UpdateClipRegion (
 		float lc,          // Light x/y coordinate (view space)

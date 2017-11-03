@@ -1,7 +1,8 @@
 #pragma once
+#include "stdafx.h"
 #include "DirectXMath.h"
 #include "d3d11.h"
-#include "VertexBuffers_def.h"
+#include "Buffers_def.h"
 #include "Material.h"
 
 using namespace DirectX;
@@ -32,13 +33,12 @@ struct MeshData {
 		RCUBE_ARR_DELETE ( Indexes );
 	}
 
-	int VertexBufferSize; // размер вертексного масива
-	int IndexBufferSize; // размер индексного масива
+	UINT VertexBufferSize; // размер вертексного масива
+	UINT IndexBufferSize; // размер индексного масива
 	Vertex_Model3D * VertArr = nullptr;  // вертексный масив
-	DWORD * Indexes = nullptr; // индексный массив 
-
-							   // тексттурные данные для этого мэша***
-	ID3D11Resource * TextureResurce = nullptr;
+	UINT * Indexes = nullptr; // индексный массив 
+							   
+	ID3D11Resource * TextureResurce = nullptr;		// тексттурные данные для этого мэша***
 	ID3D11ShaderResourceView * Texture = nullptr;
 	// тексттурные данные для этого мэша***
 
@@ -69,7 +69,7 @@ struct RCudeObjDesc // структура описывающая объкт как набор мэшей и описание к 
 
 	}
 
-	int                 MeshesCount;	// количество мэшей
+	UINT                 MeshesCount;	// количество мэшей
 										//		int					TexturesCount;	// количество текстур
 	MeshData*           Meshes;			// тут находятся все мэши для модела
 
@@ -100,14 +100,39 @@ struct RCudeObjDesc // структура описывающая объкт как набор мэшей и описание к 
 };
 
 
-/*
+
 class SceneObject
 {
 public:
+	~SceneObject ()// деконструктор класса в нем я описал релиз всех буферов ранее созданных для данной структуры т.е ее не надо удалять руками 
+	{
+		RCUBE_RELEASE ( TextureResurce );
+		RCUBE_RELEASE ( Texture );
+		RCUBE_RELEASE ( VertBuff );
+		RCUBE_ARR_DELETE ( VertArr );
+		RCUBE_ARR_DELETE ( Indexes );
+	}
+
+	UINT VertexBufferSize; // размер вертексного масива
+	UINT IndexBufferSize; // размер индексного масива
+	Vertex_Model3D * VertArr = nullptr;  // вертексный масив
+	UINT * Indexes = nullptr; // индексный массив 
+
+	ID3D11Resource * TextureResurce = nullptr;		// тексттурные данные для этого мэша***
+	ID3D11ShaderResourceView * Texture = nullptr;
+	// тексттурные данные для этого мэша***
+
+	ID3D11Buffer* VertBuff = nullptr; // вертексный буфер этого мэша
+
+	Material::SurfaceMaterial material; // данные о материале для данного мэша
+
+	BoundingBox MeshBox; // параметры коробки огранич мэш в обькте
+
+/*
 XMFLOAT3 Position;
 //	XMMATRIX Rotation; //	XMVECTOR Rotation;
 bool	 Visible;
 bool	 CastShadow;
 bool	 ReceiveLight;
-};
 */
+};

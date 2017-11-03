@@ -16,9 +16,6 @@ TorchFireParticles::TorchFireParticles()
 
 	ShaderInstanceAll = nullptr;
 
-//	m_sampleState = nullptr;
-	m_layout = nullptr;
-
 	TextcordTop = nullptr;
 	TextcordLeft = nullptr;
 
@@ -113,7 +110,6 @@ TorchFireParticles::~TorchFireParticles()
 
 bool TorchFireParticles::Initialize( HWND hwnd,
 									 D3DGlobalContext *D3DGC,
-									 ID3D10Blob* Blob,
 									 ID3D11ShaderResourceView* _FireTexture,
 									 TorchFireSmoke TorchFireSmokeInit,
 									 D3DClass *_EngineLight
@@ -194,7 +190,7 @@ bool TorchFireParticles::Initialize( HWND hwnd,
 	EngineLight = _EngineLight;
 
 	// Создаём буферы для DX
-	result = InitializeBuffers( D3DGC_Local->D11_device, Blob );
+	result = InitializeBuffers( D3DGC_Local->DX_device );
 	if ( !result )
 	{
 		return false;
@@ -261,7 +257,7 @@ void TorchFireParticles::Frame( FPSTimers& Timers )
 	UpdateLight( Timers );
 
 	D3D11_MAPPED_SUBRESOURCE  mapResource;
-	HRESULT result = D3DGC_Local->D11_deviceContext->Map( FlameInstanceBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapResource );
+	HRESULT result = D3DGC_Local->DX_deviceContext->Map( FlameInstanceBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapResource );
 	if ( FAILED( result ) )
 	{
 		MessageBox( 0, L"Ошибка доступа к буферу частиц TorchFireParticles.", L"Can't ->Map", 0 );
@@ -306,7 +302,7 @@ void TorchFireParticles::Frame( FPSTimers& Timers )
 		}
 
 	}
-	D3DGC_Local->D11_deviceContext->Unmap( FlameInstanceBuffer, 0 );
+	D3DGC_Local->DX_deviceContext->Unmap( FlameInstanceBuffer, 0 );
 
 
 }
@@ -331,29 +327,19 @@ void TorchFireParticles::Render()
 	bufferPointers[1] = FlameInstanceBuffer;
 
 	// Set the vertex buffer to active in the input assembler so it can be rendered.
-	D3DGC_Local->D11_deviceContext->IASetVertexBuffers( 0, 2, bufferPointers, strides, offsets );
+	D3DGC_Local->DX_deviceContext->IASetVertexBuffers( 0, 2, bufferPointers, strides, offsets );
 
 	// Set the index buffer to active in the input assembler so it can be rendered.
-	D3DGC_Local->D11_deviceContext->IASetIndexBuffer( IndexBuffer, DXGI_FORMAT_R32_UINT, 0 );
+	D3DGC_Local->DX_deviceContext->IASetIndexBuffer( IndexBuffer, DXGI_FORMAT_R32_UINT, 0 );
 
 	// Set the type of primitive that should be rendered from this vertex buffer.
-	D3DGC_Local->D11_deviceContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+	D3DGC_Local->DX_deviceContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
 
 	// Set shader texture resource in the pixel shader.
-	D3DGC_Local->D11_deviceContext->PSSetShaderResources( 0, 1, &FireTexture );
-
-	// Set the vertex input layout.
-	D3DGC_Local->D11_deviceContext->IASetInputLayout( m_layout );
-
-	// Set the vertex and pixel shaders that will be used to render this triangle.
-	// D3DGC_Local->D11_deviceContext->VSSetShader(m_vertexShader, NULL, 0);
-	// D3DGC_Local->D11_deviceContext->PSSetShader(m_pixelShader, NULL, 0);
-
-	// Set the sampler state in the pixel shader.
-//	D3DGC_Local->D11_deviceContext->PSSetSamplers( 0, 1, &m_sampleState );
+	D3DGC_Local->DX_deviceContext->PSSetShaderResources( 0, 1, &FireTexture );
 
 	// Render the triangle.
-	D3DGC_Local->D11_deviceContext->DrawIndexedInstanced( 6, FlameInstanceActive + SmokeInstanceActive + FireFlyInstancesActive, 0, 0, 0 );
+	D3DGC_Local->DX_deviceContext->DrawIndexedInstanced( 6, FlameInstanceActive + SmokeInstanceActive + FireFlyInstancesActive, 0, 0, 0 );
 
 }
 
@@ -392,7 +378,7 @@ bool TorchFireParticles::InitializeParticleSystem()
 }
 
 
-bool TorchFireParticles::InitializeBuffers( ID3D11Device* device, ID3D10Blob* Blob )
+bool TorchFireParticles::InitializeBuffers( ID3D11Device* device )
 {
 	HRESULT result;
 
@@ -529,68 +515,7 @@ bool TorchFireParticles::InitializeBuffers( ID3D11Device* device, ID3D10Blob* Bl
 	{
 		return false;
 	}
-/*
-	SmokeVertexData.pSysMem = SmokeVertices;
-	SmokeVertexData.SysMemPitch = 0;
-	SmokeVertexData.SysMemSlicePitch = 0;
 
-	result = device->CreateBuffer( &BillBordVertBufferDesc, &SmokeVertexData, &SmokeVertexBuffer );
-	if ( FAILED( result ) )
-	{
-		return false;
-	}
-*/
-	// Release the index array since it is no longer needed.
-//	RCUBE_ARR_DELETE( FlameVertices )
-//	delete [] SmokeVertices;
-
-	// LAYOUT
-	D3D11_INPUT_ELEMENT_DESC BASIC_Layout[5] =
-	{
-		{ "POSITION"	, 0 , DXGI_FORMAT_R32G32B32_FLOAT	, 0 , 0							   , D3D11_INPUT_PER_VERTEX_DATA   , 0 },
-		{ "TEXCOORD"	, 0 , DXGI_FORMAT_R32G32_FLOAT		, 0 , D3D11_APPEND_ALIGNED_ELEMENT , D3D11_INPUT_PER_VERTEX_DATA   , 0 },
-		{ "POSITION"	, 1 , DXGI_FORMAT_R32G32B32_FLOAT	, 1 , D3D11_APPEND_ALIGNED_ELEMENT , D3D11_INPUT_PER_INSTANCE_DATA , 1 },
-		{ "COLOR"		, 0 , DXGI_FORMAT_R32G32B32A32_FLOAT, 1 , D3D11_APPEND_ALIGNED_ELEMENT , D3D11_INPUT_PER_INSTANCE_DATA , 1 },
-		{ "InsTEXCOORD" , 0 , DXGI_FORMAT_R32G32B32A32_FLOAT, 1 , D3D11_APPEND_ALIGNED_ELEMENT , D3D11_INPUT_PER_INSTANCE_DATA , 1 }
-	};
-
-	unsigned int numElements;
-	// Get a count of the elements in the layout.
-	numElements = sizeof( BASIC_Layout ) / sizeof( BASIC_Layout[0] );
-
-	// Create the vertex input layout.
-	result = device->CreateInputLayout( BASIC_Layout, numElements, Blob->GetBufferPointer(), Blob->GetBufferSize(),
-										&m_layout );
-	if ( FAILED( result ) )
-	{
-		return false;
-	}
-/*
-	D3D11_SAMPLER_DESC samplerDesc;
-
-	// Create a texture sampler state description.
-	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.MipLODBias = 0.0f;
-	samplerDesc.MaxAnisotropy = 1;
-	samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-	samplerDesc.BorderColor[0] = 0;
-	samplerDesc.BorderColor[1] = 0;
-	samplerDesc.BorderColor[2] = 0;
-	samplerDesc.BorderColor[3] = 0;
-	samplerDesc.MinLOD = 0;
-	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-	// Create the texture sampler state.
-	result = device->CreateSamplerState( &samplerDesc, &m_sampleState );
-	if ( FAILED( result ) )
-	{
-		return false;
-	}
-
-*/
 	return true;
 }
 
@@ -605,8 +530,7 @@ void TorchFireParticles::ShutdownBuffers()
 //	RCUBE_ARR_DELETE( SmokeVertices )
 	
 	RCUBE_RELEASE( IndexBuffer )
-//	RCUBE_RELEASE( m_sampleState )
-	RCUBE_RELEASE( m_layout )
+
 	
 //	RCUBE_ARR_DELETE( FlameInstIndNumber )
 //	RCUBE_ARR_DELETE( FlameInstDistance )

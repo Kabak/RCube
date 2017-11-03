@@ -7,6 +7,7 @@
 #include "FPSTimers.h"
 #include "D3DClass.h"
 #include "Light_def.h"
+#include "Buffers_def.h"
 #include <vector>
 
 #ifndef _SNOWFALL_PARTICLES_H_
@@ -25,31 +26,18 @@ public:
 	// , а ровно количеству реальных кадров. Если кадры занимают всю текстуру,то FramesAmount = 0
 	bool Initialize( HWND hwnd,
 					 D3DGlobalContext *D3DGC_Local,
-					 ID3D10Blob* Blob,
 					 ID3D11ShaderResourceView* texture,
 					 int _UX_Amount,							// Количество строк в текстуре анимации
 					 int _VY_Amount,							// Количестко столбцов в текстуре анимации
-					 int FramesAmount,					// Реальное количество анимаций в текстуре с верха , слева направо
-					 D3DClass *_EngineLight
+					 int FramesAmount					// Реальное количество анимаций в текстуре с верха , слева направо
 					 );
 
-
-	bool InitFireSystem( HWND hwnd,
-						 D3DGlobalContext *D3DGC,
-						 ID3D10Blob* Blob,
-						 ID3D11ShaderResourceView *_FireTexture,
-						 //	ID3D11ShaderResourceView *_SmokeTexture,
-						 //	ID3D11ShaderResourceView *_HeartTexture,
-						 //	ID3D11ShaderResourceView *_ParticlesTexture,
-						 //						 int  InstanceAmount,
-						 D3DClass *_EngineLight
-						 );
 
 	void Shutdown();
 	void Frame( FPSTimers &Timers );
 	void Render();
 
-	bool InitializeBuffers( ID3D11Device*, ID3D10Blob* Blob );
+	bool InitializeBuffers( ID3D11Device* );
 	void ShutdownBuffers();
 
 	void EmitParticles( FPSTimers& Timers );
@@ -66,16 +54,11 @@ private:
 
 	D3DGlobalContext *D3DGC_Local;
 
-	D3DClass *EngineLight;
-	PointLight *TempLight;
-
-	bool InitializeParticleSystem();
+	void InitializeParticleSystem();
 	void ShutdownParticleSystem();
 
 	ID3D11ShaderResourceView *FireTexture;
-	ID3D11ShaderResourceView *SmokeTexture;
-	ID3D11ShaderResourceView *HeartTexture;
-	ID3D11ShaderResourceView *ParticlesTexture;
+
 
 	int UX_Amount;			// Ширина текстуры Width X U
 	int VY_Amount;			// Высота текстуры Height Y V
@@ -93,8 +76,7 @@ private:
 	void SetInstanceStartFrame( int FrameNumber, XMFLOAT4& Data2 );
 
 	Vertex_FlatObject* m_vertices;
-	ID3D11InputLayout* m_layout;
-//	ID3D11SamplerState* m_sampleState;
+
 	ID3D11Buffer *m_vertexBuffer;
 	ID3D11Buffer *m_indexBuffer;
 	// +++++++++++++++++   Instancing   ++++++++++++++++++++++++++++++++

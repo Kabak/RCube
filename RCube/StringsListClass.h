@@ -4,14 +4,14 @@
 #ifndef _STRINGSLISTCLASS_H_
 #define _STRINGSLISTCLASS_H_
 
-#include "SquareObjectClass.h"
+#include "FlatObjectClass.h"
 #include "FPSTimers.h"
 #include "FontClass.h"
 #include "TextClass.h"
 #include <vector>
 
 
-class StringsListClass : public SquareObjectClass
+class StringsListClass : public FlatObjectClass
 {
 
 public:
@@ -42,13 +42,15 @@ public:
 
 	int MaxVisibleIndex;	// Сколько строк рисовать из общего списка
 
+	Flat_Obj_Buffers* Buffers;
 	// Статический имеет ограничения по количеству элементов - строк в списке. 
 	// но рисуется быстрее. За счёт того, что строки рисуются на текстуре один раз без возможности обновления 
 	HRESULT Init( D3DGlobalContext* D3DGC,
 			   XMFLOAT4& _ScreenCoords,
 			   XMFLOAT4& _FormCoord,
 			   StringsList_Elements& StringsListInit,
-			   TextClass* g_text
+			   TextClass* g_text,
+			   Flat_Obj_Buffers* _Buffers
 			 );
 																	
 	void Draw();
@@ -69,6 +71,8 @@ public:
 
 //	void InitDynamicStringsList( vector <char*> StringsList ); // Динамический StringsList
 
+	int SentencesIndex;			// Индекс группы текстовых строк в списке всех строк резервируется для конкретнго StringsList, чтобы все строки для конкретного StringsList рисовались одновременно
+
 private:
 	
 	D3DGlobalContext* Local_D3DGC;
@@ -78,7 +82,6 @@ private:
 
 vector <int> SentencesResIndex;// Список индексов предложений зарезервированных для нашего StringsList
 
-	int SentencesIndex;			// Индекс группы текстовых строк в списке всех строк резервируется для конкретнго StringsList, чтобы все строки для конкретного StringsList рисовались одновременно
 	int FontIndex;				// номер шрифта которым рисуется текст
 	int FontHeightInPixel;		// Размер текстуры шрифта в пикселях ( для качественного написания любого символа )
 

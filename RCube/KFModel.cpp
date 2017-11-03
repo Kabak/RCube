@@ -6,7 +6,6 @@
 KFModel::KFModel(){
 
 	m_posesBuffer = nullptr;
-	vertLayout = nullptr;
 	ThisObjDesc.Positions = nullptr;
 	ThisObjDesc.PositionsDraw = nullptr;
 
@@ -15,7 +14,7 @@ KFModel::KFModel(){
 bool KFModel::LoadKFObject(std::wstring FileName){
 
 	HRESULT hr;
-	int c = 0 , h = 0;
+	UINT c = 0 , h = 0;
 	D3D11_BUFFER_DESC bd;
 	D3D11_SUBRESOURCE_DATA InitData;
 	RCube_VecFloat34 TempFloat3;
@@ -112,17 +111,14 @@ bool KFModel::LoadKFObject(std::wstring FileName){
 
 }
 
-HRESULT KFModel::Init(HWND hwnd, std::wstring filename, ID3D11Device *d3d11Device
-	, ID3D11DeviceContext * DevCon, UINT Shaders, int m_instanceCount, D3DClass * ActiveLightClass){
+HRESULT KFModel::Init(std::wstring filename, D3DGlobalContext * D3DGC, UINT Shaders, int m_instanceCount, D3DClass * ActiveLightClass){
 
 	HRESULT hr = 0;
 	g_ActiveLightClass = ActiveLightClass;
-	g_hwnd = hwnd;
-	//ID3DXEffect * 
 
 	ThisObjDesc.InstanceCount = m_instanceCount;
-	d3d11DevCon = DevCon ;
-	KFModel::d3d11Device = d3d11Device ;
+	d3d11DevCon = D3DGC->DX_deviceContext ;
+	d3d11Device = D3DGC->DX_device ;
 	
 	LoadKFObject(filename) ;
 
@@ -179,56 +175,10 @@ HRESULT KFModel::Init(HWND hwnd, std::wstring filename, ID3D11Device *d3d11Devic
 
 }
 
-HRESULT KFModel::Frame(int frames ){
 
-	/*HRESULT result ;
-	D3D11_MAPPED_SUBRESOURCE mapperResurse , mapperResurse2 ;
-	Vertex * vertixesPtr ;
-	DWORD  * IndexesPtr ;
-	int c = 0;
-
-	result = d3d11DevCon->Map(VertBuff , 0 , D3D11_MAP_WRITE_DISCARD , 0 , &mapperResurse ) ;
-	if (FAILED(result)){
-	//	MessageBox(working_hwnd, L"2DRenderingClass. ошибка в изменении вертексного буфера", L"Error", MB_OK);
-		return E_FAIL ;
-	}
-
-	vertixesPtr = (Vertex*)mapperResurse.pData ;
-
-
-	memcpy(vertixesPtr , VertArr[frames] , (sizeof(Vertex) * VertexSizes[frames]));
-
-	d3d11DevCon->Unmap(VertBuff , 0);
-
-
-	result = d3d11DevCon->Map(IndexBuff , 0 , D3D11_MAP_WRITE_DISCARD , 0 , &mapperResurse2 ) ;
-	if (FAILED(result)){
-	//	MessageBox(working_hwnd, L"2DRenderingClass. ошибка в изменении вертексного буфера", L"Error", MB_OK);
-		return E_FAIL ;
-	}
-
-	IndexesPtr = (DWORD*)mapperResurse2.pData ;
-
-
-	memcpy(IndexesPtr , Indexes[frames] , (sizeof(DWORD) * IndexesSizes[frames]));
-
-	d3d11DevCon->Unmap(IndexBuff , 0);
-
-	UsingSubsetIndexStart = SubSetIndexStarts[frames] ;
-
-	ObjectNum = ObjectNumArr[frames] ;*/
-	return S_OK ;
-
-}
-
-KFModel::~KFModel(){
-	 
-
+KFModel::~KFModel()
+{
 	RCUBE_RELEASE(m_posesBuffer);
-	RCUBE_RELEASE(vertLayout);
-
-
-
 }
 
 
@@ -271,7 +221,7 @@ bool KFModel::UpdateInstancingPos() {
 
 
 void KFModel::LightRender() {
-	int c = 0;
+	UINT c = 0;
 
 	unsigned int strides[2];
 	unsigned int offsets[2];
@@ -280,8 +230,6 @@ void KFModel::LightRender() {
 	UpdateInstancingPos();
 
 	if (Instance != 0) {
-
-		d3d11DevCon->IASetInputLayout(vertLayout);
 
 		// Set vertex buffer stride and offset.
 		strides[0] = sizeof( Vertex_Model3D );
@@ -316,7 +264,7 @@ void KFModel::LightRender() {
 
 void KFModel::Render() {
 
-	int c = 0;
+	UINT c = 0;
 
 	unsigned int strides[2];
 	unsigned int offsets[2];
@@ -325,8 +273,6 @@ void KFModel::Render() {
 	UpdateInstancingPos();
 
 	if (Instance != 0) {
-
-		d3d11DevCon->IASetInputLayout(vertLayout);
 
 		// Set vertex buffer stride and offset.
 		strides[0] = sizeof( Vertex_Model3D );

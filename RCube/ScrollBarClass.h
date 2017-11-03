@@ -9,21 +9,18 @@
 #endif
 
 
-#include "SquareObjectClass.h"
+#include "FlatObjectClass.h"
 #include "FPSTimers.h"
 #include <dinput.h>
-//#include <WICTextureLoader.h>
+#include "DX11Buffers.h"
+#include "D3DGlobalContext.h"
 
-class ScrollBarClass : public SquareObjectClass {
+
+class ScrollBarClass : public FlatObjectClass {
 
 private:
 
 	const float MIN_TRAVELER_SIZE = 20.0f; // В пикселях 20
-
-	// Кнопки
-	SquareObjectClass *MinButton;
-	SquareObjectClass *MaxButton;
-	SquareObjectClass *Traveller;
 
 	Vertex_FlatObject *BodyVertexes;
 
@@ -98,6 +95,12 @@ private:
 	bool Enabled;
 
 public:
+	// Кнопки
+	FlatObjectClass *MinButton;
+	FlatObjectClass *MaxButton;
+	FlatObjectClass *Traveller;
+	FlatObjectClass *Body;
+
 	// Изменяем позицию ползунка в новое значение
 	void SetValue( float value );
 	
@@ -149,7 +152,11 @@ public:
 	HRESULT Init( D3DGlobalContext* D3DGC,
 		XMFLOAT4& _ScreenCoords,
 		XMFLOAT4& _FormCoord,
-		KFScrollBar_Elements& TempScrollBarData
+		KFScrollBar_Elements& TempScrollBarData,
+		Flat_Obj_Buffers* _BuffersMin,
+		Flat_Obj_Buffers* _BuffersMax,
+		Flat_Obj_Buffers* _BuffersTraveler,
+		Flat_Obj_Buffers* _Body
 		);
 
 	void Draw();

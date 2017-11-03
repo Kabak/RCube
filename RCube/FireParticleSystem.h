@@ -7,7 +7,7 @@
 #include "FPSTimers.h"
 #include "D3dClass.h"
 #include "Light_def.h"
-#include "VertexBuffers_def.h"
+#include "Buffers_def.h"
 #include <vector>
 
 #ifndef _FIRE_PARTICLE_SYSTEM_H_
@@ -26,7 +26,6 @@ public:
    // , а ровно количеству реальных кадров. Если кадры занимают всю текстуру,то FramesAmount = 0
    bool Initialize( HWND hwnd, 
 	   D3DGlobalContext *D3DGC_Local, 
-					ID3D10Blob* Blob, 
    ID3D11ShaderResourceView* texture, 
 					   int _UX_Amount,							// Количество строк в текстуре анимации
 					   int _VY_Amount,							// Количестко столбцов в текстуре анимации
@@ -50,7 +49,7 @@ public:
 	void Frame( FPSTimers &Timers );
 	void Render();
 
-	bool InitializeBuffers( ID3D11Device*, ID3D10Blob* Blob );
+	bool InitializeBuffers( ID3D11Device* );
 	void ShutdownBuffers();
 
 	void EmitParticles( FPSTimers& Timers );
@@ -101,8 +100,7 @@ private:
 	void SetInstanceStartFrame(int FrameNumber, XMFLOAT4& Data2 );
 
 	Vertex_FlatObject* m_vertices;
-	ID3D11InputLayout* m_layout;
-//	ID3D11SamplerState* m_sampleState;
+
 	ID3D11Buffer *m_vertexBuffer;
 	ID3D11Buffer *m_indexBuffer;
 	// +++++++++++++++++   Instancing   ++++++++++++++++++++++++++++++++

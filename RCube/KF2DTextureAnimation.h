@@ -1,10 +1,10 @@
 #pragma once
 #include "stdafx.h"
 
-#include "SquareObjectClass.h"
+#include "FlatObjectClass.h"
 #include "D3DGlobalContext.h"
-#include "ResourceManager.h"
 #include "FPSTimers.h"
+#include "DX11Buffers.h"
 
 #ifndef _KF2DTextureANIMATION_H_
 #define _KF2DTextureANIMATION_H_
@@ -21,12 +21,11 @@ public:
 		ID3D11ShaderResourceView * animTexture,
 		int DrawShaderIndex,				// Номер шейдера в движке которым нужно рисовать анимацию
 		int ReturnShaderIndex,				// Номер шейдера в движке который нужно включить после анимации
-		ResourceManager *_ShaderManager,
+		Flat_Obj_Buffers* _Buffers,
 		XMFLOAT4& _ObjParam				// x,y - позиция на экране  z - Width , w - Height
 		);
 
 	void Frame( FPSTimers &fpstimers );
-	void Draw();
 
 	bool Enabled;
 
@@ -48,12 +47,15 @@ public:
 
 	void SetFPSpeed(float FPS );
 
+	// Текстура с анимацией
+	FlatObjectClass * AnimeTextures;
+
 private:
 
 	int UX_Amount;			// Ширина текстуры Width X U
 	int VY_Amount;			// Высота текстуры Height Y V
 
-	ResourceManager *ShaderManager;
+//	ResourceManager * GlobalResourceManager;
 	// Сколько всего кадров в анимации
 	int NumOfAnimeFrams;
 	// Текущий кадр
@@ -67,9 +69,6 @@ private:
 	float *TextcordTop; 
 	float *TextcordLeft;
 
-	// Текстура с анимацией
-	SquareObjectClass * AnimeTextures;
-	
 	// ШИрина одного кадра в текстурных координатах 0 - 1
 	float OneFrameWidth;
 	// Высота одного кадра в текстурных координатах 0 - 1

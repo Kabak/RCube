@@ -1,6 +1,11 @@
 ========================================================================
     WIN32 APPLICATION : RCube Project Overview
 ========================================================================
+Шаблонные функции в реализация в Н файле, не CPP
+https://ru.stackoverflow.com/questions/429903/%D0%92-%D0%BA%D0%B0%D0%BA%D0%BE%D0%BC-%D1%81%D0%BB%D1%83%D1%87%D0%B0%D0%B5-%D0%BD%D1%83%D0%B6%D0%BD%D0%BE-%D0%BE%D0%BF%D1%80%D0%B5%D0%B4%D0%B5%D0%BB%D1%8F%D1%82%D1%8C-%D1%84%D1%83%D0%BD%D0%BA%D1%86%D0%B8%D1%8E-%D0%B2-%D0%B7%D0%B0%D0%B3%D0%BE%D0%BB%D0%BE%D0%B2%D0%BE%D1%87%D0%BD%D0%BE%D0%BC-%D1%84%D0%B0%D0%B9%D0%BB%D0%B5
+Типы данных как аргументы
+https://rsdn.org/forum/cpp/624025.hot
+
 VS Find & Replace didnt work
 https://social.msdn.microsoft.com/Forums/vstudio/en-US/40c9ad4a-8cee-4f3f-b420-c7cc0463942a/visual-studio-2012-find-in-files-not-displaying-files?forum=vsx
 
@@ -12,6 +17,9 @@ Dx11 Core Interfaces
 https://msdn.microsoft.com/en-us/library/ff476154(v=vs.85).aspx
 Dx12 Core Interfaces
 https://msdn.microsoft.com/en-us/library/dn934203(v=vs.85).aspx
+Dx12 Samples
+https://github.com/Microsoft/DirectX-Graphics-Samples
+https://msdn.microsoft.com/en-us/library/windows/desktop/mt186624(v=vs.85).aspx
 
 Проблема с мультисемплированием и шейдером Texture2DMS
 http://www.gamedev.ru/code/forum/?id=211108
@@ -83,11 +91,11 @@ https://msdn.microsoft.com/en-us/library/ff471358%28v=vs.85%29.aspx
 
 	}	ThisObjDesc;
 
-Constant Buffers slots
-0 - матрицы World , View, Projection, Ortho, Camera Position для кадра
-1 - свет D3DClass Light PerFrameConstants
-13 - цвет шрифта для рисования
-12 - FXAA фильтрация
+Vertex Shader Constant Buffers slots
+0  VS - матрицы World , View, Projection, Ortho, Camera Position для кадра
+1  VS - свет D3DClass Light PerFrameConstants
+13 VS - цвет шрифта для рисования
+12 PS - FXAA фильтрация 
 
 Samplers Slots
 0 - 3D Model Samspling

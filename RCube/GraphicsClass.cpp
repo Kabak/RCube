@@ -5,7 +5,6 @@
 // Filename: graphicsclass.cpp
 ////////////////////////////////////////////////////////////////////////////////
 #include "GraphicsClass.h"
-#include "Light_def.h"
 
 void __stdcall Duck()
 {
@@ -15,18 +14,16 @@ void __stdcall Duck()
 GraphicsClass::GraphicsClass()
 {
 
+					   m_D3D = nullptr;
 					 Profile = nullptr;
 				   m_Frustum = nullptr;
-					   m_D3D = nullptr;
 					m_Camera = nullptr;
-GlobalShadersConstantsBuffer = nullptr;
 				   MyManager = nullptr;
 					  m_Text = nullptr;
 					m_Bitmap = nullptr;
 					 Mapping = nullptr;
-//					 m_Light = nullptr;
 
-		 		    MainMenu = nullptr;
+					MainMenu = nullptr;
 				 AnimTexture = nullptr;
 						 Hud = nullptr;
 
@@ -39,9 +36,9 @@ GlobalShadersConstantsBuffer = nullptr;
 
 				   KFTerrain = nullptr;
 				   ModelList = nullptr;
-				  ClusterMap = nullptr;
+//				  ClusterMap = nullptr;
 				  ShadowWork = nullptr;
-				  
+				  RCubeRender = nullptr;
 
 			Global = new  char[100];
 
@@ -81,25 +78,25 @@ GraphicsClass::~GraphicsClass()
 
 	Strings.clear();
 
-	RCUBE_DELETE ( AnimTexture );
-	RCUBE_DELETE ( KFTerrain );
-	RCUBE_DELETE ( Profile );
+	RCUBE_DELETE ( RCubeRender );
 	RCUBE_DELETE ( ShadowWork );
-//  RCUBE_SHUTDOWN ( m_Light );
+//    RCUBE_DELETE ( ClusterMap );
+
+	RCUBE_DELETE ( ModelList );
+	RCUBE_DELETE ( KFTerrain );
   RCUBE_SHUTDOWN ( FireParticles );
   RCUBE_SHUTDOWN ( TorchFire );
   RCUBE_SHUTDOWN ( SnowParticles );
-    RCUBE_DELETE ( ClusterMap );
-   RCUBE_RELEASE (GlobalShadersConstantsBuffer);
-	RCUBE_DELETE ( ModelList );
-    RCUBE_DELETE ( Mapping );
-    RCUBE_DELETE ( MainMenu );
 	RCUBE_DELETE ( Hud );
+	RCUBE_DELETE ( AnimTexture );
+	RCUBE_DELETE ( MainMenu );
+	RCUBE_DELETE ( Mapping );
 	RCUBE_DELETE ( m_Bitmap );
-    RCUBE_DELETE ( MyManager );
   RCUBE_SHUTDOWN ( m_Text );
+	RCUBE_DELETE ( MyManager );
     RCUBE_DELETE ( m_Camera );
 	RCUBE_DELETE ( m_Frustum );
+	RCUBE_DELETE ( Profile );
   RCUBE_SHUTDOWN ( m_D3D );
 
 }
@@ -128,9 +125,8 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 // http://stackoverflow.com/questions/22133742/dx11-crash-when-accessing-xmmatrix
 //	siz = __alignof(D3DClass);
 
-
 	Profile = new RCubeProfiling;
-	Profile->Initialize();
+	Profile->Initialize ();
 
 	m_Frustum = new FrustumClass;
 
@@ -151,7 +147,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 		m_D3D->D3DGC->CLight_SM_PCF_Sampler,		// ShadowMap PCF sampler , FXAA
 		m_D3D->D3DGC->FlatObject_Sampler			// Flat Object sampler ( CubeMap, Text, Menu Items, All Particles  )
 	};
-	m_D3D->D3DGC->D11_deviceContext->PSSetSamplers ( 0, 4, AllSamplers );
+	m_D3D->D3DGC->DX_deviceContext->PSSetSamplers ( 0, 4, AllSamplers );
 
 	// Инициализируем глобальную ссылку на InputClass 
 	m_D3D->D3DGC->m_EngineInputClass = _Input;
@@ -173,29 +169,11 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	m_Camera->Render();
 //	m_Camera->FirstPersonCam = true;
 
-
-// + Создаём константный буфер
-	D3D11_BUFFER_DESC cbbd;
-	ZeroMemory( &cbbd, sizeof( D3D11_BUFFER_DESC ) );
-
-	cbbd.Usage = D3D11_USAGE_DEFAULT;
-	cbbd.ByteWidth = sizeof( ConstantBufferData );
-	cbbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	cbbd.CPUAccessFlags = 0;
-	cbbd.MiscFlags = 0;
-
-	hr = m_D3D->D3DGC->D11_device->CreateBuffer( &cbbd, NULL, &GlobalShadersConstantsBuffer);
-	if ( FAILED( hr ) )
-	{
-		MessageBox( NULL, L"Create cbPerObjectBuffer failed!", Error, 0 );
-		result = false;
-	}
-
-// - Создаём константный буфер
-
 	MyManager = new ResourceManager;
-	MyManager->Init(m_D3D->D3DGC , hwnd);
+	MyManager->Init(m_D3D->D3DGC);
 //	m_D3D->D3DGC->ShaderManager = MyManager;
+
+// Грузим ресурсы
 	hr = MyManager->InitTextures(L"Textures/Result.kaf");
 	if ( FAILED( hr ) )
 	{
@@ -691,17 +669,25 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 		return false;
 	}
 
-
+	// Инициализируем систему рисования 
+	RCubeRender = new RenderClass ( m_D3D->D3DGC, MyManager, m_D3D, m_Text );
 	
 // +++++++++++++++++++++   Custom Cursor   ++++++++++++++++++++++++++++++++++
 	XMFLOAT4 MouseCursorPos = {0.0f, 0.0f, 30.0f, 30.0f};
-	m_Bitmap = new SquareObjectClass;
-	hr = m_Bitmap->Init ( m_D3D->D3DGC,
-		MouseCursorPos,
-		MyManager->ShaderResourceArr[10],
-		NO_FLIP
-	);
-	
+	{
+		// Инициализируцем буферы для m_Bitmap
+		int TempIndex = MyManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 1, 6, MyManager->TexturesArr[10]->SRV );
+		m_Bitmap = new FlatObjectClass;
+		hr = m_Bitmap->Init ( m_D3D->D3DGC->ScreenWidth, m_D3D->D3DGC->ScreenHeight,
+			MouseCursorPos,
+			MyManager->TexturesArr[10]->SRV,
+			NO_FLIP,
+			MyManager->Get_Flat_ObjectBuffers_ByIndex ( TempIndex )
+		);
+		m_Bitmap->BuffersIndex = TempIndex;
+	}
+
+
 	m_Bitmap->ShaderIndex = MyManager->GetShaderIndexByName(L"KF2DObj");
 
 	if (FAILED( hr ))
@@ -793,51 +779,52 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	m_D3D->TurnZBufferOff();
 
 	m_D3D->SetCullNoneResterizeState ();
-	m_D3D->D3DGC->D11_deviceContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
-	m_D3D->D3DGC->D11_deviceContext->OMSetRenderTargets( 1, &m_D3D->D3DGC->BackBuffer_ProxyTextureRTV, NULL ); //m_D3D->D3DGC->m_depthStencilView
-	m_D3D->D3DGC->D11_deviceContext->ClearRenderTargetView( m_D3D->D3DGC->BackBuffer_ProxyTextureRTV, m_D3D->D3DGC->ZeroColor );
+	m_D3D->D3DGC->DX_deviceContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+	m_D3D->D3DGC->DX_deviceContext->OMSetRenderTargets( 1, &m_D3D->D3DGC->BackBuffer_ProxyTextureRTV, NULL ); //m_D3D->D3DGC->m_depthStencilView
+	m_D3D->D3DGC->DX_deviceContext->ClearRenderTargetView( m_D3D->D3DGC->BackBuffer_ProxyTextureRTV, m_D3D->D3DGC->ZeroColor );
 
-	MyManager->SetActiveShadersInProgramm ( m_Text->TextShaderIndex );
 //	Profile->StartTimer();
-	m_Text->m_Font[0]->RenderFontOnTexture ( MyManager->ShaderResourceArr[1],
+
+	RCubeRender->RenderFontOnTexture ( MyManager->TexturesArr[1]->SRV,
 											 Path,
 											 L"Анимация OFF",
-											 FontOnTexture );
-//	m_D3D->SaveTextureToPNG( m_D3D->D3DGC->BackBuffer_ProxyTextureSRV );
+											 FontOnTexture
+	);
 
-	m_D3D->D3DGC->D11_deviceContext->ClearRenderTargetView( m_D3D->D3DGC->BackBuffer_ProxyTextureRTV, m_D3D->D3DGC->ZeroColor );
-	m_Text->m_Font[0]->RenderFontOnTexture ( MyManager->ShaderResourceArr[7],
+	RCubeRender->RenderFontOnTexture ( MyManager->TexturesArr[7]->SRV,
 											 Path,
 											 L"FXAA ON",
-											 FontOnTexture );
+											 FontOnTexture 
+		);
 
-	m_D3D->D3DGC->D11_deviceContext->ClearRenderTargetView( m_D3D->D3DGC->BackBuffer_ProxyTextureRTV, m_D3D->D3DGC->ZeroColor );
-	m_Text->m_Font[0]->RenderFontOnTexture ( MyManager->ShaderResourceArr[6],
+	RCubeRender->RenderFontOnTexture ( MyManager->TexturesArr[6]->SRV,
 											 Path,
 											 L"Shadows ON",
-											 FontOnTexture );
+											 FontOnTexture
+		);
 
-	m_D3D->D3DGC->D11_deviceContext->ClearRenderTargetView( m_D3D->D3DGC->BackBuffer_ProxyTextureRTV, m_D3D->D3DGC->ZeroColor );
-	m_Text->m_Font[0]->RenderFontOnTexture ( MyManager->ShaderResourceArr[2],
+	RCubeRender->RenderFontOnTexture ( MyManager->TexturesArr[2]->SRV,
 											 Path,
 											 L"Анимация ON",
-											 FontOnTexture );
+											 FontOnTexture 
+	);
 
-	m_D3D->D3DGC->D11_deviceContext->ClearRenderTargetView( m_D3D->D3DGC->BackBuffer_ProxyTextureRTV, m_D3D->D3DGC->ZeroColor );
-	m_Text->m_Font[0]->RenderFontOnTexture( MyManager->ShaderResourceArr[4],
+	RCubeRender->RenderFontOnTexture( MyManager->TexturesArr[4]->SRV,
 											Path,
 											L"Soft Shadows",
-											FontOnTexture );
-	//
-	m_D3D->D3DGC->D11_deviceContext->ClearRenderTargetView(m_D3D->D3DGC->BackBuffer_ProxyTextureRTV, m_D3D->D3DGC->ZeroColor);
-	m_Text->m_Font[0]->RenderFontOnTexture(MyManager->ShaderResourceArr[3],
+											FontOnTexture
+	);
+
+	RCubeRender->RenderFontOnTexture(MyManager->TexturesArr[3]->SRV,
 											Path,
 											L"Text OFF",
-											FontOnTexture);
+											FontOnTexture 
+	);
+
 
 //	Profile->StopTimer(Global);
 
-	m_D3D->D3DGC->D11_deviceContext->ClearRenderTargetView( m_D3D->D3DGC->BackBuffer_ProxyTextureRTV, m_D3D->D3DGC->ZeroColor );
+	m_D3D->D3DGC->DX_deviceContext->ClearRenderTargetView( m_D3D->D3DGC->BackBuffer_ProxyTextureRTV, m_D3D->D3DGC->ZeroColor );
 
 	m_D3D->TurnOffAlphaBlending();
 	m_D3D->TurnZBufferOn();
@@ -983,11 +970,11 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 
 	KFButton_Elements Buttons[8];
 	Buttons[0]._ObjParam = { 10.0f, 10.0f, x, y };
-	Buttons[0].OsnTextureResource = MyManager->ResourceArr[1];
-	Buttons[0].OsnTexture = MyManager->ShaderResourceArr[1];
-	Buttons[0].IsClickTexture = MyManager->ShaderResourceArr[19];
-	Buttons[0].IsMouseOnButtonTexture = MyManager->ShaderResourceArr[5];
-	Buttons[0].IsNotEnalbledTexture = MyManager->ShaderResourceArr[5];
+	Buttons[0].OsnTextureResource = MyManager->TexturesArr[1]->Resource;
+	Buttons[0].OsnTexture = MyManager->TexturesArr[1]->SRV;
+	Buttons[0].IsClickTexture = MyManager->TexturesArr[19]->SRV;
+	Buttons[0].IsMouseOnButtonTexture = MyManager->TexturesArr[5]->SRV;
+	Buttons[0].IsNotEnalbledTexture = MyManager->TexturesArr[5]->SRV;
 
 	Buttons[0].Data = NULL; // Нет строки в Buttons[0].Label 
 	Buttons[0].Label = "";
@@ -1001,11 +988,11 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 
 
 	Buttons[1]._ObjParam = { 10.0f, Buttons[0]._ObjParam.y + y + 10.0f , x, y };
-	Buttons[1].OsnTextureResource = MyManager->ResourceArr[2];
-	Buttons[1].OsnTexture = MyManager->ShaderResourceArr[2];
-	Buttons[1].IsClickTexture = MyManager->ShaderResourceArr[19];
-	Buttons[1].IsMouseOnButtonTexture = MyManager->ShaderResourceArr[5];
-	Buttons[1].IsNotEnalbledTexture = MyManager->ShaderResourceArr[5];
+	Buttons[1].OsnTextureResource = MyManager->TexturesArr[2]->Resource;
+	Buttons[1].OsnTexture = MyManager->TexturesArr[2]->SRV;
+	Buttons[1].IsClickTexture = MyManager->TexturesArr[19]->SRV;
+	Buttons[1].IsMouseOnButtonTexture = MyManager->TexturesArr[5]->SRV;
+	Buttons[1].IsNotEnalbledTexture = MyManager->TexturesArr[5]->SRV;
 /*
 	Data1->MaxLength = 0;
 	Data1->PosX = 150;
@@ -1028,11 +1015,11 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 
 
 	Buttons[2]._ObjParam = { 10.0f, Buttons[1]._ObjParam.y + y + 10.0f, x, y };
-	Buttons[2].OsnTextureResource = MyManager->ResourceArr[3];
-	Buttons[2].OsnTexture = MyManager->ShaderResourceArr[3];
-	Buttons[2].IsClickTexture = MyManager->ShaderResourceArr[19];
+	Buttons[2].OsnTextureResource = MyManager->TexturesArr[3]->Resource;
+	Buttons[2].OsnTexture = MyManager->TexturesArr[3]->SRV;
+	Buttons[2].IsClickTexture = MyManager->TexturesArr[19]->SRV;
 	Buttons[2].IsMouseOnButtonTexture = NULL;
-	Buttons[2].IsNotEnalbledTexture = MyManager->ShaderResourceArr[5];
+	Buttons[2].IsNotEnalbledTexture = MyManager->TexturesArr[5]->SRV;
 /*
 	Data2->MaxLength = 0;
 	Data2->PosX = 150;
@@ -1054,11 +1041,11 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Buttons[2].SecondSlot = true;
 
 	Buttons[3]._ObjParam = { 10.0f, Buttons[2]._ObjParam.y + y + 10.0f, x, y };
-	Buttons[3].OsnTextureResource = MyManager->ResourceArr[4];
-	Buttons[3].OsnTexture = MyManager->ShaderResourceArr[4];
-	Buttons[3].IsClickTexture = MyManager->ShaderResourceArr[19];
+	Buttons[3].OsnTextureResource = MyManager->TexturesArr[4]->Resource;
+	Buttons[3].OsnTexture = MyManager->TexturesArr[4]->SRV;
+	Buttons[3].IsClickTexture = MyManager->TexturesArr[19]->SRV;
 	Buttons[3].IsMouseOnButtonTexture = NULL;
-	Buttons[3].IsNotEnalbledTexture = MyManager->ShaderResourceArr[5];
+	Buttons[3].IsNotEnalbledTexture = MyManager->TexturesArr[5]->SRV;
 /*
 	Data3->MaxLength = 0;
 	Data3->PosX = 150;
@@ -1080,11 +1067,11 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Buttons[3].SecondSlot = true;
 
 	Buttons[4]._ObjParam = { 10.0f, Buttons[3]._ObjParam.y + y + 10.0f, x, y };
-	Buttons[4].OsnTextureResource = MyManager->ResourceArr[5];
-	Buttons[4].OsnTexture = MyManager->ShaderResourceArr[5];
-	Buttons[4].IsClickTexture = MyManager->ShaderResourceArr[19];
-	Buttons[4].IsMouseOnButtonTexture = MyManager->ShaderResourceArr[5];
-	Buttons[4].IsNotEnalbledTexture = MyManager->ShaderResourceArr[5];
+	Buttons[4].OsnTextureResource = MyManager->TexturesArr[5]->Resource;
+	Buttons[4].OsnTexture = MyManager->TexturesArr[5]->SRV;
+	Buttons[4].IsClickTexture = MyManager->TexturesArr[19]->SRV;
+	Buttons[4].IsMouseOnButtonTexture = MyManager->TexturesArr[5]->SRV;
+	Buttons[4].IsNotEnalbledTexture = MyManager->TexturesArr[5]->SRV;
 
 	Buttons[4].Data = NULL; // Нет строки в Buttons[4].Label 
 	Buttons[4].Label = "";
@@ -1144,10 +1131,12 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 					 StringsList1, 1,	// StringsLists
 					 NULL,		// Нет анимации
 					 { 112.0f, 84.0f, 800.0f, 600.0f },
-					 MyManager->ShaderResourceArr[18],
+					 MyManager->TexturesArr[18]->SRV,
+					 MyManager,
 					 m_Text
 					 );
 
+	MyManager->AddMenu ( dynamic_cast<Menu*> (MainMenu) );	// Добавляем меню в список существующих
 	KFScrollBar_Elements Bars[11];
 	
 	Bars[0].Horizontal = false;
@@ -1156,16 +1145,16 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[0].ObjParam = { 200.0f, 50.0f, 0.0f, 200.0f };
 	Bars[0].UpSideDown = true;
 
-	Bars[0].OsnTextureResource = MyManager->ResourceArr[12];
-	Bars[0].BodyTexture = MyManager->ShaderResourceArr[12];
+	Bars[0].OsnTextureResource = MyManager->TexturesArr[12]->Resource;
+	Bars[0].BodyTexture = MyManager->TexturesArr[12]->SRV;
 	Bars[0].BodyNotEnalbledTexture = NULL;
-	Bars[0].ButtonsTexture = MyManager->ShaderResourceArr[13];
-	Bars[0].ButtonPressTexture = MyManager->ShaderResourceArr[17];
+	Bars[0].ButtonsTexture = MyManager->TexturesArr[13]->SRV;
+	Bars[0].ButtonPressTexture = MyManager->TexturesArr[17]->SRV;
 	Bars[0].ButtonNotEnalbledTexture = NULL;
-	Bars[0].MouseOnButtonTexture = MyManager->ShaderResourceArr[16];
-	Bars[0].TravellerTexture = MyManager->ShaderResourceArr[14];
+	Bars[0].MouseOnButtonTexture = MyManager->TexturesArr[16]->SRV;
+	Bars[0].TravellerTexture = MyManager->TexturesArr[14]->SRV;
 	Bars[0].TravellerNotEnalbledTexture = NULL;
-	Bars[0].TravellerPressTexture = MyManager->ShaderResourceArr[15];
+	Bars[0].TravellerPressTexture = MyManager->TexturesArr[15]->SRV;
 	Bars[0].MouseOnTravellerTexture = NULL;
 
 // Для отладки шейдера теней
@@ -1175,16 +1164,16 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[1].ObjParam = { 10.0f, 450.0f, 0.0f, 100.0f };
 	Bars[1].UpSideDown = true;
 
-	Bars[1].OsnTextureResource = MyManager->ResourceArr[12];
-	Bars[1].BodyTexture = MyManager->ShaderResourceArr[12];
+	Bars[1].OsnTextureResource = MyManager->TexturesArr[12]->Resource;
+	Bars[1].BodyTexture = MyManager->TexturesArr[12]->SRV;
 	Bars[1].BodyNotEnalbledTexture = NULL;
-	Bars[1].ButtonsTexture = MyManager->ShaderResourceArr[13];
-	Bars[1].ButtonPressTexture = MyManager->ShaderResourceArr[17];
+	Bars[1].ButtonsTexture = MyManager->TexturesArr[13]->SRV;
+	Bars[1].ButtonPressTexture = MyManager->TexturesArr[17]->SRV;
 	Bars[1].ButtonNotEnalbledTexture = NULL;
-	Bars[1].MouseOnButtonTexture = MyManager->ShaderResourceArr[16];
-	Bars[1].TravellerTexture = MyManager->ShaderResourceArr[14];
+	Bars[1].MouseOnButtonTexture = MyManager->TexturesArr[16]->SRV;
+	Bars[1].TravellerTexture = MyManager->TexturesArr[14]->SRV;
 	Bars[1].TravellerNotEnalbledTexture = NULL;
-	Bars[1].TravellerPressTexture = MyManager->ShaderResourceArr[15];
+	Bars[1].TravellerPressTexture = MyManager->TexturesArr[15]->SRV;
 	Bars[1].MouseOnTravellerTexture = NULL;
 	// DepthBias
 	Bars[2].Horizontal = false;
@@ -1193,16 +1182,16 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[2].ObjParam = { 40.0f, 450.0f, 0.0f, 100.0f };
 	Bars[2].UpSideDown = true;
 
-	Bars[2].OsnTextureResource = MyManager->ResourceArr[12];
-	Bars[2].BodyTexture = MyManager->ShaderResourceArr[12];
+	Bars[2].OsnTextureResource = MyManager->TexturesArr[12]->Resource;
+	Bars[2].BodyTexture = MyManager->TexturesArr[12]->SRV;
 	Bars[2].BodyNotEnalbledTexture = NULL;
-	Bars[2].ButtonsTexture = MyManager->ShaderResourceArr[13];
-	Bars[2].ButtonPressTexture = MyManager->ShaderResourceArr[17];
+	Bars[2].ButtonsTexture = MyManager->TexturesArr[13]->SRV;
+	Bars[2].ButtonPressTexture = MyManager->TexturesArr[17]->SRV;
 	Bars[2].ButtonNotEnalbledTexture = NULL;
-	Bars[2].MouseOnButtonTexture = MyManager->ShaderResourceArr[16];
-	Bars[2].TravellerTexture = MyManager->ShaderResourceArr[14];
+	Bars[2].MouseOnButtonTexture = MyManager->TexturesArr[16]->SRV;
+	Bars[2].TravellerTexture = MyManager->TexturesArr[14]->SRV;
 	Bars[2].TravellerNotEnalbledTexture = NULL;
-	Bars[2].TravellerPressTexture = MyManager->ShaderResourceArr[15];
+	Bars[2].TravellerPressTexture = MyManager->TexturesArr[15]->SRV;
 	Bars[2].MouseOnTravellerTexture = NULL;
 	// SlopeScaledDepthBias
 	Bars[3].Horizontal = false;
@@ -1211,16 +1200,16 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[3].ObjParam = { 70.0f, 450.0f, 0.0f, 100.0f };
 	Bars[3].UpSideDown = true;
 
-	Bars[3].OsnTextureResource = MyManager->ResourceArr[12];
-	Bars[3].BodyTexture = MyManager->ShaderResourceArr[12];
+	Bars[3].OsnTextureResource = MyManager->TexturesArr[12]->Resource;
+	Bars[3].BodyTexture = MyManager->TexturesArr[12]->SRV;
 	Bars[3].BodyNotEnalbledTexture = NULL;
-	Bars[3].ButtonsTexture = MyManager->ShaderResourceArr[13];
-	Bars[3].ButtonPressTexture = MyManager->ShaderResourceArr[17];
+	Bars[3].ButtonsTexture = MyManager->TexturesArr[13]->SRV;
+	Bars[3].ButtonPressTexture = MyManager->TexturesArr[17]->SRV;
 	Bars[3].ButtonNotEnalbledTexture = NULL;
-	Bars[3].MouseOnButtonTexture = MyManager->ShaderResourceArr[16];
-	Bars[3].TravellerTexture = MyManager->ShaderResourceArr[14];
+	Bars[3].MouseOnButtonTexture = MyManager->TexturesArr[16]->SRV;
+	Bars[3].TravellerTexture = MyManager->TexturesArr[14]->SRV;
 	Bars[3].TravellerNotEnalbledTexture = NULL;
-	Bars[3].TravellerPressTexture = MyManager->ShaderResourceArr[15];
+	Bars[3].TravellerPressTexture = MyManager->TexturesArr[15]->SRV;
 	Bars[3].MouseOnTravellerTexture = NULL;
 	// PCF_AMOUNT
 	Bars[4].Horizontal = false;
@@ -1229,16 +1218,16 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[4].ObjParam = { 100.0f, 450.0f, 0.0f, 100.0f };
 	Bars[4].UpSideDown = true;
 
-	Bars[4].OsnTextureResource = MyManager->ResourceArr[12];
-	Bars[4].BodyTexture = MyManager->ShaderResourceArr[12];
+	Bars[4].OsnTextureResource = MyManager->TexturesArr[12]->Resource;
+	Bars[4].BodyTexture = MyManager->TexturesArr[12]->SRV;
 	Bars[4].BodyNotEnalbledTexture = NULL;
-	Bars[4].ButtonsTexture = MyManager->ShaderResourceArr[13];
-	Bars[4].ButtonPressTexture = MyManager->ShaderResourceArr[17];
+	Bars[4].ButtonsTexture = MyManager->TexturesArr[13]->SRV;
+	Bars[4].ButtonPressTexture = MyManager->TexturesArr[17]->SRV;
 	Bars[4].ButtonNotEnalbledTexture = NULL;
-	Bars[4].MouseOnButtonTexture = MyManager->ShaderResourceArr[16];
-	Bars[4].TravellerTexture = MyManager->ShaderResourceArr[14];
+	Bars[4].MouseOnButtonTexture = MyManager->TexturesArr[16]->SRV;
+	Bars[4].TravellerTexture = MyManager->TexturesArr[14]->SRV;
 	Bars[4].TravellerNotEnalbledTexture = NULL;
-	Bars[4].TravellerPressTexture = MyManager->ShaderResourceArr[15];
+	Bars[4].TravellerPressTexture = MyManager->TexturesArr[15]->SRV;
 	Bars[4].MouseOnTravellerTexture = NULL;
 	// PCF_Step
 	Bars[5].Horizontal = false;
@@ -1247,16 +1236,16 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[5].ObjParam = { 130.0f, 450.0f, 0.0f, 100.0f };
 	Bars[5].UpSideDown = true;
 
-	Bars[5].OsnTextureResource = MyManager->ResourceArr[12];
-	Bars[5].BodyTexture = MyManager->ShaderResourceArr[12];
+	Bars[5].OsnTextureResource = MyManager->TexturesArr[12]->Resource;
+	Bars[5].BodyTexture = MyManager->TexturesArr[12]->SRV;
 	Bars[5].BodyNotEnalbledTexture = NULL;
-	Bars[5].ButtonsTexture = MyManager->ShaderResourceArr[13];
-	Bars[5].ButtonPressTexture = MyManager->ShaderResourceArr[17];
+	Bars[5].ButtonsTexture = MyManager->TexturesArr[13]->SRV;
+	Bars[5].ButtonPressTexture = MyManager->TexturesArr[17]->SRV;
 	Bars[5].ButtonNotEnalbledTexture = NULL;
-	Bars[5].MouseOnButtonTexture = MyManager->ShaderResourceArr[16];
-	Bars[5].TravellerTexture = MyManager->ShaderResourceArr[14];
+	Bars[5].MouseOnButtonTexture = MyManager->TexturesArr[16]->SRV;
+	Bars[5].TravellerTexture = MyManager->TexturesArr[14]->SRV;
 	Bars[5].TravellerNotEnalbledTexture = NULL;
-	Bars[5].TravellerPressTexture = MyManager->ShaderResourceArr[15];
+	Bars[5].TravellerPressTexture = MyManager->TexturesArr[15]->SRV;
 	Bars[5].MouseOnTravellerTexture = NULL;
 
 	Bars[6].Horizontal = false;
@@ -1265,16 +1254,16 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[6].ObjParam = { 160.0f, 450.0f, 0.0f, 100.0f };
 	Bars[6].UpSideDown = true;
 
-	Bars[6].OsnTextureResource = MyManager->ResourceArr[12];
-	Bars[6].BodyTexture = MyManager->ShaderResourceArr[12];
+	Bars[6].OsnTextureResource = MyManager->TexturesArr[12]->Resource;
+	Bars[6].BodyTexture = MyManager->TexturesArr[12]->SRV;
 	Bars[6].BodyNotEnalbledTexture = NULL;
-	Bars[6].ButtonsTexture = MyManager->ShaderResourceArr[13];
-	Bars[6].ButtonPressTexture = MyManager->ShaderResourceArr[17];
+	Bars[6].ButtonsTexture = MyManager->TexturesArr[13]->SRV;
+	Bars[6].ButtonPressTexture = MyManager->TexturesArr[17]->SRV;
 	Bars[6].ButtonNotEnalbledTexture = NULL;
-	Bars[6].MouseOnButtonTexture = MyManager->ShaderResourceArr[16];
-	Bars[6].TravellerTexture = MyManager->ShaderResourceArr[14];
+	Bars[6].MouseOnButtonTexture = MyManager->TexturesArr[16]->SRV;
+	Bars[6].TravellerTexture = MyManager->TexturesArr[14]->SRV;
 	Bars[6].TravellerNotEnalbledTexture = NULL;
-	Bars[6].TravellerPressTexture = MyManager->ShaderResourceArr[15];
+	Bars[6].TravellerPressTexture = MyManager->TexturesArr[15]->SRV;
 	Bars[6].MouseOnTravellerTexture = NULL;
 	// Shadow Divider
 	Bars[7].Horizontal = false;
@@ -1283,16 +1272,16 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[7].ObjParam = { 190.0f, 450.0f, 0.0f, 100.0f };
 	Bars[7].UpSideDown = true;
 
-	Bars[7].OsnTextureResource = MyManager->ResourceArr[12];
-	Bars[7].BodyTexture = MyManager->ShaderResourceArr[12];
+	Bars[7].OsnTextureResource = MyManager->TexturesArr[12]->Resource;
+	Bars[7].BodyTexture = MyManager->TexturesArr[12]->SRV;
 	Bars[7].BodyNotEnalbledTexture = NULL;
-	Bars[7].ButtonsTexture = MyManager->ShaderResourceArr[13];
-	Bars[7].ButtonPressTexture = MyManager->ShaderResourceArr[17];
+	Bars[7].ButtonsTexture = MyManager->TexturesArr[13]->SRV;
+	Bars[7].ButtonPressTexture = MyManager->TexturesArr[17]->SRV;
 	Bars[7].ButtonNotEnalbledTexture = NULL;
-	Bars[7].MouseOnButtonTexture = MyManager->ShaderResourceArr[16];
-	Bars[7].TravellerTexture = MyManager->ShaderResourceArr[14];
+	Bars[7].MouseOnButtonTexture = MyManager->TexturesArr[16]->SRV;
+	Bars[7].TravellerTexture = MyManager->TexturesArr[14]->SRV;
 	Bars[7].TravellerNotEnalbledTexture = NULL;
-	Bars[7].TravellerPressTexture = MyManager->ShaderResourceArr[15];
+	Bars[7].TravellerPressTexture = MyManager->TexturesArr[15]->SRV;
 	Bars[7].MouseOnTravellerTexture = NULL;
 
 	// DyffuseY
@@ -1302,16 +1291,16 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[8].ObjParam = { 35.0f, 700.0f, 100.0f, 25.0f };
 	Bars[8].UpSideDown = false;
 
-	Bars[8].OsnTextureResource = MyManager->ResourceArr[12];
-	Bars[8].BodyTexture = MyManager->ShaderResourceArr[12];
+	Bars[8].OsnTextureResource = MyManager->TexturesArr[12]->Resource;
+	Bars[8].BodyTexture = MyManager->TexturesArr[12]->SRV;
 	Bars[8].BodyNotEnalbledTexture = NULL;
-	Bars[8].ButtonsTexture = MyManager->ShaderResourceArr[13];
-	Bars[8].ButtonPressTexture = MyManager->ShaderResourceArr[17];
+	Bars[8].ButtonsTexture = MyManager->TexturesArr[13]->SRV;
+	Bars[8].ButtonPressTexture = MyManager->TexturesArr[17]->SRV;
 	Bars[8].ButtonNotEnalbledTexture = NULL;
-	Bars[8].MouseOnButtonTexture = MyManager->ShaderResourceArr[16];
-	Bars[8].TravellerTexture = MyManager->ShaderResourceArr[14];
+	Bars[8].MouseOnButtonTexture = MyManager->TexturesArr[16]->SRV;
+	Bars[8].TravellerTexture = MyManager->TexturesArr[14]->SRV;
 	Bars[8].TravellerNotEnalbledTexture = NULL;
-	Bars[8].TravellerPressTexture = MyManager->ShaderResourceArr[15];
+	Bars[8].TravellerPressTexture = MyManager->TexturesArr[15]->SRV;
 	Bars[8].MouseOnTravellerTexture = NULL;
 
 	// Active LIghts on Screen
@@ -1321,16 +1310,16 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[9].ObjParam = { 35.0f, 730.0f, 100.0f, 25.0f };
 	Bars[9].UpSideDown = false;
 
-	Bars[9].OsnTextureResource = MyManager->ResourceArr[12];
-	Bars[9].BodyTexture = MyManager->ShaderResourceArr[12];
+	Bars[9].OsnTextureResource = MyManager->TexturesArr[12]->Resource;
+	Bars[9].BodyTexture = MyManager->TexturesArr[12]->SRV;
 	Bars[9].BodyNotEnalbledTexture = NULL;
-	Bars[9].ButtonsTexture = MyManager->ShaderResourceArr[13];
-	Bars[9].ButtonPressTexture = MyManager->ShaderResourceArr[17];
+	Bars[9].ButtonsTexture = MyManager->TexturesArr[13]->SRV;
+	Bars[9].ButtonPressTexture = MyManager->TexturesArr[17]->SRV;
 	Bars[9].ButtonNotEnalbledTexture = NULL;
-	Bars[9].MouseOnButtonTexture = MyManager->ShaderResourceArr[16];
-	Bars[9].TravellerTexture = MyManager->ShaderResourceArr[14];
+	Bars[9].MouseOnButtonTexture = MyManager->TexturesArr[16]->SRV;
+	Bars[9].TravellerTexture = MyManager->TexturesArr[14]->SRV;
 	Bars[9].TravellerNotEnalbledTexture = NULL;
-	Bars[9].TravellerPressTexture = MyManager->ShaderResourceArr[15];
+	Bars[9].TravellerPressTexture = MyManager->TexturesArr[15]->SRV;
 	Bars[9].MouseOnTravellerTexture = NULL;
 
 	// Active Lights on Screen
@@ -1340,16 +1329,16 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[10].ObjParam = { 35.0f, 760.0f, 100.0f, 25.0f };
 	Bars[10].UpSideDown = false;
 
-	Bars[10].OsnTextureResource = MyManager->ResourceArr[12];
-	Bars[10].BodyTexture = MyManager->ShaderResourceArr[12];
+	Bars[10].OsnTextureResource = MyManager->TexturesArr[12]->Resource;
+	Bars[10].BodyTexture = MyManager->TexturesArr[12]->SRV;
 	Bars[10].BodyNotEnalbledTexture = NULL;
-	Bars[10].ButtonsTexture = MyManager->ShaderResourceArr[13];
-	Bars[10].ButtonPressTexture = MyManager->ShaderResourceArr[17];
+	Bars[10].ButtonsTexture = MyManager->TexturesArr[13]->SRV;
+	Bars[10].ButtonPressTexture = MyManager->TexturesArr[17]->SRV;
 	Bars[10].ButtonNotEnalbledTexture = NULL;
-	Bars[10].MouseOnButtonTexture = MyManager->ShaderResourceArr[16];
-	Bars[10].TravellerTexture = MyManager->ShaderResourceArr[14];
+	Bars[10].MouseOnButtonTexture = MyManager->TexturesArr[16]->SRV;
+	Bars[10].TravellerTexture = MyManager->TexturesArr[14]->SRV;
 	Bars[10].TravellerNotEnalbledTexture = NULL;
-	Bars[10].TravellerPressTexture = MyManager->ShaderResourceArr[15];
+	Bars[10].TravellerPressTexture = MyManager->TexturesArr[15]->SRV;
 	Bars[10].MouseOnTravellerTexture = NULL;
 
 
@@ -1359,27 +1348,27 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Buttons[2].Type = CHECKBOX; // CheckBox
 	Buttons[2].Checked = m_D3D->D3DGC->ShadowsOn;
 	Buttons[2].Label = "";
-	Buttons[2].OsnTextureResource = MyManager->ResourceArr[5];
-	Buttons[2].OsnTexture = MyManager->ShaderResourceArr[5];
-	Buttons[2].IsClickTexture = MyManager->ShaderResourceArr[6];
+	Buttons[2].OsnTextureResource = MyManager->TexturesArr[5]->Resource;
+	Buttons[2].OsnTexture = MyManager->TexturesArr[5]->SRV;
+	Buttons[2].IsClickTexture = MyManager->TexturesArr[6]->SRV;
 	Buttons[2].Data = NULL;
 
 
 	Buttons[3].Type = CHECKBOX; // CheckBox
 	Buttons[3].Checked = m_D3D->D3DGC->EnableFXAA;
 	Buttons[3].Label = "";
-	Buttons[3].OsnTextureResource = MyManager->ResourceArr[5];
-	Buttons[3].OsnTexture = MyManager->ShaderResourceArr[5];
-	Buttons[3].IsClickTexture = MyManager->ShaderResourceArr[7];
+	Buttons[3].OsnTextureResource = MyManager->TexturesArr[5]->Resource;
+	Buttons[3].OsnTexture = MyManager->TexturesArr[5]->SRV;
+	Buttons[3].IsClickTexture = MyManager->TexturesArr[7]->SRV;
 	Buttons[3].Data = NULL;
 
 
 	Buttons[6]._ObjParam = { 10.0f, Buttons[3]._ObjParam.y + y + 10.0f, x, y };
-	Buttons[6].OsnTextureResource = MyManager->ResourceArr[5];
-	Buttons[6].OsnTexture = MyManager->ShaderResourceArr[5];
-	Buttons[6].IsClickTexture = MyManager->ShaderResourceArr[4];
+	Buttons[6].OsnTextureResource = MyManager->TexturesArr[5]->Resource;
+	Buttons[6].OsnTexture = MyManager->TexturesArr[5]->SRV;
+	Buttons[6].IsClickTexture = MyManager->TexturesArr[4]->SRV;
 	Buttons[6].IsMouseOnButtonTexture = NULL;
-	Buttons[6].IsNotEnalbledTexture = MyManager->ShaderResourceArr[5];
+	Buttons[6].IsNotEnalbledTexture = MyManager->TexturesArr[5]->SRV;
 
 	Buttons[6].Data = NULL; // Нет строки в Buttons[4].Label 
 	Buttons[6].Label = "";
@@ -1404,8 +1393,8 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 
 
 	Buttons[4]._ObjParam = { 10.0f, 330.0f, 0.0f, 0.0f };
-	Buttons[4].OsnTextureResource = MyManager->ResourceArr[11];
-	Buttons[4].OsnTexture = MyManager->ShaderResourceArr[11];
+	Buttons[4].OsnTextureResource = MyManager->TexturesArr[11]->Resource;
+	Buttons[4].OsnTexture = MyManager->TexturesArr[11]->SRV;
 	Buttons[4].IsClickTexture = NULL;
 	Buttons[4].IsMouseOnButtonTexture = NULL;
 	Buttons[4].IsNotEnalbledTexture = NULL;
@@ -1429,8 +1418,8 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Data5->Level = MENU;
 
 	Buttons[5]._ObjParam = { 10.0f, 380.0f, 0.0f, 0.0f };
-	Buttons[5].OsnTextureResource = MyManager->ResourceArr[11];
-	Buttons[5].OsnTexture = MyManager->ShaderResourceArr[11];
+	Buttons[5].OsnTextureResource = MyManager->TexturesArr[11]->Resource;
+	Buttons[5].OsnTexture = MyManager->TexturesArr[11]->SRV;
 	Buttons[5].IsClickTexture = NULL;
 	Buttons[5].IsMouseOnButtonTexture = NULL;
 	Buttons[5].IsNotEnalbledTexture = NULL;
@@ -1447,9 +1436,9 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 
 	// Hide Text
 	Buttons[7]._ObjParam = { 10.0f, 600.0f, 0.0f, 0.0f };
-	Buttons[7].OsnTextureResource = MyManager->ResourceArr[3];
-	Buttons[7].OsnTexture = MyManager->ShaderResourceArr[3];
-	Buttons[7].IsClickTexture = MyManager->ShaderResourceArr[19];
+	Buttons[7].OsnTextureResource = MyManager->TexturesArr[3]->Resource;
+	Buttons[7].OsnTexture = MyManager->TexturesArr[3]->SRV;
+	Buttons[7].IsClickTexture = MyManager->TexturesArr[19]->SRV;
 	Buttons[7].IsMouseOnButtonTexture = NULL;
 	Buttons[7].IsNotEnalbledTexture = NULL;
 	Buttons[7].Data = NULL;
@@ -1468,10 +1457,14 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 
 	AnimTexture = new KF2DTextureAnimation;
 	XMFLOAT4 ObjData = { 100.0f, 800.0f, 100.0f, 100.0f };
-	AnimTexture->Init(hwnd, m_D3D->D3DGC, 8, 8, MyManager->ShaderResourceArr[8],
-	MyManager->GetShaderIndexByName ( L"FireAnimation" ) ,	// анимация в меню FireAnimation_vs
-	MyManager->GetShaderIndexByName ( L"KF2DObj" ),			// возвращаем KF2DObj_vs
-	MyManager, ObjData );
+	{
+		int TempIndex = MyManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 1, 6, MyManager->TexturesArr[10]->SRV );
+		AnimTexture->Init ( hwnd, m_D3D->D3DGC, 8, 8, MyManager->TexturesArr[8]->SRV,
+			MyManager->GetShaderIndexByName ( L"FireAnimation" ),	// анимация в меню FireAnimation_vs
+			MyManager->GetShaderIndexByName ( L"KF2DObj" ),			// возвращаем KF2DObj_vs
+			MyManager->Get_Flat_ObjectBuffers_ByIndex ( TempIndex ),
+			ObjData );
+	}
 	// -------------------     Анимация     ------------------------------
 
 
@@ -1483,10 +1476,12 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 		NULL, 0,	// StringsLists
 		AnimTexture,	// Передаём объект анимации в меню
 		{ float(screenWidth - 250) , 0.0f, 250.0f, float(screenHeight) },
-		MyManager->ShaderResourceArr[18],
-//		MyManager->GetShaderBlobByName ( L"KF2DObj" ),
+		MyManager->TexturesArr[18]->SRV,
+		MyManager,
 		m_Text
 		);
+	
+	MyManager->AddMenu ( dynamic_cast<Menu*> (Hud) );	// Добавляем меню в список существующих
 
 	// Помещаем надписи Label внутрь кнопок
 	Hud->PutLabelsInsideButtons();
@@ -1510,7 +1505,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Mapping = new CubeMapping;
 	Mapping->ShaderForDraw = MyManager->GetShaderIndexByName ( L"CubeMap" );
 	Mapping->Init(m_D3D->D3DGC, 
-	MyManager->ShaderResourceArr[MyManager->InitOneTexture(L"Textures/skymap.dds")]) ;
+	MyManager->TexturesArr[MyManager->InitOneTexture(L"Textures/skymap.dds")]->SRV) ;
 
 // ++++++++++++++++++++++++++++++++++++++++     LIGHT & ShadowMap    ++++++++++++++++++++++++++++++++++++++++++++	
 //	m_Light = new LightClass;
@@ -1536,13 +1531,10 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 		(
 		hwnd,
 		m_D3D->D3DGC,
-		MyManager->GetShaderBlobByName ( L"particle" ),				// Блоб от создания шейдера для Particles ( нужен для создания Layout )
-												//		MyManager->ShaderResourceArr[20],	// Текстура звезды
-		MyManager->ShaderResourceArr[20], //8
+		MyManager->TexturesArr[20]->SRV,	// Текстура звезды
 		1,
 		1,
-		1,
-		m_D3D								// Указатель на класс света в движке
+		1
 		);
 		
 		TorchFire = new TorchFireParticles;
@@ -1569,8 +1561,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 			(
 			hwnd,
 			m_D3D->D3DGC,
-			MyManager->GetShaderBlobByName ( L"TorchFire3D" ),// Блоб от создания шейдера для Particles ( нужен для создания Layout )
-			MyManager->ShaderResourceArr[22], //8 22 //		MyManager->ShaderResourceArr[20],	// Текстура звезды
+			MyManager->TexturesArr[22]->SRV, //8 22 //		MyManager->ShaderResourceArr[20],	// Текстура звезды
 			TorchFireSmokeInit,
 			m_D3D								// Указатель на класс света в движке
 			);
@@ -1591,8 +1582,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	(	
 		hwnd, 
 		m_D3D->D3DGC, 
-		MyManager->GetShaderBlobByName ( L"FireParticle3D" ),// Блоб от создания шейдера для Particles ( нужен для создания Layout )
-		MyManager->ShaderResourceArr[8], //8
+		MyManager->TexturesArr[8]->SRV, //8
 		8,
 		8,
 		0,
@@ -1790,8 +1780,8 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 		m_Camera->SetPosition( 20.98f, 37.81f, 54.40f );
 		m_Camera->SetLookAt( 20.70f, 37.36f, 53.55f );
 
-		//int Index = MyManager->InitOneTexture(hwnd, L"Textures/land.jpg", m_D3D->D3DGC->D11_device, m_D3D->D3DGC->D11_deviceContext);
-		//MyManager->InitTextures(hwnd, L"Textures/RcubeTextures.kaf", m_D3D->D3DGC->D11_device, m_D3D->D3DGC->D11_deviceContext);
+		//int Index = MyManager->InitOneTexture(hwnd, L"Textures/land.jpg", m_D3D->D3DGC->DX_device, m_D3D->D3DGC->DX_deviceContext);
+		//MyManager->InitTextures(hwnd, L"Textures/RcubeTextures.kaf", m_D3D->D3DGC->DX_device, m_D3D->D3DGC->DX_deviceContext);
 
 		Terrain::KFLandscapeParam Land;
 
@@ -1809,7 +1799,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 
 		KFTerrain = new Terrain;
 		KFTerrain->Initialize(hwnd, m_D3D->D3DGC,
-		MyManager->ShaderResourceArr[21], //MyManager->ShaderResourceArr[MyManager->InitOneTexture(hwnd , L"Textures/moonTexture.png" , m_D3D->D3DGC->D11_device , m_D3D->D3DGC->D11_deviceContext)] 
+		MyManager->TexturesArr[21]->SRV, //MyManager->ShaderResourceArr[MyManager->InitOneTexture(hwnd , L"Textures/moonTexture.png" , m_D3D->D3DGC->DX_device , m_D3D->D3DGC->DX_deviceContext)] 
 		Rows , Columns , &Land, 1.0f/* расстояние между точками */, 100 /* количество кластеров на которые разбит тераин по X оси */,
 			100/* количество кластеров на которые разбит тераин по Z оси  */, 49 /* дальность прорисовки в кластерах */, m_D3D);
 
@@ -1833,10 +1823,10 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 
 		ModelList = new KFModelList;
 
-		ModelList->Init(hwnd, m_D3D->D3DGC, MyManager, m_D3D, m_Frustum);
+		ModelList->Init(hwnd, m_D3D->D3DGC, m_D3D, m_Frustum);
 		ModelList->IsClusteringUse = false;
 
-		ClusterMap = new KFClusterMap(100, 100, 100, 50, 50, 50);
+//		ClusterMap = new KFClusterMap(100, 100, 100, 50, 50, 50);
 
 		ShadowWork = new KFShadowWork;
 
@@ -2052,9 +2042,9 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 	MyManager->SetActiveShadersInProgramm( m_D3D->LightShaderForDraw );
 	// Устанавливаем сразу всё что нужно для отрисовки всех моделей со светом
 	// Чтобы не устанаваить это в цикле много раз
-	m_D3D->D3DGC->D11_deviceContext->OMSetDepthStencilState(m_D3D->D3DGC->m_depthStencilState, 0);
+	m_D3D->D3DGC->DX_deviceContext->OMSetDepthStencilState(m_D3D->D3DGC->m_depthStencilState, 0);
 	m_D3D->SetDefaultResterizeState ();
-	m_D3D->D3DGC->D11_deviceContext->OMSetRenderTargets(1, &m_D3D->D3DGC->BackBuffer_RTV, m_D3D->D3DGC->m_depthStencilView);
+	m_D3D->D3DGC->DX_deviceContext->OMSetRenderTargets(1, &m_D3D->D3DGC->BackBuffer_RTV, m_D3D->D3DGC->m_depthStencilView);
 	// Измеряем быстродействие
 	// Федя 540 ns    Мой  517 ns   
 //			char Str[25];// = new char [25];
@@ -2203,7 +2193,8 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 		//	Profile->StartTimer();
 		// Измеряем быстродействие
 		MyManager->SetActiveShadersInProgramm ( Hud->ShaderForDraw );
-		Hud->Draw();
+		RCubeRender->RenderMenu ( 1 );
+//		Hud->Draw();
 		// Измеряем быстродействие
 		//	Profile->StopTimer(Str);
 		//	m_Text->UpdateSentence(4, Str, 100, 160);
@@ -2257,7 +2248,8 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 //			Profile->StopTimer(Str);
 //			m_Text->UpdateSentence(13, Str, m_Text->GetPosX( 13 ), m_Text->GetPosY( 13 ) );
 		MyManager->SetActiveShadersInProgramm ( MainMenu->ShaderForDraw );
-		MainMenu->Draw();
+		RCubeRender->RenderMenu ( 0 );
+//		MainMenu->Draw();
 		MyManager->SetActiveShadersInProgramm( m_Text->TextShaderIndex );
 		result = m_Text->Render( 1 );	// Рисуем текст для меню
 
@@ -2267,7 +2259,7 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 		// Рисуем мышкин курсор
 		MyManager->SetActiveShadersInProgramm( m_Bitmap->ShaderIndex );
 		m_Bitmap->ChangeMousePosition( mouseX, mouseY );
-		m_Bitmap->Draw();
+		RCubeRender->RenderFlatObject ( MyManager->Get_Flat_ObjectBuffers_ByIndex ( m_Bitmap->BuffersIndex ) );
 		// Рисуем мышкин курсор
 
 //	if (IsSettingsMenuOn)
@@ -2334,8 +2326,8 @@ void GraphicsClass::UpdateConstantBuffer()
 	Temp.Vec = XMQuaternionRotationMatrix(m_D3D->D3DGC->ViewMatrix);
 	cbPerObj.TransposedCameraRotation2 = Temp.Fl4;
 
-	m_D3D->D3DGC->D11_deviceContext->UpdateSubresource(GlobalShadersConstantsBuffer, 0, NULL, &cbPerObj, 0, 0);
-	m_D3D->D3DGC->D11_deviceContext->VSSetConstantBuffers(0, 1, &GlobalShadersConstantsBuffer);
+	m_D3D->D3DGC->Global_VS_ConstantsBuffer->Update( &cbPerObj );
+	m_D3D->D3DGC->DX_deviceContext->VSSetConstantBuffers(0, 1, &m_D3D->D3DGC->Global_VS_ConstantsBuffer->Buffer );
 }
 
 

@@ -54,15 +54,15 @@ KFModelList::~KFModelList(){
 }
 
 
-HRESULT KFModelList::Init(HWND g_Hwnd, D3DGlobalContext * D3DGC, ResourceManager * ResourceManeger
+HRESULT KFModelList::Init(HWND g_Hwnd, D3DGlobalContext * D3DGC
 	, D3DClass * ActiveLightClass, FrustumClass * ActiveFrustum) {
 
 	gActiveFrustum = ActiveFrustum;
 	g_LightClass = ActiveLightClass;
-	myResourceManeger = ResourceManeger;
-	g_Device = D3DGC->D11_device;
-	g_SwapChain = D3DGC->D11_swapChain;
-	g_DevCon = D3DGC->D11_deviceContext;
+	Local_D3DGC = D3DGC;
+	g_Device = D3DGC->DX_device;
+	g_SwapChain = D3DGC->DX_swapChain;
+	g_DevCon = D3DGC->DX_deviceContext;
 	g_HWND = g_Hwnd;
 
 	ShaderObjArr = new int* [30];
@@ -85,8 +85,7 @@ void KFModelList::AddObject(std::wstring FileNameKFO, UINT BolobIndex, UINT Shad
 	int c = 0;
 	Model3DPointer = new KFModel;
 
-	Model3DPointer->Init(g_HWND, FileNameKFO, g_Device, g_DevCon,
-		Shaders , InstCout , g_LightClass);
+	Model3DPointer->Init(FileNameKFO, Local_D3DGC, Shaders , InstCout , g_LightClass);
 
 	RCubeModelList[ModelCout] = Model3DPointer;
 	// сохран€ю указатели на элементы модэлов (очень подходит дл€ быстрого доступа)
@@ -136,8 +135,6 @@ void KFModelList::LightRender(){
 	{
 		// провер€ю есть ли обьeкты дл€ отрисовки вообще
 		if (*Source > 0) {
-			// устанавливаю активный в проге шейдерсписок
-		//	myResourceManeger->SetActiveShadersInProgramm(ActiveShaderIndexes[g_c]);
 			//бегу по всем модел€м
 			while (g_p < *Source)
 			{// если обьекты дл€ проверки просто напросто не закончились
@@ -302,8 +299,6 @@ void KFModelList::Render() {
 	{
 		// провер€ю есть ли обькты дл€ отрисовки вообще
 		if (*Source > 0) {
-			// устанавливаю активный в проге шейдерсписок
-			//	myResourceManeger->SetActiveShadersInProgramm(ActiveShaderIndexes[g_c]);
 			//бегу по всем модел€м
 			while (g_p < *Source)
 			{// если обьекты дл€ проверки просто напросто не закончились

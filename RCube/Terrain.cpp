@@ -2,12 +2,9 @@
 #include "Terrain.h"
 
 
-Terrain::Terrain() {
+Terrain::Terrain() 
+{
 
-	m_lightBuffer = nullptr;
-	//m_matrixBuffer = nullptr;
-//	m_sampleState = nullptr;
-	m_layout = nullptr;
 	m_indexBuffer = nullptr;
 	m_vertexBuffer = nullptr;
 	m_heightMap = nullptr;
@@ -23,7 +20,7 @@ HRESULT Terrain::Initialize(HWND hwnd, D3DGlobalContext *D3DGC,
 	Local_D3DGC = D3DGC;
 	g_ActiveLight = ActiveLight;
 	HRESULT result;
-	ID3D10Blob* errorMessage;
+
 	g_hwnd = hwnd;
 
 	g_DrawLength = DrawLength;
@@ -36,8 +33,6 @@ HRESULT Terrain::Initialize(HWND hwnd, D3DGlobalContext *D3DGC,
 	CheckClustersVertixes(hwnd);
 	CheckDrawLenghtParam(hwnd);
 
-//	D3D11_SAMPLER_DESC samplerDesc;
-	D3D11_BUFFER_DESC lightBufferDesc;
 	g_Texture = TerrTexture;
 	g_VertixesIndent = VertixesIndent;
 
@@ -45,7 +40,6 @@ HRESULT Terrain::Initialize(HWND hwnd, D3DGlobalContext *D3DGC,
 	bool bool_result;
 
 
-	// Load in the height map for the terrain.
 	// Load in the height map for the terrain.
 	if (LandParam->filename == nullptr)
 		bool_result = GenersteRandTerrain(LandParam, VertixesIndent);
@@ -71,32 +65,8 @@ HRESULT Terrain::Initialize(HWND hwnd, D3DGlobalContext *D3DGC,
 		CalculateTextureCoordinates();
 
 	// Initialize the vertex and index buffer that hold the geometry for the terrain.
-		bool_result = InitializeBuffers( Local_D3DGC->D11_device,  ClustersWidth, ClusterHeight);
+		bool_result = InitializeBuffers( Local_D3DGC->DX_device,  ClustersWidth, ClusterHeight);
 	if (!bool_result)
-	{
-		return E_FAIL;
-	}
-
-	LightDesc.ambientColor = XMFLOAT4(0.4f, 0.4f, 0.4f, 1.0f);
-	LightDesc.diffuseColor = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	LightDesc.lightDirection = XMFLOAT3(1.0f , 1.0f , 1.0f);
-
-
-	// Initialize the pointers this function will use to null.
-	errorMessage = 0;
-
-	// Setup the description of the light dynamic constant buffer that is in the pixel shader.
-	// Note that ByteWidth always needs to be a multiple of 16 if using D3D11_BIND_CONSTANT_BUFFER or CreateBuffer will fail.
-	lightBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	lightBufferDesc.ByteWidth = sizeof(LightBufferType);
-	lightBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	lightBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	lightBufferDesc.MiscFlags = 0;
-	lightBufferDesc.StructureByteStride = 0;
-
-	// Create the constant buffer pointer so we can access the vertex shader constant buffer from within this class.
-	result = Local_D3DGC->D11_device->CreateBuffer(&lightBufferDesc, NULL, &m_lightBuffer);
-	if (FAILED(result))
 	{
 		return E_FAIL;
 	}
@@ -124,7 +94,7 @@ HRESULT Terrain::Initialize(HWND hwnd, D3DGlobalContext *D3DGC,
 	posesData.SysMemSlicePitch = 0;
 
 	// Create the instance buffer.
-	result = Local_D3DGC->D11_device->CreateBuffer(&posesBufferDesc, &posesData, &m_posesBuffer);
+	result = Local_D3DGC->DX_device->CreateBuffer(&posesBufferDesc, &posesData, &m_posesBuffer);
 	if (FAILED(result))
 	{
 		return result;
@@ -542,15 +512,8 @@ void Terrain::CalculateTextureCoordinates()
 }
 
 
-void Terrain::LightRender() {
-
-
-	HRESULT result;
-	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	unsigned int bufferNumber;
-	//	MatrixBufferType* dataPtr;
-	LightBufferType* dataPtr2;
-
+void Terrain::LightRender() 
+{
 	unsigned int strides[2];
 	unsigned int offsets[2];
 	ID3D11Buffer* bufferPointers[2];
@@ -568,43 +531,16 @@ void Terrain::LightRender() {
 	bufferPointers[1] = m_posesBuffer;
 
 	// Set the vertex buffer to active in the input assembler so it can be rendered.
-	Local_D3DGC->D11_deviceContext->IASetVertexBuffers(0, 2, bufferPointers, strides, offsets);
+	Local_D3DGC->DX_deviceContext->IASetVertexBuffers(0, 2, bufferPointers, strides, offsets);
 
 	// Set the index buffer to active in the input assembler so it can be rendered.
-	Local_D3DGC->D11_deviceContext->IASetIndexBuffer(m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	Local_D3DGC->DX_deviceContext->IASetIndexBuffer(m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
 	// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
-	Local_D3DGC->D11_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	// Lock the light constant buffer so it can be written to.
-	result = Local_D3DGC->D11_deviceContext->Map(m_lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	// Get a pointer to the data in the constant buffer.
-	dataPtr2 = (LightBufferType*)mappedResource.pData;
-
-	// Copy the lighting variables into the constant buffer.
-	dataPtr2->ambientColor = LightDesc.ambientColor;
-	dataPtr2->diffuseColor = LightDesc.diffuseColor;
-	dataPtr2->lightDirection = LightDesc.lightDirection;
-	dataPtr2->padding = LightDesc.padding;
-
-	// Unlock the constant buffer.
-	Local_D3DGC->D11_deviceContext->Unmap(m_lightBuffer, 0);
-
-	// Set the position of the light constant buffer in the pixel shader.
-	bufferNumber = 0;
-
-	// Finally set the light constant buffer in the pixel shader with the updated values.
-	Local_D3DGC->D11_deviceContext->PSSetConstantBuffers(bufferNumber, 1, &m_lightBuffer);
-
+	Local_D3DGC->DX_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	// Set shader texture resource in the pixel shader.
-	Local_D3DGC->D11_deviceContext->PSSetShaderResources(0, 1, &g_Texture);
-
-	// Set the vertex input layout.
-	Local_D3DGC->D11_deviceContext->IASetInputLayout(m_layout);
-
-	// Set the sampler state in the pixel shader.
-//	Local_D3DGC->D11_deviceContext->PSSetSamplers(0, 1, &m_sampleState);
+	Local_D3DGC->DX_deviceContext->PSSetShaderResources(0, 1, &g_Texture);
 
 	// Render the triangle.
 	g_ActiveLight->RenderIndextedClustered(g_Texture, m_indexCount, 1);
@@ -612,14 +548,8 @@ void Terrain::LightRender() {
 }
 
 
-void Terrain::Render() {
-
-
-	HRESULT result;
-	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	unsigned int bufferNumber;
-	//	MatrixBufferType* dataPtr;
-	LightBufferType* dataPtr2;
+void Terrain::Render() 
+{
 
 	unsigned int strides[2];
 	unsigned int offsets[2];
@@ -638,46 +568,19 @@ void Terrain::Render() {
 	bufferPointers[1] = m_posesBuffer;
 
 	// Set the vertex buffer to active in the input assembler so it can be rendered.
-	Local_D3DGC->D11_deviceContext->IASetVertexBuffers(0, 2, bufferPointers, strides, offsets);
+	Local_D3DGC->DX_deviceContext->IASetVertexBuffers(0, 2, bufferPointers, strides, offsets);
 
 	// Set the index buffer to active in the input assembler so it can be rendered.
-	Local_D3DGC->D11_deviceContext->IASetIndexBuffer(m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	Local_D3DGC->DX_deviceContext->IASetIndexBuffer(m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
 	// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
-	Local_D3DGC->D11_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	// Lock the light constant buffer so it can be written to.
-	result = Local_D3DGC->D11_deviceContext->Map(m_lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	// Get a pointer to the data in the constant buffer.
-	dataPtr2 = (LightBufferType*)mappedResource.pData;
-
-	// Copy the lighting variables into the constant buffer.
-	dataPtr2->ambientColor = LightDesc.ambientColor;
-	dataPtr2->diffuseColor = LightDesc.diffuseColor;
-	dataPtr2->lightDirection = LightDesc.lightDirection;
-	dataPtr2->padding = LightDesc.padding;
-
-	// Unlock the constant buffer.
-	Local_D3DGC->D11_deviceContext->Unmap(m_lightBuffer, 0);
-
-	// Set the position of the light constant buffer in the pixel shader.
-	bufferNumber = 0;
-
-	// Finally set the light constant buffer in the pixel shader with the updated values.
-	Local_D3DGC->D11_deviceContext->PSSetConstantBuffers(bufferNumber, 1, &m_lightBuffer);
-
+	Local_D3DGC->DX_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	// Set shader texture resource in the pixel shader.
-	Local_D3DGC->D11_deviceContext->PSSetShaderResources(0, 1, &g_Texture);
-
-	// Set the vertex input layout.
-	Local_D3DGC->D11_deviceContext->IASetInputLayout(m_layout);
-
-	// Set the sampler state in the pixel shader.
-//	Local_D3DGC->D11_deviceContext->PSSetSamplers(0, 1, &m_sampleState);
+	Local_D3DGC->DX_deviceContext->PSSetShaderResources(0, 1, &g_Texture);
 
 	// Render the triangle.
-	Local_D3DGC->D11_deviceContext->DrawIndexed(m_indexCount, 0, 0);
+	Local_D3DGC->DX_deviceContext->DrawIndexed(m_indexCount, 0, 0);
 
 }
 
@@ -840,9 +743,6 @@ Terrain::~Terrain() {
 
 	RCUBE_RELEASE(m_indexBuffer);
 	RCUBE_RELEASE(m_vertexBuffer)
-	RCUBE_RELEASE(m_lightBuffer)
-//	RCUBE_RELEASE(m_sampleState)
-	RCUBE_RELEASE(m_layout)
 
 }
 
@@ -1010,7 +910,7 @@ void Terrain::Frame(bool CameraReplaseData, XMVECTOR &CameraPosition) {
 			D3D11_MAPPED_SUBRESOURCE mapperResurse;
 			Vertex_Model3D * vertixesPtr;
 
-			Local_D3DGC->D11_deviceContext->Map(m_vertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapperResurse);
+			Local_D3DGC->DX_deviceContext->Map(m_vertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapperResurse);
 
 			vertixesPtr = (Vertex_Model3D*)mapperResurse.pData;
 
@@ -1035,7 +935,7 @@ void Terrain::Frame(bool CameraReplaseData, XMVECTOR &CameraPosition) {
 				++f;
 			}
 
-			Local_D3DGC->D11_deviceContext->Unmap(m_vertexBuffer, 0);
+			Local_D3DGC->DX_deviceContext->Unmap(m_vertexBuffer, 0);
 
 		}
 

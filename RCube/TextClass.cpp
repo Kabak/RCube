@@ -9,8 +9,6 @@ TextClass::TextClass()
 	FontsNumber	= 0;
    FontsCreated = 0;
 
-   m_FontShader = nullptr;
-
 		 m_Font.reserve(10);
 
 	mouseString = new char[STRMAXLENGTH];
@@ -50,7 +48,7 @@ TextClass::~TextClass()
 }
 
 
-bool TextClass::Initialize(D3DGlobalContext* D3DGC, vector < FontOnTextureData* > FontList )
+bool TextClass::Initialize(D3DGlobalContext* D3DGC, vector < FontOnTextureData* > FontList)
 {
 	bool result;
 
@@ -65,7 +63,7 @@ bool TextClass::Initialize(D3DGlobalContext* D3DGC, vector < FontOnTextureData* 
 	for(UINT i = 0; i < FontsNumber; ++i )
 	{
 		m_Font1 = new FontClass;
-	// Initialize the font object.
+
 		result = m_Font1->Initialize(D3DGC , FontList[i] );
 		if(!result)
 		{
@@ -74,19 +72,6 @@ bool TextClass::Initialize(D3DGlobalContext* D3DGC, vector < FontOnTextureData* 
 		}
 		m_Font.emplace_back (m_Font1);
 		++FontsCreated;
-	}
-
-// Create and initialize the font shader object.
-
-	// Create the font shader object.
-	m_FontShader = new FontShaderClass;
-
-	// Initialize the font shader object.
-	result = m_FontShader->Initialize( D3DGC );
-	if(!result)
-	{
-		MessageBox( D3DGC->hwnd, L"Could not initialize the font shader object.", L"Error", MB_OK);
-		return false;
 	}
 
 // Create and initialize the two strings that will be used for this tutorial. One string says Hello in white at 100, 100 and the other says Goodbye in yellow at 100, 200. The UpdateSentence 
@@ -123,9 +108,6 @@ void TextClass::Shutdown()
 {
 	DeleteAllSentences();
 
-	// Release the font shader object.
-	RCUBE_SHUTDOWN( m_FontShader );
-	
 	// Release the font object.
 	for (UINT i = 0; i < FontsCreated; ++i)
 	{
@@ -146,9 +128,7 @@ bool TextClass::Render( int Level )
 	SetFps(fpstimers.FpsRate);
 	SetCpu(fpstimers.CpuVal);
 
-	Local_D3DGC->D11_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	m_FontShader->SetFontLayoutSempler( Local_D3DGC->D11_deviceContext );
+	Local_D3DGC->DX_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	for (UINT i = 0, j = (UINT)Sentences.size(); i < j ; ++i)
 	{
@@ -246,7 +226,7 @@ bool TextClass::InitializeSentence( SentenceType* sentence, int& maxLength )
 	vertexData.SysMemSlicePitch = 0;
 
 	// Create the vertex buffer.
-	result = Local_D3DGC->D11_device->CreateBuffer(&vertexBufferDesc, &vertexData, &sentence->vertexBuffer);
+	result = Local_D3DGC->DX_device->CreateBuffer(&vertexBufferDesc, &vertexData, &sentence->vertexBuffer);
 	if(FAILED(result))
 	{
 		return false;
@@ -268,7 +248,7 @@ bool TextClass::InitializeSentence( SentenceType* sentence, int& maxLength )
 	indexData.SysMemSlicePitch = 0;
 
 	// Create the index buffer.
-	result = Local_D3DGC->D11_device->CreateBuffer(&indexBufferDesc, &indexData, &sentence->indexBuffer);
+	result = Local_D3DGC->DX_device->CreateBuffer(&indexBufferDesc, &indexData, &sentence->indexBuffer);
 	if(FAILED(result))
 	{
 		return false;
@@ -286,7 +266,6 @@ bool TextClass::InitializeSentence( SentenceType* sentence, int& maxLength )
 }
 
 // UpdateSentence changes the contents of the vertex buffer for the input sentence. It uses the Map and Unmap functions along with memcpy to update the contents of the vertex buffer.
-
 bool TextClass::UpdateSentence(int SentenceNumber, char* text, int positionX, int positionY, float RenderFontSize )
 {
 	int numLetters;
@@ -326,7 +305,7 @@ bool TextClass::UpdateSentence(int SentenceNumber, char* text, int positionX, in
 	m_Font[Source->FontType]->BuildVertexArray((void*)vertices, text, drawX, drawY, RenderFontSize);
 
 	// Copy the vertex array information into the sentence vertex buffer.
-	Local_D3DGC->D11_deviceContext->UpdateSubresource( Source->vertexBuffer, NULL, NULL, (void*)vertices, NULL, NULL);
+	Local_D3DGC->DX_deviceContext->UpdateSubresource( Source->vertexBuffer, NULL, NULL, (void*)vertices, NULL, NULL);
 	// Release the vertex array as it is no longer needed.
 	delete [] vertices;
 	vertices = nullptr;
@@ -337,7 +316,6 @@ bool TextClass::UpdateSentence(int SentenceNumber, char* text, int positionX, in
 
 //  RenderSentence function puts the sentence vertex and index buffer on the input assembler and then calls the FontShaderClass object to draw the sentence that was given as input to this function. 
 // Notice that we use the m_baseViewMatrix instead of the current view matrix. This allows us to draw text to the same location on the screen each frame regardless of where the current view may be. Likewise we use the orthoMatrix instead of the regular projection matrix since this should be drawn using 2D coordinates.
-
 bool TextClass::RenderSentence( SentenceType* sentence )
 {
 	unsigned int stride, offset;
@@ -348,14 +326,15 @@ bool TextClass::RenderSentence( SentenceType* sentence )
 	offset = 0;
 
 	// Set the vertex buffer to active in the input assembler so it can be rendered.
-	Local_D3DGC->D11_deviceContext->IASetVertexBuffers(0, 1, &sentence->vertexBuffer, &stride, &offset);
+	Local_D3DGC->DX_deviceContext->IASetVertexBuffers(0, 1, &sentence->vertexBuffer, &stride, &offset);
 
 	// Set the index buffer to active in the input assembler so it can be rendered.
-	Local_D3DGC->D11_deviceContext->IASetIndexBuffer(sentence->indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	Local_D3DGC->DX_deviceContext->IASetIndexBuffer(sentence->indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-	// Render the text using the font shader.
-	m_FontShader->Render( Local_D3DGC->D11_deviceContext, sentence->indexCount, m_Font[sentence->FontType]->GetTexture(),
-		sentence->Colour);
+	ID3D11ShaderResourceView* texture = m_Font[sentence->FontType]->GetTexture ();
+	Local_D3DGC->DX_deviceContext->PSSetShaderResources ( 0, 1, &texture );
+
+	Local_D3DGC->DX_deviceContext->DrawIndexed ( sentence->indexCount, 0, 0 );
 
 	return true;
 }
@@ -365,8 +344,6 @@ bool TextClass::RenderSentence( SentenceType* sentence )
 
 bool TextClass::SetMousePosition(int& mouseX, int& mouseY)
 {
-//	char tempString[16];
-//	char mouseString[16];
 	bool result;
 
 
@@ -454,7 +431,6 @@ bool TextClass::SetFps(int fps)
 }
 
 // The SetCpu function is similar to the SetFps function. It takes the cpu value and converts it to a string which is then stored in the sentence structure and rendered.
-
 bool TextClass::SetCpu(int cpu)
 {
 //	char tempString[16];
@@ -496,10 +472,6 @@ int TextClass::AddSentence(SENTENCE_INIT_DATA* data, char* String)
 	{
 		data->MaxLength = Size + 2;
 	}
-
-//	if ( data->MaxLength >= STRMAXLENGTH || strlen(String) >= data->MaxLength || data->MaxLength < 1 )
-//		return -1;
-
 
 	SentenceType* Sentence1 = new SentenceType;
 	ZeroMemory(Sentence1, sizeof(SentenceType));
@@ -671,10 +643,9 @@ void TextClass::ShowScrolling(int i)
 }
 
 
-void TextClass::DrawOneSentence( int SentenceIndex ){
-
+void TextClass::DrawOneSentence( int SentenceIndex )
+{
 	RenderSentence( Sentences[SentenceIndex] );
-
 }
 
 

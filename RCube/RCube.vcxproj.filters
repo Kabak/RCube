@@ -37,6 +37,9 @@
     <Filter Include="Render\Buffers">
       <UniqueIdentifier>{56aa5bc4-f31f-41c3-9bae-c0b376efedc7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Render\Textures">
+      <UniqueIdentifier>{0fb85510-b700-4df2-8373-0296de38e12a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -114,9 +117,6 @@
     <ClInclude Include="KF_PXControler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ParticleSystemClass.h">
-      <Filter>Particles</Filter>
-    </ClInclude>
     <ClInclude Include="Emiters.h">
       <Filter>Particles</Filter>
     </ClInclude>
@@ -150,28 +150,13 @@
     <ClInclude Include="FontClass.h">
       <Filter>Text</Filter>
     </ClInclude>
-    <ClInclude Include="FontShaderCLass.h">
-      <Filter>Text</Filter>
-    </ClInclude>
-    <ClInclude Include="FontCustomFromFileClass.h">
-      <Filter>Text</Filter>
-    </ClInclude>
-    <ClInclude Include="KF2DObjClass.h">
-      <Filter>Menu</Filter>
-    </ClInclude>
     <ClInclude Include="KF2DTextureAnimation.h">
       <Filter>Menu</Filter>
     </ClInclude>
     <ClInclude Include="KFButton.h">
       <Filter>Menu</Filter>
     </ClInclude>
-    <ClInclude Include="KFTextureOnTextureDrawing.h">
-      <Filter>Menu</Filter>
-    </ClInclude>
     <ClInclude Include="ScrollBarClass.h">
-      <Filter>Menu</Filter>
-    </ClInclude>
-    <ClInclude Include="SquareObjectClass.h">
       <Filter>Menu</Filter>
     </ClInclude>
     <ClInclude Include="MenuControler.h">
@@ -198,26 +183,41 @@
     <ClInclude Include="Terrain.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ResourceManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="CubeMappingClass.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="DX11Buffers.h">
-      <Filter>Render\Buffers</Filter>
     </ClInclude>
     <ClInclude Include="Light_def.h">
       <Filter>Render</Filter>
     </ClInclude>
-    <ClInclude Include="Buffer.h">
-      <Filter>Render\Buffers</Filter>
-    </ClInclude>
     <ClInclude Include="SceneObject.h">
       <Filter>Render</Filter>
     </ClInclude>
-    <ClInclude Include="VertexBuffers_def.h">
+    <ClInclude Include="Buffers_def.h">
       <Filter>Render\Buffers</Filter>
+    </ClInclude>
+    <ClInclude Include="DX11Buffers.h">
+      <Filter>Render\Buffers</Filter>
+    </ClInclude>
+    <ClInclude Include="RObject.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="RResources.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="ResourceManager.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="FlatObjectClass.h">
+      <Filter>Menu</Filter>
+    </ClInclude>
+    <ClInclude Include="Menu.h">
+      <Filter>Menu</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderClass.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="Texture.h">
+      <Filter>Render\Textures</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -284,9 +284,6 @@
     <ClCompile Include="KF_PXControler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ParticleSystemClass.cpp">
-      <Filter>Particles</Filter>
-    </ClCompile>
     <ClCompile Include="Emiters.cpp">
       <Filter>Particles</Filter>
     </ClCompile>
@@ -311,31 +308,16 @@
     <ClCompile Include="FontClass.cpp">
       <Filter>Text</Filter>
     </ClCompile>
-    <ClCompile Include="FontCustomFromFileClass.cpp">
-      <Filter>Text</Filter>
-    </ClCompile>
-    <ClCompile Include="FontShaderClass.cpp">
-      <Filter>Text</Filter>
-    </ClCompile>
     <ClCompile Include="TextClass.cpp">
       <Filter>Text</Filter>
     </ClCompile>
     <ClCompile Include="KFButton.cpp">
       <Filter>Menu</Filter>
     </ClCompile>
-    <ClCompile Include="KFTextureOnTextureDrawing.cpp">
-      <Filter>Menu</Filter>
-    </ClCompile>
     <ClCompile Include="MenuControler.cpp">
       <Filter>Menu</Filter>
     </ClCompile>
-    <ClCompile Include="SquareObjectClass.cpp">
-      <Filter>Menu</Filter>
-    </ClCompile>
     <ClCompile Include="ScrollBarClass.cpp">
-      <Filter>Menu</Filter>
-    </ClCompile>
-    <ClCompile Include="KF2DObjClass.cpp">
       <Filter>Menu</Filter>
     </ClCompile>
     <ClCompile Include="KF2DTextureAnimation.cpp">
@@ -359,14 +341,23 @@
     <ClCompile Include="Terrain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ResourceManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="CubeMappingClass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DX11Buffers.cpp">
-      <Filter>Render\Buffers</Filter>
+    <ClCompile Include="ResourceManager.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="FlatObjectClass.cpp">
+      <Filter>Menu</Filter>
+    </ClCompile>
+    <ClCompile Include="Menu.cpp">
+      <Filter>Menu</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderClass.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Texture.cpp">
+      <Filter>Render\Textures</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

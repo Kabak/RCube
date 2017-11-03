@@ -8,7 +8,9 @@ KFButton::KFButton()
 			 IsButonPressTexture = nullptr;
 		  IsMouseOnButtonTexture = nullptr;
 			  NotEnalbledTexture = nullptr;
-							 Obj = nullptr;
+			    OsnButtontexture = nullptr;
+//							 Obj = nullptr;
+						 Buffers = nullptr;
 				 g_State.IsPress = false ;
 		 g_State.IsMouseOnButton = false ;
 						 Checked = false;
@@ -25,13 +27,13 @@ HRESULT KFButton::Init(
 	D3DGlobalContext* D3DGC,
 			XMFLOAT4& _ScreenCoords,
 			XMFLOAT4& _FormCoord,
-   KFButton_Elements& ButtonInitData
+   KFButton_Elements& ButtonInitData,
+	Flat_Obj_Buffers* _Buffers
 		  ) 
 	{
 	HRESULT Result = S_OK ;
 
-	 D3DGC_Obj = D3DGC;
-
+	   Buffers = _Buffers;
 	Checked    = ButtonInitData.Checked;
 	ObjectType = ButtonInitData.Type;
 	EditType   = ButtonInitData.EditType;
@@ -102,10 +104,13 @@ HRESULT KFButton::Init(
 	vertices[3].TexCoord = XMFLOAT2(1.0f, 0.0f);
 
 
-	unsigned long indices[6] = { 0, 1, 2, 0, 3, 1 };
+//	unsigned int indices[6] = { 0, 1, 2, 0, 3, 1 };
+	Buffers->FlatObjectVB->Update ( vertices );
+	Buffers->IndexBs->Update ( (Index_Type*)FlatObjectIndices );
+	Buffers->RenderTexture = ButtonInitData.OsnTexture;
 
-	Obj = new KF2DObjClass ;
-	Obj->Init( D3DGC, vertices, indices, ButtonInitData.OsnTexture, 4, 6 );
+//	Obj = new KF2DObjClass ;
+//	Obj->Init( D3DGC, vertices, FlatObjectIndices, ButtonInitData.OsnTexture, 4, 6 );
 
 	delete [] vertices ;
 	
@@ -115,7 +120,7 @@ HRESULT KFButton::Init(
 HRESULT KFButton::Draw()
 {
 
-	Obj->Render() ;
+//	Obj->Render() ;
 	
 	return S_OK;
 }
@@ -153,7 +158,7 @@ void KFButton::ClearButtonState()
 KFButton::~KFButton()
 {
 
-	RCUBE_DELETE( Obj );
+//	RCUBE_DELETE( Obj );
 }
 
 
@@ -187,13 +192,14 @@ void KFButton::ResetButtonParam() {
 	vertices[3].Position = XMFLOAT3(right, top, 0.0f);  // Top right.
 	vertices[3].TexCoord = XMFLOAT2(1.0f, 0.0f);
 
-	Obj->SetVertexBuffer( vertices ) ;
+//	Obj->SetVertexBuffer( vertices ) ;
+	Buffers->FlatObjectVB->Update ( vertices );
 
 	delete [] vertices ;
 
 }
 
-bool KFButton::Frame( DXINPUTSTRUCT& InputClass, bool &ObjectBUSY )
+bool KFButton::Frame( DXINPUTSTRUCT& InputClass, bool &ObjectBUSY)
 {
 	// Проверка, была ли нажата мышка и не отпущена именно на этом объекте
 	// Если не была нажата вовсе или нажата на этом объекте, то выполняем обработку этого объекта
@@ -248,10 +254,12 @@ bool KFButton::Frame( DXINPUTSTRUCT& InputClass, bool &ObjectBUSY )
 
 				if ( IsButonPressTexture != NULL || Checked )
 				{
-					SetObjectTexture( IsButonPressTexture );
+//					SetObjectTexture( IsButonPressTexture );
+					Buffers->RenderTexture = IsButonPressTexture;	// новая попытка )
 				}
 				else
-					SetObjectTexture( OsnButtontexture );
+					Buffers->RenderTexture = OsnButtontexture;	// новая попытка )
+//					SetObjectTexture( OsnButtontexture );
 			}
 			else // Мышка не была нажата на объекте
 			{ 
@@ -315,14 +323,17 @@ bool KFButton::Frame( DXINPUTSTRUCT& InputClass, bool &ObjectBUSY )
 
 				if (IsMouseOnButtonTexture != NULL)
 				{
-					SetObjectTexture(IsMouseOnButtonTexture);
+//					SetObjectTexture(IsMouseOnButtonTexture);
+					Buffers->RenderTexture = IsMouseOnButtonTexture;
 				}
 				else 
 				{
 					if ( Checked )
-						SetObjectTexture( IsButonPressTexture );
+						Buffers->RenderTexture = IsButonPressTexture;
+//						SetObjectTexture( IsButonPressTexture );
 					else
-						SetObjectTexture( OsnButtontexture );
+						Buffers->RenderTexture = OsnButtontexture;
+//						SetObjectTexture( OsnButtontexture );
 				}
 			}	
 
@@ -337,12 +348,14 @@ bool KFButton::Frame( DXINPUTSTRUCT& InputClass, bool &ObjectBUSY )
 
 			if ( Checked )
 			{
-				SetObjectTexture(IsButonPressTexture);
+//				SetObjectTexture(IsButonPressTexture);
+				Buffers->RenderTexture = IsButonPressTexture;
 //				g_State.IsPress = true;
 			}
 			else
 			{
-				SetObjectTexture(OsnButtontexture);
+//				SetObjectTexture(OsnButtontexture);
+				Buffers->RenderTexture = OsnButtontexture;
 //				g_State.IsPress = false;
 			}
 
@@ -398,18 +411,21 @@ void KFButton::SetEnable ( bool Value )
 	if( Value )
 	{
 		Enabled = true;
-		SetObjectTexture( OsnButtontexture );
+//		SetObjectTexture( OsnButtontexture );
+		Buffers->RenderTexture = OsnButtontexture;
 	}
 	else
 	{
 		Enabled = false;
 		if( NotEnalbledTexture != nullptr )
 		{
-			SetObjectTexture( NotEnalbledTexture );
+//			SetObjectTexture( NotEnalbledTexture );
+			Buffers->RenderTexture = NotEnalbledTexture;
 		}
 		else
 		{
-			SetObjectTexture( OsnButtontexture );
+//			SetObjectTexture( OsnButtontexture );
+			Buffers->RenderTexture = OsnButtontexture;
 		}
 	}
 

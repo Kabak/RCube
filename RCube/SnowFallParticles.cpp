@@ -6,9 +6,6 @@
 SnowFallParticles::SnowFallParticles()
 {
 	FireTexture = nullptr;
-	SmokeTexture = nullptr;
-	HeartTexture = nullptr;
-	ParticlesTexture = nullptr;
 	m_particleList = nullptr;
 	FireInstIndNumber = nullptr;
 	FireInstDistance = nullptr;
@@ -16,8 +13,6 @@ SnowFallParticles::SnowFallParticles()
 	m_vertexBuffer = nullptr;
 	m_indexBuffer = nullptr;
 
-//	m_sampleState = nullptr;
-	m_layout = nullptr;
 	// +++++++++++++++++   Instancing   ++++++++++++++++++++++++++++++++
 	m_instanceBuffer = nullptr;
 	// -----------------   Instancing   --------------------------------
@@ -31,7 +26,7 @@ SnowFallParticles::SnowFallParticles()
 	Camera.Vec = { 0.0f, 0.0f, 0.0f, 1.0f };
 	Object.Vec = { 0.0f, 0.0f, 0.0f, 1.0f };
 
-	TempLight = nullptr;
+
 }
 
 
@@ -42,13 +37,10 @@ SnowFallParticles::~SnowFallParticles()
 
 bool SnowFallParticles::Initialize( HWND hwnd,
 									 D3DGlobalContext *D3DGC,
-									 ID3D10Blob* Blob,
 									 ID3D11ShaderResourceView* _FireTexture,
 									 int _UX_Amount,							// Количество строк в текстуре анимации
 									 int _VY_Amount,							// Количестко столбцов в текстуре анимации
-									 int FramesAmount,						// Реальное количество анимаций в текстуре с верха , слева направо
-
-									 D3DClass *_EngineLight
+									 int FramesAmount						// Реальное количество анимаций в текстуре с верха , слева направо
 									 )
 {
 	bool result;
@@ -91,34 +83,16 @@ bool SnowFallParticles::Initialize( HWND hwnd,
 		++UX;
 	}
 
-	// Получаем указатель на класс LIght в движке, для манипуляцией источниками света для частиц
-	EngineLight = _EngineLight;
 
 	// Initialize the particle system.
-	result = InitializeParticleSystem();
-	if ( !result )
-	{
-		return false;
-	}
+	InitializeParticleSystem();
 
 	// Create the buffers that will be used to render the particles with.
-	result = InitializeBuffers( D3DGC_Local->D11_device, Blob );
+	result = InitializeBuffers( D3DGC_Local->DX_device );
 	if ( !result )
 	{
 		return false;
 	}
-
-	TempLight = new PointLight;
-
-	TempLight->attenuationBegin = 0.1f;
-	TempLight->attenuationEnd = 0.5f;
-	//	TempLight->color = { 1.0f, 0.7f, 1.0f };
-	//	TempLight->position = { 0.0f, 0.0f, 0.0f };//;{ 0.0f, 10.0f, 00.0f }
-	//	TempLight->direction = { 0.0f, 0.0f, 0.0f };//;{ 0.0f, -0.3f, -1.0f }
-	TempLight->angel = 0.0f;
-	TempLight->ShadowMapSliceNumber = -1;
-	TempLight->Dummy = 1;
-	TempLight->HaveShadow = false;
 
 	return true;
 }
@@ -132,8 +106,6 @@ void SnowFallParticles::Shutdown()
 
 	// Release the particle system.
 	ShutdownParticleSystem();
-
-	RCUBE_DELETE( TempLight );
 
 	RCUBE_ARR_DELETE( TextcordTop );
 	RCUBE_ARR_DELETE( TextcordLeft );
@@ -156,7 +128,7 @@ void SnowFallParticles::Frame( FPSTimers& Timers )
 
 /*
 	D3D11_MAPPED_SUBRESOURCE  mapResource;
-	HRESULT result = D3DGC_Local->D11_deviceContext->Map( m_instanceBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapResource );
+	HRESULT result = D3DGC_Local->DX_deviceContext->Map( m_instanceBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapResource );
 	if ( FAILED( result ) )
 	{
 		MessageBox( 0, L"Ошибка доступа к буферу частиц FireParticles.", L"Can't ->Map", 0 );
@@ -172,9 +144,9 @@ void SnowFallParticles::Frame( FPSTimers& Timers )
 		++Sortedinstance;
 	}
 
-	D3DGC_Local->D11_deviceContext->Unmap( m_instanceBuffer, 0 );
+	D3DGC_Local->DX_deviceContext->Unmap( m_instanceBuffer, 0 );
 */
-	D3DGC_Local->D11_deviceContext->UpdateSubresource( m_instanceBuffer, NULL, NULL, instances, NULL, NULL );
+	D3DGC_Local->DX_deviceContext->UpdateSubresource( m_instanceBuffer, NULL, NULL, instances, NULL, NULL );
 }
 
 
@@ -197,33 +169,23 @@ void SnowFallParticles::Render()
 	bufferPointers[1] = m_instanceBuffer;
 
 	// Set the vertex buffer to active in the input assembler so it can be rendered.
-	D3DGC_Local->D11_deviceContext->IASetVertexBuffers( 0, 2, bufferPointers, strides, offsets );
+	D3DGC_Local->DX_deviceContext->IASetVertexBuffers( 0, 2, bufferPointers, strides, offsets );
 
 	// Set the index buffer to active in the input assembler so it can be rendered.
-	D3DGC_Local->D11_deviceContext->IASetIndexBuffer( m_indexBuffer, DXGI_FORMAT_R32_UINT, 0 );
+	D3DGC_Local->DX_deviceContext->IASetIndexBuffer( m_indexBuffer, DXGI_FORMAT_R32_UINT, 0 );
 
 	// Set the type of primitive that should be rendered from this vertex buffer.
-	D3DGC_Local->D11_deviceContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+	D3DGC_Local->DX_deviceContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
 
 	// Set shader texture resource in the pixel shader.
-	D3DGC_Local->D11_deviceContext->PSSetShaderResources( 0, 1, &FireTexture );
-
-	// Set the vertex input layout.
-	D3DGC_Local->D11_deviceContext->IASetInputLayout( m_layout );
-
-	// Set the vertex and pixel shaders that will be used to render this triangle.
-	// deviceContext->VSSetShader(m_vertexShader, NULL, 0);
-	// deviceContext->PSSetShader(m_pixelShader, NULL, 0);
-
-	// Set the sampler state in the pixel shader.
-//	D3DGC_Local->D11_deviceContext->PSSetSamplers( 0, 1, &m_sampleState );
+	D3DGC_Local->DX_deviceContext->PSSetShaderResources( 0, 1, &FireTexture );
 
 	// Render the triangle.
-	D3DGC_Local->D11_deviceContext->DrawIndexedInstanced( 6, m_currentParticleCount/*m_instanceCount*/, 0, 0, 0 );
+	D3DGC_Local->DX_deviceContext->DrawIndexedInstanced( 6, m_currentParticleCount/*m_instanceCount*/, 0, 0, 0 );
 }
 
 
-bool SnowFallParticles::InitializeParticleSystem()
+void SnowFallParticles::InitializeParticleSystem()
 {
 	// Set the random deviation of where the particles can be located when emitted.
 	m_particleDeviationX = 30.5f;
@@ -266,7 +228,6 @@ bool SnowFallParticles::InitializeParticleSystem()
 	// Clear the initial accumulated time for the particle per second emission rate.
 	m_accumulatedTime = 0.0f;
 
-	return true;
 }
 
 
@@ -281,7 +242,7 @@ void SnowFallParticles::ShutdownParticleSystem()
 }
 
 
-bool SnowFallParticles::InitializeBuffers( ID3D11Device* device, ID3D10Blob* Blob )
+bool SnowFallParticles::InitializeBuffers( ID3D11Device* device )
 {
 	HRESULT result;
 
@@ -297,7 +258,7 @@ bool SnowFallParticles::InitializeBuffers( ID3D11Device* device, ID3D10Blob* Blo
 	m_vertices = new Vertex_FlatObject[4];
 
 
-	unsigned long indices[6] = { 0, 1, 2, 0, 3, 1 };
+//	unsigned long indices[6] = { 0, 1, 2, 0, 3, 1 };
 
 	// Set up the description of the static index buffer.
 	BillBordVertexesIndBufferDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -308,7 +269,7 @@ bool SnowFallParticles::InitializeBuffers( ID3D11Device* device, ID3D10Blob* Blo
 	BillBordVertexesIndBufferDesc.StructureByteStride = 0;
 
 	// Give the subresource structure a pointer to the index data.
-	indexData.pSysMem = &indices[0];
+	indexData.pSysMem = &FlatObjectIndices[0];
 	indexData.SysMemPitch = 0;
 	indexData.SysMemSlicePitch = 0;
 
@@ -390,53 +351,6 @@ bool SnowFallParticles::InitializeBuffers( ID3D11Device* device, ID3D10Blob* Blo
 	// Release the index array since it is no longer needed.
 	delete[] m_vertices;
 
-	// LAYOUT
-	D3D11_INPUT_ELEMENT_DESC BASIC_Layout[5] =
-	{
-		{ "POSITION"	, 0 , DXGI_FORMAT_R32G32B32_FLOAT	, 0 , 0							   , D3D11_INPUT_PER_VERTEX_DATA   , 0 },
-		{ "TEXCOORD"	, 0 , DXGI_FORMAT_R32G32_FLOAT		, 0 , D3D11_APPEND_ALIGNED_ELEMENT , D3D11_INPUT_PER_VERTEX_DATA   , 0 },
-		{ "POSITION"	, 1 , DXGI_FORMAT_R32G32B32A32_FLOAT, 1 , D3D11_APPEND_ALIGNED_ELEMENT , D3D11_INPUT_PER_INSTANCE_DATA , 1 },
-		{ "COLOR"		, 0 , DXGI_FORMAT_R32G32B32A32_FLOAT, 1 , D3D11_APPEND_ALIGNED_ELEMENT , D3D11_INPUT_PER_INSTANCE_DATA , 1 },
-        { "InsTEXCOORD" , 0 , DXGI_FORMAT_R32G32B32A32_FLOAT, 1 , D3D11_APPEND_ALIGNED_ELEMENT , D3D11_INPUT_PER_INSTANCE_DATA , 1 }
-	};
-
-	unsigned int numElements;
-	// Get a count of the elements in the layout.
-	numElements = sizeof( BASIC_Layout ) / sizeof( BASIC_Layout[0] );
-
-	// Create the vertex input layout.
-	result = device->CreateInputLayout( BASIC_Layout, numElements, Blob->GetBufferPointer(), Blob->GetBufferSize(),
-										&m_layout );
-	if ( FAILED( result ) )
-	{
-		return false;
-	}
-/*
-	D3D11_SAMPLER_DESC samplerDesc;
-
-	// Create a texture sampler state description.
-	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.MipLODBias = 0.0f;
-	samplerDesc.MaxAnisotropy = 1;
-	samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-	samplerDesc.BorderColor[0] = 0;
-	samplerDesc.BorderColor[1] = 0;
-	samplerDesc.BorderColor[2] = 0;
-	samplerDesc.BorderColor[3] = 0;
-	samplerDesc.MinLOD = 0;
-	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-	// Create the texture sampler state.
-	result = device->CreateSamplerState( &samplerDesc, &m_sampleState );
-	if ( FAILED( result ) )
-	{
-		return false;
-	}
-*/
-
 	return true;
 }
 
@@ -448,9 +362,6 @@ void SnowFallParticles::ShutdownBuffers()
 	// -----------------   Instancing   --------------------------------
 	RCUBE_RELEASE( m_indexBuffer );
 	RCUBE_RELEASE( m_vertexBuffer );
-
-//	RCUBE_RELEASE( m_sampleState );
-	RCUBE_RELEASE( m_layout );
 
 	RCUBE_ARR_DELETE( instances );
 //	RCUBE_ARR_DELETE( m_vertices );
@@ -537,15 +448,6 @@ void SnowFallParticles::EmitParticles( FPSTimers& Timers )
 
 		// Now insert it into the particle array in the correct depth order.
 		m_particleList[index] = Data;
-
-		// Вставляем свет
-		TempLight->position = Data1.position;
-		RCube_VecFloat34 TempColor;
-		TempColor.Fl4 = Data1.color;
-		TempLight->color = TempColor.Fl3;
-
-//		m_particleList[index].LightIndex = EngineLight->AddLightSource( *TempLight );
-		// -- Вставляем свет ---------------------------------------------------------------------------------------------------------------------
 
 		instances[index] = Data1;
 

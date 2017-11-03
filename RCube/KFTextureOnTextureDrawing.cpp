@@ -63,7 +63,7 @@ HRESULT KFTextureOnTextureDrawing::Init(HWND hwnd, D3DGlobalContext* D3DGC, UINT
 	D3D11_TEXTURE2D_DESC textureDesc;
 	HRESULT result;
 	D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-	g_deviceContext = D3DGC->D11_deviceContext;
+	g_deviceContext = D3DGC->DX_deviceContext;
 	g_ActiveRenderTargetView = ActiveRenderTargetView;
 
 	// Initialize the render target texture description.
@@ -82,7 +82,7 @@ HRESULT KFTextureOnTextureDrawing::Init(HWND hwnd, D3DGlobalContext* D3DGC, UINT
 	textureDesc.MiscFlags = 0;
 
 	// Create the render target texture.
-	result = D3DGC->D11_device->CreateTexture2D(&textureDesc, NULL, &m_renderTargetTexture);
+	result = D3DGC->DX_device->CreateTexture2D(&textureDesc, NULL, &m_renderTargetTexture);
 	if (FAILED(result))
 	{
 		MessageBox(hwnd, L"KFTextureManegerClass. ошибка в создании m_renderTargetTexture", L"Error", MB_OK);
@@ -95,7 +95,7 @@ HRESULT KFTextureOnTextureDrawing::Init(HWND hwnd, D3DGlobalContext* D3DGC, UINT
 	renderTargetViewDesc.Texture2D.MipSlice = 0;
 
 	// Create the render target view.
-	result = D3DGC->D11_device->CreateRenderTargetView(m_renderTargetTexture, &renderTargetViewDesc, &m_renderTargetView);
+	result = D3DGC->DX_device->CreateRenderTargetView(m_renderTargetTexture, &renderTargetViewDesc, &m_renderTargetView);
 	if (FAILED(result))
 	{
 		MessageBox(hwnd, L"KFTextureManegerClass. ошибка в создании рендер таргета", L"Error", MB_OK);
@@ -109,14 +109,14 @@ HRESULT KFTextureOnTextureDrawing::Init(HWND hwnd, D3DGlobalContext* D3DGC, UINT
 	shaderResourceViewDesc.Texture2D.MipLevels = 1;
 
 	// Create the shader resource view.
-	result = D3DGC->D11_device->CreateShaderResourceView(m_renderTargetTexture, &shaderResourceViewDesc, &m_shaderResourceView);
+	result = D3DGC->DX_device->CreateShaderResourceView(m_renderTargetTexture, &shaderResourceViewDesc, &m_shaderResourceView);
 	if (FAILED(result))
 	{
 		MessageBox(hwnd, L"KFTextureManegerClass. ошибка в создании шейдер ресурсов", L"Error", MB_OK);
 		return E_FAIL;
 	}
 
-	osnBackGroun = new SquareObjectClass;
+	osnBackGroun = new FlatObjectClass;
 
 	XMFLOAT4 ObjData = { 0.0f, 0.0f, (float)StTextureWidth,	(float)StTextureHeigth };
 	
@@ -124,7 +124,7 @@ HRESULT KFTextureOnTextureDrawing::Init(HWND hwnd, D3DGlobalContext* D3DGC, UINT
 
 	ObjData = { PosX * D3DGC->ScreenWidth, PosY * D3DGC->ScreenHeight, (float)StTextureWidth, (float)StTextureHeigth };
 	
-	Obj = new SquareObjectClass;
+	Obj = new FlatObjectClass;
 	Obj->Init(D3DGC, ObjData, m_shaderResourceView, 0);
 
 	OsnTextureWidth = StTextureWidth;
@@ -134,8 +134,8 @@ HRESULT KFTextureOnTextureDrawing::Init(HWND hwnd, D3DGlobalContext* D3DGC, UINT
 	g_ScreenHeigth = D3DGC->ScreenHeight;
 	g_ScreenX = screenPosX;
 	g_ScreenY = ScreenPosY;
-	g_device = D3DGC->D11_device;
-	g_DevCon = D3DGC->D11_deviceContext;
+	g_device = D3DGC->DX_device;
+	g_DevCon = D3DGC->DX_deviceContext;
 
 
 	return S_OK;
@@ -189,8 +189,8 @@ void KFTextureOnTextureDrawing::AddTexture(D3DGlobalContext* D3DGC, float TexPos
 	XMFLOAT4 ObjData = { TexPosX * OsnTextureWidth
 		, TexPosY * OsnTextureHeigth, texWidth, texHeigth };
 
-	SquareObjectClass * TimeObj;
-	TimeObj = new SquareObjectClass;
+	FlatObjectClass * TimeObj;
+	TimeObj = new FlatObjectClass;
 	TimeObj->Init(D3DGC, ObjData, Texture, 0);
 
 	ObjsArray.push_back(TimeObj);

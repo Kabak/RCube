@@ -6,7 +6,7 @@
 
 #include <d3d11.h>
 #include <DirectXMath.h>
-#include "VertexBuffers_def.h"
+#include "Buffers_def.h"
 
 using namespace DirectX;
 

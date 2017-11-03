@@ -25,7 +25,7 @@ public:
 	// , а ровно количеству реальных кадров. Если кадры занимают всю текстуру,то FramesAmount = 0
 	bool Initialize( HWND hwnd,
 					 D3DGlobalContext *D3DGC_Local,
-					 ID3D10Blob* Blob,
+
 					 ID3D11ShaderResourceView* texture,
 					 TorchFireSmoke TorchFIreSmokeInit,
 					 D3DClass *_EngineLight
@@ -34,7 +34,7 @@ public:
 
 	bool InitFireSystem( HWND hwnd,
 						 D3DGlobalContext *D3DGC,
-						 ID3D10Blob* Blob,
+
 						 ID3D11ShaderResourceView *_FireTexture,
 						 //	ID3D11ShaderResourceView *_SmokeTexture,
 						 //	ID3D11ShaderResourceView *_HeartTexture,
@@ -47,7 +47,7 @@ public:
 	void Frame( FPSTimers &Timers );
 	void Render();
 
-	bool InitializeBuffers( ID3D11Device*, ID3D10Blob* Blob );
+	bool InitializeBuffers( ID3D11Device* );
 	void ShutdownBuffers();
 
 	void EmitFlameParticles( FPSTimers& Timers );
@@ -86,9 +86,6 @@ private:
 
 	// Размер частиц при инициализации Вертексного буфера
 	float m_particleSize; 
-
-	ID3D11InputLayout* m_layout;
-//	ID3D11SamplerState* m_sampleState;
 
 	// Номер света присвоенный системой
 	int LightIndex;

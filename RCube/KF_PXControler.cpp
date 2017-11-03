@@ -186,7 +186,7 @@ void KF_PXControler::Init(HWND * g_hwnd , D3DGlobalContext *D3DGC, KFModelList *
 #if PX_SUPPORT_GPU_PHYSX
 	PxCudaContextManagerDesc cudaContextManagerDesc;
 	ZeroMemory(&cudaContextManagerDesc, sizeof ( PxCudaContextManagerDesc ));
-	cudaContextManagerDesc.graphicsDevice = D3DGC->D11_device;
+	cudaContextManagerDesc.graphicsDevice = D3DGC->DX_device;
 	cudaContextManagerDesc.interopMode = PxCudaInteropMode::D3D11_INTEROP;
 	cudaContextManagerDesc.ctx = NULL;
 	cudaContextManagerDesc.appGUID = "RCUBE";
@@ -768,7 +768,7 @@ PxShape* KF_PXControler::CreateShape(int ModelIndex, ShapeData  Shape) {
 
 		PxVec3 * verts = new PxVec3[nbVerts];
 		PxU32 * indices32 = new PxU32[indexesCout];
-		int c = 0, counter = 0, fullCounter = 0, inv_c;
+		UINT c = 0, counter = 0, fullCounter = 0, inv_c;
 
 		while (counter < model->ThisObjDesc.MeshesCount ) {
 			c = 0;

@@ -10,8 +10,7 @@
  ClusteredSM_ps.cso //9
  FXAA_vs.cso //10	5
  FXAA_ps.cso //11
- LightRenderSM_vs.cso //12	6
- LightRenderSM_ps.cso //13
+ LightRenderSM_vs.cso //12	6  LightRenderSM_ps.cso //13
  FireAnimation_vs.cso //14	7
  FireAnimation_ps.cso //15
  FireParticle3D_vs.cso //16	8

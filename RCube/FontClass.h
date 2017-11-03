@@ -12,10 +12,7 @@
 #include <D2D1.h>
 #include <vector>
 #include <DirectXTex.h>
-// Для альтернативного рисования текстом на текстуре без MAP
-#include "SquareObjectClass.h"
-#include "ResourceManager.h"
-//#include <afx.h>
+#include "FlatObjectClass.h"
 
 
 using namespace std;
@@ -45,17 +42,16 @@ public:
     }
 // ------------------------------------
 
-	bool Initialize(D3DGlobalContext* D3DGC, FontOnTextureData *FOTData1 );
+	bool Initialize(D3DGlobalContext* D3DGC, FontOnTextureData *FOTData1);
 	void Shutdown();
 	ID3D11ShaderResourceView* GetTexture();
-//	void SetTexture(ID3D11ShaderResourceView* Texture);
 
 	void BuildVertexArray(void*, char*, float&, float&, float&);
 
-	// Рисуем любым шрифтом TTF на текстуре
-	bool RenderFontOnTexture ( ID3D11ShaderResourceView* textureForDraw, WCHAR* FontNameFullPath, WCHAR* text, FontOnTextureData *FOTData );
-
-	bool CreateTextureFontFromFontFile( WCHAR* FontNameFullPath, FontOnTextureData *FOTData, bool fontTextureOut, bool fontTextDescOut );
+	bool CreateTextureFontFromFontFile( WCHAR* FontNameFullPath, 
+		FontOnTextureData *FOTData, 
+		bool fontTextureOut, 
+		bool fontTextDescOut );
 
 	UINT GetFontHeight ();
 
@@ -89,26 +85,12 @@ private:
 	// Коррекция позиций символов после обрезания текстуры
 	void CorrectSymbolsDim( float OutlineSize, int NewTextureWidth );
 
-	// Копируем текстуру с текстом на нужную текстуру
-	bool CopyTextTextureOnTexture ( ID3D11ShaderResourceView* textureForDraw );
-	bool CopyTextTextureOnTexture_OLD ( ID3D11ShaderResourceView* textureForDraw );
-
 struct VertexType
 	{
 		XMFLOAT3 position;
 		XMFLOAT2 texture;
 	};
 
-struct Vertex
-{
-	Vertex(){}
-	Vertex(float x, float y, float z,
-		float u, float v)
-		: pos(x,y,z), texCoord(u, v){}
-
-	XMFLOAT3 pos;
-	XMFLOAT2 texCoord;
-};
 
 // описание каждого символа в текстуре
 	struct _Symbol_Dim 
@@ -166,7 +148,8 @@ private:
 //		   IDXGIAdapter1* Adapter;			// не удаляем
 		    ID3D11Device* d3d11Device;		// не удаляем
 		D3DGlobalContext* Local_D3DGC;
-	   ResourceManager* LocalResManager;
+//		ResourceManager * GlobalResourceManager;
+//	   ResourceManager* LocalResManager;
 #if defined( DEBUG ) || defined( _DEBUG )
 			 ID3D11Debug* DebugDevice;
 #endif

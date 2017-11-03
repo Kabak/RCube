@@ -18,7 +18,7 @@ NotEnalbledTravellerTexture = nullptr;
 				  MinButton = nullptr;
 				  MaxButton = nullptr;
 				  Traveller = nullptr;
-
+					   Body = nullptr;
 			  ButtonPressed = false;
 		   TravellerPressed = false;
 				 UpSideDown = false;
@@ -34,13 +34,16 @@ HRESULT ScrollBarClass::Init(
 	D3DGlobalContext* D3DGC,
 	XMFLOAT4& _ScreenCoords,
 	XMFLOAT4& _FormCoord,
-	KFScrollBar_Elements& TempScrollBarData
+	KFScrollBar_Elements& TempScrollBarData,
+	Flat_Obj_Buffers* _BuffersMin,
+	Flat_Obj_Buffers* _BuffersMax,
+	Flat_Obj_Buffers* _BuffersTraveler,
+	Flat_Obj_Buffers* _Body
 	) 
 {
 	HRESULT Result = S_OK;
 
-	D3DGC_Obj = D3DGC;
-
+//	GlobalResourceManager = GlobalResManager;
 	Horizontal = TempScrollBarData.Horizontal;
 
 //	StaticTravelerWidth = _StaticTravelerWidth;
@@ -112,10 +115,10 @@ HRESULT ScrollBarClass::Init(
 	_2DPixelXmax = float(_ScreenCoords.z / 2);
 	_2DPixelYmax = float(_ScreenCoords.w / 2);
 
-	MinButton = new SquareObjectClass;
-	MaxButton = new SquareObjectClass;
-	Traveller = new SquareObjectClass;
-		
+	MinButton = new FlatObjectClass;
+	MaxButton = new FlatObjectClass;
+	Traveller = new FlatObjectClass;
+		 Body = new FlatObjectClass;
 		// Временная переменная для размещения кнопок и ползунка вокруг тела
 		XMFLOAT4 _MinButton = { 0.0f, 0.0f, 0.0f, 0.0f };
 		XMFLOAT4 _MaxButton = { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -134,23 +137,29 @@ HRESULT ScrollBarClass::Init(
 
 		SetButtonsToBody( Horizontal, _MinButton, _MaxButton, _TravellerButton );
 
+
+
 		if ( Horizontal )
 		{
+			// тело
+			Body->Init ( D3DGC->ScreenWidth, D3DGC->ScreenHeight, ObjParam, BodyTexture, NO_FLIP, _Body );
 			// Инициализируем MinButton
-			MinButton->Init(D3DGC_Obj, _MinButton, ButtonsTexture, NO_FLIP );
+			MinButton->Init( D3DGC->ScreenWidth, D3DGC->ScreenHeight, _MinButton, ButtonsTexture, NO_FLIP, _BuffersMin );
 			// Инициализируем MaxButton
-			MaxButton->Init(D3DGC_Obj, _MaxButton, ButtonsTexture, FLIP_HORIZONTAL );
+			MaxButton->Init( D3DGC->ScreenWidth, D3DGC->ScreenHeight, _MaxButton, ButtonsTexture, FLIP_HORIZONTAL, _BuffersMax );
 			// Инициализируем TravellerButton	
-			Traveller->Init(D3DGC_Obj, _TravellerButton, TravellerTexture, NO_FLIP );
+			Traveller->Init( D3DGC->ScreenWidth, D3DGC->ScreenHeight, _TravellerButton, TravellerTexture, NO_FLIP, _BuffersTraveler );
 		}
 		else
 		{
+			// тело
+			Body->Init ( D3DGC->ScreenWidth, D3DGC->ScreenHeight, ObjParam, BodyTexture, ROTATE90, _Body );
 			// Инициализируем MinButton
-			MinButton->Init(D3DGC_Obj, _MinButton, ButtonsTexture, ROTATE90 );
+			MinButton->Init( D3DGC->ScreenWidth, D3DGC->ScreenHeight, _MinButton, ButtonsTexture, ROTATE90, _BuffersMin );
 			// Инициализируем MaxButton
-			MaxButton->Init(D3DGC_Obj, _MaxButton, ButtonsTexture, FLIP_HORIZONTAL_ROTATE_90 );
+			MaxButton->Init( D3DGC->ScreenWidth, D3DGC->ScreenHeight, _MaxButton, ButtonsTexture, FLIP_HORIZONTAL_ROTATE_90, _BuffersMax );
 			// Инициализируем TravellerButton	
-			Traveller->Init(D3DGC_Obj, _TravellerButton, TravellerTexture, ROTATE90 );
+			Traveller->Init( D3DGC->ScreenWidth, D3DGC->ScreenHeight, _TravellerButton, TravellerTexture, ROTATE90, _BuffersTraveler );
 		}
 		
 		// Инвертируем значение для правильной инициализации, скролбара вверх ногами + - вверху   - - внизу
@@ -192,16 +201,20 @@ HRESULT ScrollBarClass::Init(
 		BodyVertexes[3].TexCoord = XMFLOAT2( 0.0f, 0.0f );
 	}
 
-	unsigned long indices[6] = { 0, 1, 2, 0, 3, 1 };
+//	unsigned int indices[6] = { 0, 1, 2, 0, 3, 1 };
 
+	Body->Buffers->FlatObjectVB->Update ( BodyVertexes );
+	Body->Buffers->IndexBs->Update ( (Index_Type*)FlatObjectIndices );
+	Body->Buffers->RenderTexture = BodyTexture;
+/*
 	Obj = new KF2DObjClass;
-	Obj->Init(D3DGC, BodyVertexes, indices, BodyTexture, 4, 6 );
+	Obj->Init(D3DGC, BodyVertexes, FlatObjectIndices, BodyTexture, 4, 6 );
 	if ( FAILED( Result ) )
 	{
 		MessageBox( NULL, L"ScrollBar Obj creation Error", 0, 0 );
 		Result = false;
 	}
-
+*/
 //	Obj->SetVertexBuffer( BodyVertexes, 4 );
 
 	delete[] BodyVertexes;
@@ -210,7 +223,7 @@ HRESULT ScrollBarClass::Init(
 }
 
 void ScrollBarClass::Draw() {
-
+/*
 	Obj->Render();
 
 	if (MinMixButtonsShow) 
@@ -220,15 +233,16 @@ void ScrollBarClass::Draw() {
 	}
 
 	Traveller->Draw();
-
+*/
 }
 
 ScrollBarClass::~ScrollBarClass() 
 {
-	RCUBE_DELETE ( Obj );
+//	RCUBE_DELETE ( Obj );
 	RCUBE_DELETE ( MinButton ); 
 	RCUBE_DELETE ( MaxButton );
 	RCUBE_DELETE ( Traveller );
+	RCUBE_DELETE ( Body );
 }
 
 void ScrollBarClass::SetMouseOnButtonTexture(ID3D11ShaderResourceView * Texture) {
@@ -860,7 +874,8 @@ void ScrollBarClass::SetEnable ( bool Value )
 		MinButton->SetObjectTexture( ButtonsTexture );
 		MaxButton->SetObjectTexture( ButtonsTexture );
 		Traveller->SetObjectTexture ( TravellerTexture );
-		Obj->SetObjectTexture ( BodyTexture );
+//		Obj->SetObjectTexture ( BodyTexture );
+		Buffers->RenderTexture = BodyTexture;
 	}
 	else
 	{
@@ -881,10 +896,18 @@ void ScrollBarClass::SetEnable ( bool Value )
 		else
 			Traveller->SetObjectTexture ( TravellerTexture );
 		
-		if ( NotEnalbledBodyTexture )
-			Obj->SetObjectTexture ( NotEnalbledBodyTexture );
+		if (NotEnalbledBodyTexture)
+		{
+//			Obj->SetObjectTexture ( NotEnalbledBodyTexture );
+			Buffers->RenderTexture = NotEnalbledBodyTexture;
+		}
+
 		else
-			Obj->SetObjectTexture ( BodyTexture );
+		{
+//			Obj->SetObjectTexture ( BodyTexture );
+			Buffers->RenderTexture = BodyTexture;
+		}
+
 	}
 
 }

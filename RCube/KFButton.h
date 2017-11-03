@@ -9,17 +9,17 @@
 #endif
 
 #include <dinput.h>
-#include "SquareObjectClass.h"
+#include "FlatObjectClass.h"
 #include "TextClass.h"
 #include "D3DGlobalContext.h"
-
+#include "DX11Buffers.h"
 						
 struct ButtonState{
 	bool	IsPress;
 	bool    IsMouseOnButton;
 };
 
-class KFButton : public SquareObjectClass{
+class KFButton : public FlatObjectClass{
 
 private :
 	
@@ -93,7 +93,8 @@ public :
 		D3DGlobalContext* D3DGC,
 				XMFLOAT4& ScreenCoords,
 				XMFLOAT4& FormCoord,
-	   KFButton_Elements& ButtonInitData
+	   KFButton_Elements& ButtonInitData,
+		Flat_Obj_Buffers* _Buffers
 		);
 
 	HRESULT Draw();
@@ -103,7 +104,7 @@ public :
 	// и был активен дл€ ввода с клавиатуры только один Edit на форме.
 	// ≈сли активный Edit не мен€лс€ то возвращаетс€ false
 	// ObjectBUSY - дл€ отслеживани€ нажата ли мышка на каком-либо объекте в конкретном меню
-	bool Frame( DXINPUTSTRUCT& InputClass, bool &ObjectBUSY );
+	bool Frame( DXINPUTSTRUCT& InputClass, bool &ObjectBUSY);
 
 	void SetIfButtonPressTexture(ID3D11ShaderResourceView* Texture);
 
