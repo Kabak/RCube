@@ -13,9 +13,10 @@
 #include <vector>
 #include "D3DGlobalContext.h"
 #include "Terrain.h"
-#include "KFModel.h"
-#include "KFModelList.h"
+//#include "KFModel.h"
+//#include "KFModelList.h"
 #include <string.h>
+#include "ResourceManager.h"
 
 #define EASY_CAPSULE_CLIMBING_MODE 1
 #define CONSTRAINED_CAPSULE_CLIMBING_MODE 2
@@ -132,7 +133,7 @@ public:
 	KF_PXControler();
 	~KF_PXControler();
 
-	void Init(HWND * g_hwnd , D3DGlobalContext *D3DGC, KFModelList * ActiveModelList);
+	void Init(HWND * g_hwnd , D3DGlobalContext *D3DGC, ResourceManager* ResourceManager );
 
 	PxFoundation * gFoundation = nullptr;
 	PxCooking *	theCooking = nullptr;
@@ -205,7 +206,7 @@ private:
 
 	HWND g_Hwnd;
 	//модел лист активный в движке
-	KFModelList * g_ModelList;
+	ResourceManager* MyManager;
 
 	//***************просто рабочие переменные которыет позвоняют не тратить время на создание локальных***************
 	XMVECTOR WorkQuat;

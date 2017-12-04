@@ -5,11 +5,13 @@
 
 Material::Material()
 {
-
+	Name = nullptr;
+	Texture = nullptr;
 };
 
 
 Material::~Material()
 {
-
+	RCUBE_ARR_DELETE ( Name )
+	RCUBE_RELEASE ( Texture )
 };

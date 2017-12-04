@@ -174,7 +174,7 @@ bool EngineKernel::Initialize()
 	PxControl = new KF_PXControler; // выделение памяти под его
 	PxControl->Init( &m_hwnd/*это параметры окна в котором находиться выполнение движка (необходимо для вывода сообщении об ошибках)*/, 
 	m_Graphics->GetD3DGC(),
-	m_Graphics->ModelList 
+	m_Graphics->MyManager
 		/*глобальный моделлист в котором обьекты которые добавляются в физику*/); //  инит его
 
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   С ЭТИМ МЕСТОМ МОГУТ БЫТЬ ВОПРОСЫ !!!
@@ -188,10 +188,25 @@ bool EngineKernel::Initialize()
 	//++++++++++++++++++++инит физикса++++++++++++++++++++++++++++++
 
 	// ++++++++++++++++++++++++++++++   Init Objects   +++++++++++++++++++++++++++++++++++
-	int BlobIndex = m_Graphics->MyManager->GetShaderIndexByName ( L"ClusteredSM" ) * 2;
+//	int BlobIndex = m_Graphics->MyManager->GetShaderIndexByName ( L"ClusteredSM" ) * 2;
 	int BunchShaderIndex = m_Graphics->MyManager->GetShaderIndexByName ( L"ClusteredSM" );
 
-	m_Graphics->ModelList->AddObject( L"Models/Cube.kfo", BlobIndex, BunchShaderIndex, MAX_OBJ);//0
+
+// + NEW RENDER !!!!!!!!!!!!
+	int index = m_Graphics->MyManager->Add_3D_Object ( L"Models/Cube.kfo", MAX_OBJ );
+	m_Graphics->MyManager->InitRandInstansingPoses ( index, ( m_Graphics->KFTerrain->g_Rows / 2 ) * m_Graphics->KFTerrain->g_VertixesIndent
+										 , -( ( m_Graphics->KFTerrain->g_Rows / 2 ) * m_Graphics->KFTerrain->g_VertixesIndent ), 20.0f, 19.0f
+										 , ( m_Graphics->KFTerrain->g_Columns / 2 ) * m_Graphics->KFTerrain->g_VertixesIndent, -( ( m_Graphics->KFTerrain->g_Columns / 2 ) * m_Graphics->KFTerrain->g_VertixesIndent ) );
+	m_Graphics->MyManager->InitRandInstansingRots ( index );
+
+	index = m_Graphics->MyManager->Add_3D_Object ( L"Models/Ship.kfo", 1 );
+	m_Graphics->MyManager->Set_3D_Object_Positon ( index, 0, 150.0f, 0.0f, 0.0f );
+
+	index = m_Graphics->MyManager->Add_3D_Object ( L"Models/Dragon.kfo", 1 );//2
+	m_Graphics->MyManager->Set_3D_Object_Positon ( index, 0, XMFLOAT3 ( 100.0f, 4.0f, -20.0f ) );
+// - NEW RENDER !!!!!!!!!!!!
+
+	m_Graphics->ModelList->AddObject( L"Models/Cube.kfo", BunchShaderIndex, MAX_OBJ);//0
 
 	m_Graphics->ModelList->InitRandInstansingPoses( 0, (m_Graphics->KFTerrain->g_Rows / 2) * m_Graphics->KFTerrain->g_VertixesIndent
 		, -((m_Graphics->KFTerrain->g_Rows / 2) * m_Graphics->KFTerrain->g_VertixesIndent), 20.0f, 19.0f
@@ -214,11 +229,11 @@ bool EngineKernel::Initialize()
 
 	///****************Добавление инстнсинг обьектов***************************************
 
-	m_Graphics->ModelList->AddObject( L"Models/Ship.kfo", BlobIndex, BunchShaderIndex, 1);//1
+	m_Graphics->ModelList->AddObject( L"Models/Ship.kfo", BunchShaderIndex, 1);//1
 	m_Graphics->ModelList->SetPositon( 1, 0, 0.0f, 5.0f, 0.0f );
 
 
-	m_Graphics->ModelList->AddObject(L"Models/Dragon.kfo", BlobIndex, BunchShaderIndex, 1);//2
+	m_Graphics->ModelList->AddObject(L"Models/Dragon.kfo", BunchShaderIndex, 1);//2
 	m_Graphics->ModelList->SetPositon(2 , 0 , XMFLOAT3(-100.0f , 4.0f , 20.0f ));
 	//m_Graphics->ModelList->SetRotation(2, 0, XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f));
 	// ********************** ДОБАВЛЕНИЕ ОДНОГО ОБЬЕКТА ОБЬЕКТА  ********************************************
@@ -283,7 +298,7 @@ bool EngineKernel::Initialize()
 		return false;
 	}
 
-	m_Graphics->MyManager->InitSounds ( L"Sounds/sounds.kaf", m_Sound );
+//	m_Graphics->MyManager->InitSounds ( L"Sounds/sounds.kaf", m_Sound );
 
 	KF3DObjectData * Data = new KF3DObjectData[26];
 	int c = 0;
@@ -385,8 +400,11 @@ bool EngineKernel::Initialize()
 
 	/// *************** добавление карты высот (террэйна******************************
 	// одна функция
-	PxControl->CreateHeildHield( m_Graphics->KFTerrain->g_Rows /*количество точек по оси X*/, m_Graphics->KFTerrain->g_Columns/*количество точек по оси Y*/
-		, m_Graphics->KFTerrain->g_VertixesIndent/*отступ между точками*/, m_Graphics->KFTerrain->m_heightMap /*сам вот этот буфер вершин*/, L"Models/Terrain.fiz.txt"/*а это файл физики котрый описывает свойства*/ );
+	PxControl->CreateHeildHield( m_Graphics->KFTerrain->g_Rows			/*количество точек по оси X*/, 
+								 m_Graphics->KFTerrain->g_Columns		/*количество точек по оси Y*/,
+								 m_Graphics->KFTerrain->g_VertixesIndent/*отступ между точками*/, 
+								 m_Graphics->KFTerrain->m_heightMap		/*сам вот этот буфер вершин*/, 
+								 L"Models/Terrain.fiz.txt"				/*а это файл физики котрый описывает свойства*/ );
 
 	// если юзается все время террэйн моего типа по прсто можно имя заменить Terrain на произвольно созданный Terrain или же если наробка или нейкии другой обьект использующии карту вершин можно просто грамотно воспользоватья оргументами для создания
 	/// *************** добавление карты высот (террэйна******************************
@@ -1182,7 +1200,7 @@ void EngineKernel::KeysPressed()
 		m_Graphics->m_D3D->SetSpecularPower(SpecPower);
 
 		sprintf_s(Str, 50, "Spec. Pow = %8.4f", SpecPower);
-		m_Graphics->m_Text->UpdateSentence(4, Str, 100, 160);
+		m_Graphics->MyManager->UpdateSentence(4, Str, 100, 160);
 	}
 	//G
 	if (m_Input->ActionKey[14].Pressed)
@@ -1196,7 +1214,7 @@ void EngineKernel::KeysPressed()
 		m_Graphics->m_D3D->SetSpecularPower(SpecPower);
 
 		sprintf_s(Str, 50, "Spec. Pow = %8.4f", SpecPower);
-		m_Graphics->m_Text->UpdateSentence(4, Str, 100, 160);
+		m_Graphics->MyManager->UpdateSentence(4, Str, 100, 160);
 	}
 	//Z
 	if (m_Input->ActionKey[4].Pressed)

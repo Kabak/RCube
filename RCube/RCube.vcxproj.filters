@@ -22,14 +22,8 @@
     <Filter Include="EffectsManager">
       <UniqueIdentifier>{531f53b0-0d7b-456b-b38b-84b273883989}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Text">
-      <UniqueIdentifier>{c6ed4d61-0d05-477f-b75b-3e371145d614}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Menu">
       <UniqueIdentifier>{37ea2e0d-df63-4083-bbf8-a6760a1f67be}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Materials">
-      <UniqueIdentifier>{7b69c3d6-6385-478a-a380-84cef673b0b8}</UniqueIdentifier>
     </Filter>
     <Filter Include="Render">
       <UniqueIdentifier>{6407eb5f-e1b7-45f5-b684-779b58298da0}</UniqueIdentifier>
@@ -39,6 +33,15 @@
     </Filter>
     <Filter Include="Render\Textures">
       <UniqueIdentifier>{0fb85510-b700-4df2-8373-0296de38e12a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Render\Text">
+      <UniqueIdentifier>{f1d08080-6684-45e5-b239-f26afd1b65e4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Render\3DModel">
+      <UniqueIdentifier>{a8f2e859-67b0-4241-8224-695e9cdd23e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Render\Materials">
+      <UniqueIdentifier>{7b69c3d6-6385-478a-a380-84cef673b0b8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -87,13 +90,7 @@
     <ClInclude Include="KFPicking.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="KFModel.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="NetworkClass.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="KFModelList.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="RCubeProfiling.h">
@@ -144,12 +141,6 @@
     <ClInclude Include="TorchFireParticles.h">
       <Filter>Particles</Filter>
     </ClInclude>
-    <ClInclude Include="TextClass.h">
-      <Filter>Text</Filter>
-    </ClInclude>
-    <ClInclude Include="FontClass.h">
-      <Filter>Text</Filter>
-    </ClInclude>
     <ClInclude Include="KF2DTextureAnimation.h">
       <Filter>Menu</Filter>
     </ClInclude>
@@ -178,7 +169,7 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Material.h">
-      <Filter>Materials</Filter>
+      <Filter>Render\Materials</Filter>
     </ClInclude>
     <ClInclude Include="Terrain.h">
       <Filter>Header Files</Filter>
@@ -189,20 +180,11 @@
     <ClInclude Include="Light_def.h">
       <Filter>Render</Filter>
     </ClInclude>
-    <ClInclude Include="SceneObject.h">
-      <Filter>Render</Filter>
-    </ClInclude>
     <ClInclude Include="Buffers_def.h">
       <Filter>Render\Buffers</Filter>
     </ClInclude>
     <ClInclude Include="DX11Buffers.h">
       <Filter>Render\Buffers</Filter>
-    </ClInclude>
-    <ClInclude Include="RObject.h">
-      <Filter>Render</Filter>
-    </ClInclude>
-    <ClInclude Include="RResources.h">
-      <Filter>Render</Filter>
     </ClInclude>
     <ClInclude Include="ResourceManager.h">
       <Filter>Render</Filter>
@@ -218,6 +200,30 @@
     </ClInclude>
     <ClInclude Include="Texture.h">
       <Filter>Render\Textures</Filter>
+    </ClInclude>
+    <ClInclude Include="Text_def.h">
+      <Filter>Render\Text</Filter>
+    </ClInclude>
+    <ClInclude Include="FontClass.h">
+      <Filter>Render\Text</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneObject.h">
+      <Filter>Render\3DModel</Filter>
+    </ClInclude>
+    <ClInclude Include="3DModel.h">
+      <Filter>Render\3DModel</Filter>
+    </ClInclude>
+    <ClInclude Include="BoundingBox.h">
+      <Filter>Render\3DModel</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh_Data.h">
+      <Filter>Render\3DModel</Filter>
+    </ClInclude>
+    <ClInclude Include="KFModel.h">
+      <Filter>Render\3DModel</Filter>
+    </ClInclude>
+    <ClInclude Include="KFModelList.h">
+      <Filter>Render\3DModel</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -254,13 +260,7 @@
     <ClCompile Include="KFPicking.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="KFModel.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="NetworkClass.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="KFModelList.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RCubeProfiling.cpp">
@@ -305,12 +305,6 @@
     <ClCompile Include="TorchFireParticles.cpp">
       <Filter>Particles</Filter>
     </ClCompile>
-    <ClCompile Include="FontClass.cpp">
-      <Filter>Text</Filter>
-    </ClCompile>
-    <ClCompile Include="TextClass.cpp">
-      <Filter>Text</Filter>
-    </ClCompile>
     <ClCompile Include="KFButton.cpp">
       <Filter>Menu</Filter>
     </ClCompile>
@@ -333,7 +327,7 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Material.cpp">
-      <Filter>Materials</Filter>
+      <Filter>Render\Materials</Filter>
     </ClCompile>
     <ClCompile Include="D3dClass.cpp">
       <Filter>Render</Filter>
@@ -358,6 +352,24 @@
     </ClCompile>
     <ClCompile Include="Texture.cpp">
       <Filter>Render\Textures</Filter>
+    </ClCompile>
+    <ClCompile Include="FontClass.cpp">
+      <Filter>Render\Text</Filter>
+    </ClCompile>
+    <ClCompile Include="3DModel.cpp">
+      <Filter>Render\3DModel</Filter>
+    </ClCompile>
+    <ClCompile Include="BoundingBox.cpp">
+      <Filter>Render\3DModel</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_Data.cpp">
+      <Filter>Render\3DModel</Filter>
+    </ClCompile>
+    <ClCompile Include="KFModel.cpp">
+      <Filter>Render\3DModel</Filter>
+    </ClCompile>
+    <ClCompile Include="KFModelList.cpp">
+      <Filter>Render\3DModel</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

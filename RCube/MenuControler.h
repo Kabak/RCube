@@ -21,7 +21,7 @@ private :
 	D3DGlobalContext* McD3DGC;
 	ResourceManager * GlobalResourceManager;
 
-	TextClass* G_Text;
+//	TextClass* G_Text;
 	InputClass* GlobalInput;
 
 	// Зачем-то задаётся размер который меню считает основням и в него разворачивается при открытии
@@ -83,7 +83,7 @@ private :
 
 	void GetLabelBindKeyText();
 
-	void UpdateObjectText( KFButton* TempButton, char* Str );
+	void UpdateObjectText( KFButton* TempButton, char* Str );	// Размещает текст поверх элементов меню в центе элемента по Y
 
 public :
 
@@ -110,8 +110,8 @@ public :
 		KF2DTextureAnimation *_Animation,			// Указатель на анимацию в фоне, если NULL, то нет анимации
 		XMFLOAT4 BackGroundCoord,					// Фактически размеры меню и позиция на экране
 		ID3D11ShaderResourceView* BackgroundTexture,// Указатель на текстуру фона
-		ResourceManager * GlobalResManager,			// Указатель на класс менеджера текстур и буферов объектов
-		TextClass * GolobalText						// Указатель на класс текста в движке, для создания строк в Label, Edit
+		ResourceManager * GlobalResManager			// Указатель на класс менеджера текстур и буферов объектов
+//		TextClass * GolobalText						// Указатель на класс текста в движке, для создания строк в Label, Edit
 		);
 
 	HRESULT Frame( InputClass* InputClass, int UTF16_KeyCODE, FPSTimers& fpstimers);

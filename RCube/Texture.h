@@ -30,6 +30,7 @@ struct TextureData
 	UINT Format;// DXGI_FORMAT
 	UINT Width;	// ширина
 	UINT Height;// высота
+	UINT Depth; // глубина
 	UINT Usage; // Доступ CPU
 	UINT MipMapLevels;
 	UINT ArraySize;
@@ -65,7 +66,10 @@ public:
 	UINT Format;// DXGI_FORMAT
 	UINT Width;	// ширина
 	UINT Height;// высота
+	UINT Depth; // глубина
 	UINT Usage; // Доступ CPU
+//	UINT ArraySize;
+//	UINT MipMapLevels;
 //	DXGI_SAMPLE_DESC SampleDesc;
 	bool ShaderResource;
 	bool RenderTarget;
@@ -74,5 +78,6 @@ public:
 	bool TextureCube;
 	bool Shared_KeyMutex;
 	
+
 };
 #endif

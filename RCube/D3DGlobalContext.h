@@ -9,6 +9,7 @@
 #include "DirectXMath.h"
 #include "InputClass.h"
 #include <vector>
+#include "Text_def.h"
 
 #include"Buffers_def.h"
 #ifdef RCube_DX11
@@ -38,12 +39,12 @@ using namespace DirectX;
 ID3D11ShaderResourceView* BackBuffer_SRV;	// ShaderResourceView из backBuffer
 ID3D11UnorderedAccessView* BackBuffer_UAV;	// UnorderedAccessView из backBuffer. Невозможно создать при использовании MSAA ( нужно создавать для ResolveSubresources )
 // Fonts
-		 ID3D11Texture2D* sharedTex11;
-ID3D11ShaderResourceView* sharedTex11_SRV;
-		 ID3D11Texture2D* sharedTex11_MAPED;
+		 ID3D11Texture2D* sharedTex11;		// Текстура на которой рисуются шрифты DX10,DX11 Key_Mutex текстура
+ID3D11ShaderResourceView* sharedTex11_SRV;	// SRV Текстуры на которой рисуются шрифты DX10,DX11 Key_Mutex текстура
+		 ID3D11Texture2D* sharedTex11_MAPED;// Текстура для копирования sharedTex11, чтобы можно было сделать MAP копии sharedTex11
 		 IDXGIKeyedMutex* keyedMutex11;
 		 IDXGIKeyedMutex* keyedMutex10;
-	   ID2D1RenderTarget* D2DRenderTarget;
+	   ID2D1RenderTarget* D2DRenderTarget;	// D2D рисует текст и всё на этой текстуре. Фактически это - sharedTex11
 			ID2D1Factory* D2DFactory;
 					UINT  sharedTex11_Width;
 					UINT  sharedTex11_Height;
@@ -134,27 +135,6 @@ ID3D11UnorderedAccessView*BackBuffer_CopyResolveTextureUAV; // Невозможно создат
 	};
 
 
-// Используется для рисования шрифтом на текстуре
-	struct FontOnTextureData
-	{
-		FontOnTextureData ()
-		{
-//			D2D1::ColorF ( 0.0f, 0.0f, 0.0f, 0.0f );
-		};
-		
-// https://msdn.microsoft.com/query/dev14.query?appId=Dev14IDEF1&l=EN-US&k=k(DWrite%2FDWRITE_FONT_FACE_TYPE_TRUETYPE);k(DWRITE_FONT_FACE_TYPE_TRUETYPE);k(DevLang-C%2B%2B);k(TargetOS-Windows)&rd=true
-DWRITE_FONT_FACE_TYPE FontFaceType;
-  D2D1_ANTIALIAS_MODE AliasingMode;
-			   WCHAR* FontName;
-			   float  FontSize;		// Размер шрифта для рисования ( 20.0f / 72.0f )*96.0f
-		  ID2D1Brush* FillBrush;	// Кисть для заливки  символа
-		  ID2D1Brush* OutlineBrush;	// Кисть для окантовки символа
-				bool  Outline;		// Окантовка вокруг текста нужна ?
-			   float  OutlineWidth;	// Ширина окантовки вокруг символов
-//			XMFLOAT4 GradientPos;	// x,y - start point  z,w - end point 
-
-	};
-
 // Используется в D3DClass для создания списка доступных и рабочих режимов системы отображения ( монитора, ТВ, LСD )
 	struct Display_Mode
 	{
@@ -166,21 +146,7 @@ DWRITE_FONT_FACE_TYPE FontFaceType;
 	};
 
 
-	struct SENTENCE_INIT_DATA
-	{
-	 XMFLOAT4	Colour;		// цвет предложения RGBA
-		float	ScrollSpeed; // Скорость сдвига предложения
 
-		  int	MaxLength;	// максимальная длинна предложения
-		  int	FontType;	// номер шрифта из созданных пользователем ( индекс шрифта в массиве векторов )
-		  int	ShowType;	// как именно отрисовывается, анимируется на экране ( разные шейдеры и функции )
-		  int	HideType;	// как именно убирается с экрана при установке render = false ( разные шейдеры и функции )
-		  int 	PosX;		// позиция X на экране
-		  int	PosY;		// позиция Y на экране
-		  int	Level;		// 0 - текст в игре; 1 - HUD; 2 - Menu; 3 - StringsList1
-		 bool	Render;		// рисовать ли предложение на экране. False = исключается из списка в массиве отрисовываемых
-
-	};
 
 // Перечень глобальных индексов строк текста 
 enum GLOBAL_TEXT_INDEXES{

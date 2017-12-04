@@ -159,8 +159,7 @@ public:
 		Flat_Obj_Buffers* _Body
 		);
 
-	void Draw();
-	
+
 	// Возвращает номер элемента с которым были изменения
 	int Frame( DXINPUTSTRUCT& InputClass, FPSTimers& fpstimers, bool &ObjectBUSY );
 

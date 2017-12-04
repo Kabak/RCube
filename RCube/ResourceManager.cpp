@@ -3,7 +3,12 @@
 
 ResourceManager::ResourceManager()
 {
-	ComeputeShaderNames.resize(0);
+	RCube_Sentences.reserve ( 30 );
+	ComeputeShaderNames.reserve(2);
+	RCube_Font.reserve ( 6 );
+	UnusedSentenceIndex.reserve ( 10 );
+	UnusedFlatObjBuffersIndex.reserve ( 10 );
+	UnusedTexturesIndex.reserve ( 10 );
 }
 
 ResourceManager::~ResourceManager()
@@ -14,20 +19,64 @@ ResourceManager::~ResourceManager()
 
 void ResourceManager::ShutDown()
 {
-
-// Textures
 	int c = 0;
-	size_t i = TexturesArr.size ();
+	size_t i = 0;
+// 3D MODELS
+//	Delete_3D_Object ( 0 );
+/*
+// 3D Models Buffers
+	c = 0;
+	i = _3DModelsMeshBuffers.size ();
+	while ( c < i )
+	{
+		RCUBE_DELETE ( _3DModelsMeshBuffers[c] );									// Удаляем сам шрифт
+		++c;
+	}
+	_3DModelsMeshBuffers.clear ();
+	Unused3DModelsIndex.clear ();
+	Unused3DModelsMeshBuffersIndex.clear ();
+*/
+// 3D MODELS
+	c = 0;
+	i = _3DModels.size ();
+	while ( c < i )
+	{
+		Delete_3D_Object( c );
+		++c;
+	}
+	_3DModels.clear ();
+
+	_3DModelsMeshBuffers.clear ();
+	Unused3DModelsIndex.clear ();
+	Unused3DModelsMeshBuffersIndex.clear ();
+
+// SENTENCES
+	DeleteAllSentences ();
+	UnusedSentenceIndex.clear ();
+
+// FONTS
+	c = 0;
+	i = RCube_Font.size ();
+	while (c < i)
+	{
+		RCUBE_DELETE ( RCube_Font[c] );									// Удаляем сам шрифт
+		++c;
+	}
+	RCube_Font.clear ();
+
+// TEXTURES
+	c = 0;
+	i = TexturesArr.size ();
 	while ( c < i )
 	{
 		RCUBE_DELETE ( TexturesArr[c] );
 		++c;
 	}
 	TexturesArr.clear ();
+	UnusedTexturesIndex.clear ();		// Удаляем свободные индексы текстур
 
-
+// VERTEX Shaders
 	c = 0;
-
 	while ( c < VertShaderArr.size() )
 	{
 		RCUBE_RELEASE( VertShaderArr[c] );
@@ -35,6 +84,7 @@ void ResourceManager::ShutDown()
 	}
 	VertShaderArr.clear();
 
+// PIXEL Shaders
 	c = 0;
 	while ( c < PixShaderArr.size() )
 	{
@@ -43,57 +93,53 @@ void ResourceManager::ShutDown()
 	}
 	PixShaderArr.clear();
 
+// BLOBS
 	c = 0;
 	while ( c < BlobsArr.size() )
 	{
 		RCUBE_RELEASE( BlobsArr[c] );
 		++c;
 	}
-
 	BlobsArr.clear();
 
+// COMPUTE Shaders
 	c = 0;
 	while ( c < ComeputeShaderArr.size() )
 	{
-
 		RCUBE_RELEASE( ComeputeShaderArr[c] );
-
 		++c;
 	}
 	ComeputeShaderArr.clear();
 
+// GEOMETRY Shaders
 	c = 0;
 	while ( c < GeomShaderArr.size() )
 	{
-
 		RCUBE_RELEASE( GeomShaderArr[c] );
-
 		++c;
 	}
 	GeomShaderArr.clear();
 
+// HULL Shaders
 	c = 0;
 	while ( c < HullShderArr.size() )
 	{
-
 		RCUBE_RELEASE( HullShderArr[c] );
-
 		++c;
 	}
 	HullShderArr.clear();
 
-	// Удаляем все DomainShaders
+
+// DOMAIN Shaders
 	c = 0;
 	while (c < DomainShderArr.size ())
 	{
-
 		RCUBE_RELEASE ( DomainShderArr[c] );
-
 		++c;
 	}
 	DomainShderArr.clear ();
 
-	// Удаляем все Layout
+// LAYOUTS
 	c = 0;
 	while (c < Layouts.size ())
 	{
@@ -102,7 +148,7 @@ void ResourceManager::ShutDown()
 	}
 	Layouts.clear ();
 
-	// Удаляем все связки шейдеров
+// SHADERS BUNCHES
 	c = 0;
 	while (c < BunchArr.size())
 	{
@@ -111,6 +157,7 @@ void ResourceManager::ShutDown()
 	}
 	BunchArr.clear();
 
+// Compute Shaders Names
 	c = 0;
 	while (c < ComeputeShaderNames.size())
 	{
@@ -119,6 +166,7 @@ void ResourceManager::ShutDown()
 	}
 	ComeputeShaderNames.clear();
 
+// Flat Objects
 	c = 0;
 	while (c < FlatObjectBuffers.size ())
 	{
@@ -128,9 +176,31 @@ void ResourceManager::ShutDown()
 	FlatObjectBuffers.clear ();
 
 
-	UnUsedBuffersIndex.clear ();	// Удаляем свободные индексы буферов
-	UnusedTextures.clear ();		// Удаляем свободные индексы текстур
+	UnusedFlatObjBuffersIndex.clear ();	// Удаляем свободные индексы буферов
+
 	Menus.clear ();					// Удаляем меню
+}
+
+int ResourceManager::GetNewTextureIndex ( Texture* NewTexture )
+{
+	int Index = -1;
+	if (!UnusedTexturesIndex.empty ())
+	{
+		Index = UnusedTexturesIndex.back ();
+		UnusedTexturesIndex.pop_back ();
+		TexturesArr[Index] = NewTexture;
+		TexturesArr[Index]->Index = Index;
+	}
+	else
+	{
+		TexturesArr.push_back ( NewTexture );
+		Index = (int)(TexturesArr.size () - 1);
+		TexturesArr[Index]->Index = Index;	// Сохраняем собственный индекс в своём теле
+	}
+
+	NewTexture->Index = Index;
+
+	return  Index;
 }
 
 
@@ -217,14 +287,27 @@ HRESULT ResourceManager::InitTextures(WCHAR * kafFilename){
 		}
 		else
 		{
+//			int Index;
 			Texture* NewTexture = new Texture;
 			NewTexture->Resource = LoadedTextureRes;
 			NewTexture->SRV = ShaderRes;
-			
-			TexturesArr.push_back ( NewTexture );
-			int Index = (int)(TexturesArr.size () - 1);
-			TexturesArr[Index]->Index = Index;	// Сохраняем собственный индекс в своём теле
 
+			GetNewTextureIndex ( NewTexture );
+/*			
+			if (!UnusedTexturesIndex.empty ())
+			{
+				Index = UnusedTexturesIndex.back ();
+				UnusedTexturesIndex.pop_back ();
+				TexturesArr[Index] = NewTexture;
+				TexturesArr[Index]->Index = Index;
+			}
+			else
+			{
+				TexturesArr.push_back ( NewTexture );
+				Index = (int)(TexturesArr.size () - 1);
+				TexturesArr[Index]->Index = Index;	// Сохраняем собственный индекс в своём теле
+			}
+*/
 		}
 
 		delete [] buffer;
@@ -232,7 +315,6 @@ HRESULT ResourceManager::InitTextures(WCHAR * kafFilename){
 	}
 
 	delete[] Buff;
-	//Readfile.close();
 	
 	return S_OK;
 }
@@ -782,8 +864,7 @@ int ResourceManager::InitOneTexture( WCHAR * TextureFilename) {
 
 	int Result = 0, length;
 
-	ID3D11ShaderResourceView * ShaderResource;
-	ID3D11Resource * LoadedTextureResource;
+	Texture* NewTexture = new Texture;
 
 	length = (UINT)wcslen(TextureFilename);
 
@@ -792,44 +873,31 @@ int ResourceManager::InitOneTexture( WCHAR * TextureFilename) {
 		(TextureFilename[length - 3] == 'b' && TextureFilename[length - 2] == 'm' && TextureFilename[length - 1] == 'p')) 
 	{
 
-
-		hr = DirectX::CreateWICTextureFromFile(Local_D3DGC->DX_device, TextureFilename, &LoadedTextureResource, &ShaderResource, NULL);
+		hr = DirectX::CreateWICTextureFromFile(Local_D3DGC->DX_device, TextureFilename, &NewTexture->Resource, &NewTexture->SRV, NULL);
 		if ( FAILED( hr ) ) {
 			MessageBox(0, L"файл поврежден.ResourceManager", Error, MB_OK);
-			return hr;
+			goto ERROR_END;
 		}
-
-		Texture* NewTexture = new Texture;
-		NewTexture->Resource = LoadedTextureResource;
-		NewTexture->SRV = ShaderResource;
-
-		TexturesArr.push_back ( NewTexture );
-		Result = (int)(TexturesArr.size () - 1);
-		TexturesArr[Result]->Index = Result;	// Сохраняем собственный индекс в своём теле
 
 	}
     if (TextureFilename[length - 3] == 'd' && TextureFilename[length - 2] == 'd' && TextureFilename[length - 1] == 's') 
 	{
 
-
-		hr = DirectX::CreateDDSTextureFromFile(Local_D3DGC->DX_device, TextureFilename, &LoadedTextureResource, &ShaderResource, NULL);
+		hr = DirectX::CreateDDSTextureFromFile(Local_D3DGC->DX_device, TextureFilename, &NewTexture->Resource, &NewTexture->SRV, NULL);
 		if ( FAILED( hr ) ) {
 			MessageBox(0, L"файл поврежден.ResourceManager", Error, MB_OK);
-			return hr;
+			goto ERROR_END;
 		}
-		
-		Texture* NewTexture = new Texture;
-		NewTexture->Resource = LoadedTextureResource;
-		NewTexture->SRV = ShaderResource;
-
-		TexturesArr.push_back ( NewTexture );
-		Result = (int)(TexturesArr.size () - 1);
-		TexturesArr[Result]->Index = Result;	// Сохраняем собственный индекс в своём теле
 
 	}
 
+	Result = GetNewTextureIndex ( NewTexture );
+
 	return Result;
 
+ERROR_END:
+	RCUBE_DELETE ( NewTexture );
+	return -1;
 }
 
 void ResourceManager::decodeFile(unsigned char ** DestBuff , WCHAR * kafFilename , HWND hwnd) {
@@ -1084,11 +1152,11 @@ int ResourceManager::Create_Flat_Obj_Buffers (bool CPUAccess, UINT InstanceAmoun
 	// http://www.cplusplus.com/reference/vector/vector/ VECTORS
 	int ReturnIndex;
 
-	if (!UnUsedBuffersIndex.empty ())
+	if (!UnusedFlatObjBuffersIndex.empty ())
 	{
 		FlatObjBuffers = new Flat_Obj_Buffers ();
-		ReturnIndex = UnUsedBuffersIndex.back();
-		UnUsedBuffersIndex.pop_back ();
+		ReturnIndex = UnusedFlatObjBuffersIndex.back();
+		UnusedFlatObjBuffersIndex.pop_back ();
 		FlatObjectBuffers[ReturnIndex] = FlatObjBuffers;
 	}
 	else
@@ -1098,7 +1166,7 @@ int ResourceManager::Create_Flat_Obj_Buffers (bool CPUAccess, UINT InstanceAmoun
 		FlatObjectBuffers.push_back ( FlatObjBuffers );
 	}
 
-		FlatObjectVB = new VertexBuffer <Vertex_FlatObject> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, CPUAccess, 4 );			// Создаём буфер вертексов FlatObject
+		FlatObjectVB = new VertexBuffer <Vertex_FlatObject> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, CPUAccess, InstanceAmount );			// Создаём буфер вертексов FlatObject
 		FlatObjBuffers->FlatObjectVB = FlatObjectVB;
 
 
@@ -1122,7 +1190,7 @@ bool ResourceManager::Delete_Flat_ObjectBuffers ( int Index )
 	int i = (int)FlatObjectBuffers.size ();
 	if (Index < i)
 	{
-		UnUsedBuffersIndex.push_back ( Index );
+		UnusedFlatObjBuffersIndex.push_back ( Index );
 		RCUBE_DELETE ( FlatObjectBuffers[Index] );
 		return true;
 	}
@@ -1147,7 +1215,7 @@ bool ResourceManager::DeleteTexture ( int Index )
 	int i = (int)TexturesArr.size ();
 	if (Index < i)
 	{
-		UnusedTextures.push_back ( Index );
+		UnusedTexturesIndex.push_back ( Index );
 		RCUBE_DELETE ( TexturesArr[Index] );
 		return true;
 	}
@@ -1163,104 +1231,106 @@ bool ResourceManager::AddMenu ( Menu* NewMenu )
 }
 
 
-int ResourceManager::CreateTexture ( TextureData _Data )
+int ResourceManager::CreateTexture ( TextureData& _Data )
 {
 	int ReturnIndex;
 
-	ID3D11Texture2D* TempTexture2D = nullptr;
-	ID3D11ShaderResourceView* TempSRV = nullptr;
-	ID3D11DepthStencilView* TempDSV = nullptr;
-	ID3D11RenderTargetView*	TempRTV = nullptr;
-	ID3D11UnorderedAccessView* TempUAV = nullptr;
-
 	Texture* NewTexture = new Texture;
+
+	D3D11_TEXTURE2D_DESC sharedTexDesc;
+	ZeroMemory ( &sharedTexDesc, sizeof ( sharedTexDesc ) );
+
+	sharedTexDesc.Width = _Data.Width;
+	sharedTexDesc.Height = _Data.Height;
+	sharedTexDesc.Format = (DXGI_FORMAT)_Data.Format;// DXGI_FORMAT_R8G8B8A8_UNORM;
+	sharedTexDesc.MipLevels = _Data.MipMapLevels;
+	sharedTexDesc.ArraySize = _Data.ArraySize;
+	sharedTexDesc.SampleDesc.Count = _Data.SampleDesc.Count;
+	sharedTexDesc.SampleDesc.Quality = _Data.SampleDesc.Quality;
+	sharedTexDesc.Usage = (D3D11_USAGE)_Data.Usage;// D3D11_USAGE_DEFAULT; //D3D11_USAGE_IMMUTABLE;
+
+	switch (sharedTexDesc.Usage)
+	{
+	case D3D11_USAGE_DYNAMIC:
+		sharedTexDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		break;
+	case D3D11_USAGE_STAGING:
+		sharedTexDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE | D3D11_CPU_ACCESS_READ;
+		break;
+	default:
+		sharedTexDesc.CPUAccessFlags = 0;
+	}
+
+	_Data.ShaderResource ? sharedTexDesc.BindFlags |= D3D11_BIND_SHADER_RESOURCE : sharedTexDesc.BindFlags;
+	_Data.DepthStensil ? sharedTexDesc.BindFlags |= D3D11_BIND_DEPTH_STENCIL : sharedTexDesc.BindFlags;
+	_Data.RenderTarget ? sharedTexDesc.BindFlags |= D3D11_BIND_RENDER_TARGET : sharedTexDesc.BindFlags;
+	_Data.Unordered_Access ? sharedTexDesc.BindFlags |= D3D11_BIND_UNORDERED_ACCESS : sharedTexDesc.BindFlags;
+
+	_Data.Shared_KeyMutex ? sharedTexDesc.MiscFlags |= D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX : sharedTexDesc.MiscFlags;
+	_Data.TextureCube ? sharedTexDesc.MiscFlags |= D3D11_RESOURCE_MISC_TEXTURECUBE : sharedTexDesc.MiscFlags;
+	_Data.GenerateMipMaps ? sharedTexDesc.MiscFlags |= D3D11_RESOURCE_MISC_GENERATE_MIPS : sharedTexDesc.MiscFlags;
+
 
 	if (_Data.Type == _2D)
 	{
-
-		D3D11_TEXTURE2D_DESC sharedTexDesc;
-		ZeroMemory ( &sharedTexDesc, sizeof ( sharedTexDesc ) );
-
-		sharedTexDesc.Width = _Data.Width;
-		sharedTexDesc.Height = _Data.Height;
-		sharedTexDesc.Format = (DXGI_FORMAT)_Data.Format;// DXGI_FORMAT_R8G8B8A8_UNORM;
-		sharedTexDesc.MipLevels = _Data.MipMapLevels;
-		sharedTexDesc.ArraySize = _Data.ArraySize;
-		sharedTexDesc.SampleDesc.Count = _Data.SampleDesc.Count;
-		sharedTexDesc.SampleDesc.Quality = _Data.SampleDesc.Quality;
-		sharedTexDesc.Usage = (D3D11_USAGE)_Data.Usage;// D3D11_USAGE_DEFAULT; //D3D11_USAGE_IMMUTABLE;
-		
-		_Data.ShaderResource	? sharedTexDesc.BindFlags | D3D11_BIND_SHADER_RESOURCE : sharedTexDesc.BindFlags;
-		_Data.DepthStensil		? sharedTexDesc.BindFlags | D3D11_BIND_DEPTH_STENCIL   : sharedTexDesc.BindFlags;
-		_Data.RenderTarget		? sharedTexDesc.BindFlags | D3D11_BIND_RENDER_TARGET   : sharedTexDesc.BindFlags;
-		_Data.Unordered_Access	? sharedTexDesc.BindFlags | D3D11_BIND_UNORDERED_ACCESS: sharedTexDesc.BindFlags;
-
-		_Data.Shared_KeyMutex	? sharedTexDesc.MiscFlags | D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX	: sharedTexDesc.MiscFlags;
-		_Data.TextureCube		? sharedTexDesc.MiscFlags | D3D11_RESOURCE_MISC_TEXTURECUBE			: sharedTexDesc.MiscFlags;
-		_Data.GenerateMipMaps	? sharedTexDesc.MiscFlags | D3D11_RESOURCE_MISC_GENERATE_MIPS		: sharedTexDesc.MiscFlags;
-
-		hr = Local_D3DGC->DX_device->CreateTexture2D ( &sharedTexDesc, NULL, &TempTexture2D );
+		hr = Local_D3DGC->DX_device->CreateTexture2D ( &sharedTexDesc, NULL, &NewTexture->Texture2D );
 		if (FAILED ( hr ))
 		{
 			MessageBox ( Local_D3DGC->hwnd, L"Could not create 2DTexture.", Error, MB_OK );
 			goto ERROR_END;
 		}
 
-		NewTexture->Texture2D = TempTexture2D;  // 2Dtexture created
-		NewTexture->Resource = dynamic_cast<ID3D11Resource*>(TempTexture2D); // Resource created
+		NewTexture->Resource = dynamic_cast<ID3D11Resource*>(NewTexture->Texture2D); // Resource created
 
 	}
 
 	if (_Data.ShaderResource)
 	{
-		hr = Local_D3DGC->DX_device->CreateShaderResourceView ( NewTexture->Resource, NULL, &TempSRV );
+		hr = Local_D3DGC->DX_device->CreateShaderResourceView ( NewTexture->Resource, NULL, &NewTexture->SRV );
 		if (FAILED ( hr ))
 		{
 			MessageBox ( Local_D3DGC->hwnd, L"Could not create ShaderResourceView", Error, MB_OK );
 			goto ERROR_END;
 		}
 
-		NewTexture->SRV = TempSRV; // Shader Resource View created
 	}
 
 	if (_Data.RenderTarget)
 	{
-		hr = Local_D3DGC->DX_device->CreateRenderTargetView ( NewTexture->Resource, NULL, &TempRTV );
+		hr = Local_D3DGC->DX_device->CreateRenderTargetView ( NewTexture->Resource, NULL, &NewTexture->RTV );
 		if (FAILED ( hr ))
 		{
 			MessageBox ( Local_D3DGC->hwnd, L"Could not create RenderTargetView", Error, MB_OK );
 			goto ERROR_END;
 		}
 
-		NewTexture->RTV = TempRTV; // Shader Resource View created
 	}
 
 	if (_Data.DepthStensil)
 	{
-		hr = Local_D3DGC->DX_device->CreateDepthStencilView ( NewTexture->Resource, NULL, &TempDSV );
+		hr = Local_D3DGC->DX_device->CreateDepthStencilView ( NewTexture->Resource, NULL, &NewTexture->DSV );
 		if (FAILED ( hr ))
 		{
 			MessageBox ( Local_D3DGC->hwnd, L"Could not create DepthStencilView", Error, MB_OK );
 			goto ERROR_END;
 		}
 
-		NewTexture->DSV = TempDSV; // Shader Resource View created
 	}
 
 	if (_Data.Unordered_Access )
 	{
-		hr = Local_D3DGC->DX_device->CreateUnorderedAccessView ( NewTexture->Resource, NULL, &TempUAV );
+		hr = Local_D3DGC->DX_device->CreateUnorderedAccessView ( NewTexture->Resource, NULL, &NewTexture->UAV );
 		if (FAILED ( hr ))
 		{
 			MessageBox ( Local_D3DGC->hwnd, L"Could not create UnorderedAccessView", Error, MB_OK );
 			goto ERROR_END;
 		}
 
-		NewTexture->UAV = TempUAV; // Shader Resource View created
 	}
 
 // Сохраняем данные созданной текстуры в её описании
 	NewTexture->DepthStensil	= _Data.DepthStensil;
+	NewTexture->ShaderResource  = _Data.ShaderResource;
 	NewTexture->Format			= _Data.Format;
 	NewTexture->Height			= _Data.Height;
 	NewTexture->Width			= _Data.Width;
@@ -1270,33 +1340,838 @@ int ResourceManager::CreateTexture ( TextureData _Data )
 	NewTexture->Type			= _Data.Type;
 	NewTexture->Unordered_Access= _Data.Unordered_Access;
 	NewTexture->Usage			= _Data.Usage;
+//	NewTexture->ArraySize		= _Data.ArraySize;
+//	NewTexture->MipMapLevels	= _Data.MipMapLevels;
 
 // Сохраняем созданные ресурсы текстуры в ощем списке текстур и вызвращяем её индекс
-	if (!UnusedTextures.empty ())
-	{
-		ReturnIndex = UnusedTextures.back ();
-		UnusedTextures.pop_back ();
-		TexturesArr[ReturnIndex] = NewTexture;
-	}
-	else
-	{
-		ReturnIndex = (int)UnusedTextures.size ();
-		TexturesArr.push_back ( NewTexture );
-	}
-
-	NewTexture->Index = ReturnIndex;
+	ReturnIndex = GetNewTextureIndex ( NewTexture );
 
 return ReturnIndex;
 
 ERROR_END:
 	RCUBE_DELETE  ( NewTexture );
-	RCUBE_RELEASE ( TempTexture2D );
-	RCUBE_RELEASE ( TempSRV );
-	RCUBE_RELEASE ( TempRTV );
-	RCUBE_RELEASE ( TempDSV );
-	RCUBE_RELEASE ( TempUAV );
-
-return -1;
+	return -1;
 }
 
 
+int ResourceManager::CloneTextureStaging ( int Source )
+{
+	int Index = -1;
+
+	size_t i = TexturesArr.size ();
+	if (Source < i )
+	{
+		// Проверяем создани ли текстура как STAGING
+		if (TexturesArr[Source]->Usage == D3D11_USAGE_STAGING)
+			return -2;	// Текстура создана как STAGING
+
+		if (TexturesArr[Source]->ShaderResource == false )
+			return -1;
+		
+		TextureData NewTexture;
+		NewTexture.Format = TexturesArr[Source]->Format;
+		NewTexture.Height = TexturesArr[Source]->Height;
+		NewTexture.Width = TexturesArr[Source]->Width;
+		NewTexture.Depth = 0;
+		NewTexture.ArraySize = 1;
+		NewTexture.MipMapLevels = 1;
+		NewTexture.Type = TexturesArr[Source]->Type;
+		NewTexture.SampleDesc.Count = 1;
+		NewTexture.SampleDesc.Quality = 0;
+		NewTexture.Usage = D3D11_USAGE_STAGING;
+		NewTexture.Shared_KeyMutex = false;
+		NewTexture.DepthStensil = false;
+		NewTexture.GenerateMipMaps = false;
+		NewTexture.RenderTarget = false;
+		NewTexture.ShaderResource = false;
+		NewTexture.TextureCube = false;
+		NewTexture.Unordered_Access = false;
+	
+		Index = CreateTexture ( NewTexture );
+
+	}
+	return Index;
+}
+
+
+// Сохранить текстуру в файл
+bool ResourceManager::SaveTextureToFile ( int Index, WCHAR* Name )
+{
+	bool CloneDone = true;
+	int TextureIndex = -1;
+	size_t i = TexturesArr.size ();
+	if (Index < i)
+
+	if (TexturesArr[Index]->Texture2D == nullptr)
+		return false;
+
+	if (TexturesArr[Index]->Usage != D3D11_USAGE_STAGING)
+	{
+		TextureIndex = CloneTextureStaging ( Index );
+
+		if (TextureIndex == -2)		// Если текстура создана как STAGING
+		{
+			TextureIndex = Index;
+			CloneDone = false;
+		}
+		else if (TextureIndex == -1)// Если не получилось клонировать текстуру
+			return false;
+	}
+
+	Local_D3DGC->DX_deviceContext->CopyResource( TexturesArr[TextureIndex]->Resource, TexturesArr[Index]->Resource );
+
+	D3D11_MAPPED_SUBRESOURCE  mapResource;
+	hr = Local_D3DGC->DX_deviceContext->Map ( TexturesArr[TextureIndex]->Resource, 0, D3D11_MAP_READ, NULL, &mapResource );
+	if (hr == S_OK)
+	{
+		Image img;
+		img.height = TexturesArr[TextureIndex]->Height;
+		img.width = TexturesArr[TextureIndex]->Width;
+		img.format = (DXGI_FORMAT)TexturesArr[TextureIndex]->Format;
+		img.rowPitch = mapResource.RowPitch;
+		img.slicePitch = mapResource.DepthPitch;
+		img.pixels = (UCHAR*)mapResource.pData;
+
+		hr = SaveToWICFile ( img, WIC_FLAGS_NONE, GetWICCodec ( WIC_CODEC_PNG ), Name );
+		if (FAILED ( hr ))
+		{
+			assert ( L"Could not save Texture to file." );
+		}
+		Local_D3DGC->DX_deviceContext->Unmap ( TexturesArr[TextureIndex]->Resource, 0);
+	}
+
+	if (CloneDone)
+		DeleteTexture ( TextureIndex );
+
+	return true;
+}
+
+
+void ResourceManager::BuildSentanceVertexArray ( FontClass* Font, void* vertices, char* sentence, float& drawX, float& drawY, float& RenderFontSize )
+{
+	Vertex_FlatObject* vertexPtr;
+	int numLetters, index, i, letter;
+
+
+	// Coerce the input vertices into a VertexType structure.
+	vertexPtr = (Vertex_FlatObject*)vertices;
+
+	// Get the number of letters in the sentence.
+	numLetters = (int)strlen ( sentence );
+
+	// Initialize the index to the vertex array.
+	index = 0;
+
+	// The following loop will now build the vertex and index arrays. It takes each character from the sentence and creates two triangles for it. It then maps the character from the font texture onto 
+	// those two triangles using the m_Font array which has the TU texture coordinates and pixel size. Once the polygon for that character has been created it then updates the X coordinate on the 
+	// screen of where to draw the next character.
+
+	// Draw each letter onto a quad.
+	for (i = 0; i<numLetters; ++i)
+	{
+		//  +++++++++   Добавлена поддержка ASCII символов после 127   +++++++++++
+		char *Source = &sentence[i];
+
+		if (*Source < 0)
+			letter = ((int)*Source) + 159; // 191 - 32
+		else
+			letter = ((int)*Source) - 32;
+		// Беква Ё
+		if (*Source == -88)
+			letter = 159;
+		// Бука ё
+		else if (*Source == -72)
+			letter = 160;
+
+		//  --------   Добавлена поддержка ASCII символов после 127   -----------
+
+		// If the letter is a space then just move over three pixels.
+		if (letter == 0)
+		{
+			// Ширина пробела
+			drawX += Font->FontSize / 2;
+		}
+		else
+		{
+			_Symbol_Dim *Source = &Font->Symbols[letter - 1];
+			float DYRFS = drawY - RenderFontSize;
+			float DXSS = drawX + Source->Symbol_Width;
+			// First triangle in quad.
+			vertexPtr[index].Position = XMFLOAT3 ( drawX, drawY, 0.0f );  // Top left.
+			vertexPtr[index].TexCoord = XMFLOAT2 ( Source->Start, 0.0f );
+			++index;
+
+			vertexPtr[index].Position = XMFLOAT3 ( (drawX + Source->Symbol_Width), DYRFS, 0.0f );  // Bottom right.
+			vertexPtr[index].TexCoord = XMFLOAT2 ( Source->End, 1.0f );
+			++index;
+
+			vertexPtr[index].Position = XMFLOAT3 ( drawX, DYRFS, 0.0f );  // Bottom left.
+			vertexPtr[index].TexCoord = XMFLOAT2 ( Source->Start, 1.0f );
+			++index;
+
+			// Second triangle in quad.
+			vertexPtr[index].Position = XMFLOAT3 ( drawX, drawY, 0.0f );  // Top left.
+			vertexPtr[index].TexCoord = XMFLOAT2 ( Source->Start, 0.0f );
+			++index;
+
+			vertexPtr[index].Position = XMFLOAT3 ( DXSS, drawY, 0.0f );  // Top right.
+			vertexPtr[index].TexCoord = XMFLOAT2 ( Source->End, 0.0f );
+			++index;
+
+			vertexPtr[index].Position = XMFLOAT3 ( DXSS, DYRFS, 0.0f );  // Bottom right.
+			vertexPtr[index].TexCoord = XMFLOAT2 ( Source->End, 1.0f );
+			++index;
+
+			// Update the x location for drawing by the size of the letter and one pixel.
+			drawX = drawX + Source->Symbol_Width + 1.0f;
+		}
+	}
+
+	return;
+}
+
+int ResourceManager::GetNewSentenceIndex ( SentenceType* NewSentence )	// Получить свободный индекс предложения в системе
+{
+	int Index = -1;
+	if (!UnusedSentenceIndex.empty ())
+	{
+		Index = UnusedSentenceIndex.back ();
+		UnusedSentenceIndex.pop_back ();
+		RCube_Sentences[Index] = NewSentence;
+	}
+	else
+	{
+		RCube_Sentences.push_back ( NewSentence );
+		Index = (int)(RCube_Sentences.size () - 1);
+	}
+
+	return  Index;
+}
+
+bool ResourceManager::InitializeSentence ( SentenceType* sentence, int& maxLength )
+{
+	// Set the maximum length of the sentence.
+	sentence->MaxLength = maxLength;
+
+	// Set the number of vertices in the vertex array.
+	sentence->vertexCount = 6 * maxLength;
+
+	sentence->VertexBufferIndex = Create_Flat_Obj_Buffers ( false, sentence->vertexCount, 0, TexturesArr[RCube_Font[sentence->FontType]->FontTextureIndex]->SRV );
+
+	return true;
+}
+
+
+void ResourceManager::UpdateSentence ( int SentenceNumber, char* text, int positionX, int positionY, float RenderFontSize )
+{
+	int numLetters;
+	Vertex_FlatObject* vertices;
+	float drawX, drawY;
+
+	// Get the number of letters in the sentence.
+	numLetters = (int)strlen ( text );
+
+	SentenceType *Source = RCube_Sentences[SentenceNumber];
+
+	// Check for possible buffer overflow.
+	if (numLetters > Source->MaxLength)
+	{
+		text[Source->MaxLength - 1] = NULL;
+	}
+	// копируем новый текст предложения в объект предложения ( скролинг бе этого не работает )
+	strcpy_s ( Source->Text, Source->MaxLength, text );
+
+	// Create the vertex array.
+	vertices = new Vertex_FlatObject[Source->vertexCount];
+
+	// Initialize vertex array to zeros at first.
+	memset ( vertices, 0, (sizeof ( Vertex_FlatObject ) * Source->vertexCount) );
+
+	// Обновляем позицию предложения 
+	Source->PosX = positionX;
+	Source->PosY = positionY;
+
+	// Calculate the starting location to draw the sentence on the screen at.
+	// Calculate the X and Y pixel position on the screen to start drawing to.
+	drawX = (float)(((Local_D3DGC->ScreenWidth / 2) * -1) + positionX);
+	drawY = (float)((Local_D3DGC->ScreenHeight / 2) - positionY);
+
+	// Build the vertex array using the FontClass and the sentence information.
+	// Use the font class to build the vertex array from the sentence text and sentence draw location.
+	BuildSentanceVertexArray ( RCube_Font[Source->FontType], (void*)vertices, text, drawX, drawY, RenderFontSize );
+
+	// Copy the vertex array information into the sentence vertex buffer.
+	FlatObjectBuffers[Source->VertexBufferIndex]->FlatObjectVB->Update ( vertices );
+
+	// Release the vertex array as it is no longer needed.
+	delete[] vertices;
+	vertices = nullptr;
+
+}
+
+
+int ResourceManager::AddSentence ( SENTENCE_INIT_DATA* data, char* String )
+{
+	bool result;
+	// Если текст больше или равен максимальной длинне строки позволенной в классе STRMAXLENGTH или 
+	// строка инициализации больше указанной желаемой длинны строки, или максимальная длинна строки
+	// меньше 1 , то возвращаем -1 вместо номера строки в массиве - строка не создаётся
+	int Size = (int)strlen ( String );
+	if (data->MaxLength > STRMAXLENGTH || Size > STRMAXLENGTH || data->MaxLength < 0)
+	{
+		return -1;
+	}
+	else if (data->MaxLength == 0 || Size + 2 > data->MaxLength) // Size + 2 - для мигающего курсора + \0 
+	{
+		data->MaxLength = Size + 2;
+	}
+
+	SentenceType* Sentence1 = new SentenceType;
+	ZeroMemory ( Sentence1, sizeof ( SentenceType ) );
+
+	int Num = GetNewSentenceIndex ( Sentence1 );
+
+	SentenceType* Source = RCube_Sentences[Num];
+
+	result = InitializeSentence ( Source, data->MaxLength );
+	if (!result)
+		return -1;
+
+	Source->Colour = XMLoadFloat4 ( &data->Colour );
+	Source->FontType = data->FontType;
+	Source->Render = data->Render;
+	Source->MaxLength = data->MaxLength;
+	Source->PosX = data->PosX;
+	Source->PosY = data->PosY;
+	Source->ShowType = data->ShowType;
+	Source->HideType = data->HideType;
+	Source->Level = data->Level;
+	Source->Height = RCube_Font[data->FontType]->FontHeightInPixel;
+
+	if (data->ScrollSpeed == 0)	Source->ScrollSpeed = 30.0f;
+
+	strcpy_s ( Source->Text, Source->MaxLength, String );
+
+	UpdateSentence ( Num, Source->Text, data->PosX, data->PosY );
+
+	return Num;
+}
+
+
+int ResourceManager::DeleteSentence ( int SentenceNumber )
+{
+	int i = (int)RCube_Sentences.size ();
+	if (SentenceNumber < i)
+	{
+		Delete_Flat_ObjectBuffers ( RCube_Sentences[SentenceNumber]->VertexBufferIndex );
+		UnusedSentenceIndex.push_back ( SentenceNumber );
+		return 0;
+	}
+	else
+		return -1;
+
+}
+
+
+void ResourceManager::DeleteAllSentences ()
+{
+	int i = 0;
+	int j = (int)RCube_Sentences.size ();
+
+	if (j > 0)
+		do
+		{
+			Delete_Flat_ObjectBuffers ( RCube_Sentences[i]->VertexBufferIndex );
+			UnusedSentenceIndex.push_back ( i );
+			++i;
+		} while (i < j);
+
+		RCube_Sentences.clear ();
+}
+
+
+int ResourceManager::GetPosX ( int SentenceNumber )
+{
+	return RCube_Sentences[SentenceNumber]->PosX;
+}
+
+
+int ResourceManager::GetPosY ( int SentenceNumber )
+{
+	return RCube_Sentences[SentenceNumber]->PosY;
+}
+
+
+char* ResourceManager::GetSentenceText ( int SentenceNumber )
+{
+	return RCube_Sentences[SentenceNumber]->Text;
+}
+
+
+int ResourceManager::GetSentenceMaxLength ( int SentenceNumber )
+{
+	int i = (int)RCube_Sentences.size ();
+	if (SentenceNumber < i)
+	{
+		return (RCube_Sentences[SentenceNumber]->MaxLength);
+	}
+	else
+		return -1;
+}
+
+
+UINT ResourceManager::GetSentenceHeight ( int SentenceNumber )
+{
+	return RCube_Sentences[SentenceNumber]->Height;
+}
+
+
+int ResourceManager::GetFontHeightInPixels ( int FontNumber )
+{
+	int i = (int)RCube_Font.size ();
+	if (FontNumber < i)
+	{
+		return (RCube_Font[FontNumber]->FontHeightInPixel);
+	}
+	else
+		return -1;
+}
+
+
+
+int ResourceManager::Create_3D_Obj_Mesh_Buffers( bool CPUAccess, UINT InstanceAmount, UINT IndexAmount = 0 )
+{
+	_3D_Obj_Buffers *_3DObjBuffers = new _3D_Obj_Buffers ();
+	
+	int ReturnIndex = GetNew3D_Obj_Mesh_Buffer_Index( _3DObjBuffers );
+
+	_3DObjBuffers->Vertexes = new VertexBuffer <Vertex_Model3D> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, CPUAccess, InstanceAmount );			// Создаём буфер вертексов FlatObject
+
+	if (IndexAmount > 0)
+	{
+		_3DObjBuffers->Indexes = new IndexBuffer < Index_Type > ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, CPUAccess, IndexAmount );
+	}
+
+	return ReturnIndex;
+
+}
+
+
+bool ResourceManager::LoadKFObject ( std::wstring FileName, _3DModel* New_3D_Model )
+{
+
+	RCube_VecFloat34 TempFloat3;
+	RCube_VecFloat34 TempFloat3_2;
+
+	std::basic_ifstream< UCHAR > file ( FileName, std::ios::in | std::ios::binary );
+	if ( !file )
+	{
+		MessageBox ( NULL, L"Не удалось открыть файл для чтения.", Error, MB_OK );
+		return false;
+	}
+
+	// Читаем из файла количество мешей в модели
+	UINT MeshesNumber = 0;
+	file.read ( ( UCHAR* ) &MeshesNumber, sizeof ( int ) ); // _3DModels.MeshesCount
+	// Если количество мешей в модели больше MAX_MODEL_MESH
+	if ( MeshesNumber > MAX_MESH_IN_MODEL || MeshesNumber == 0 )
+	{
+		MessageBox ( NULL, L"Количество мешей в модели больше MAX_MODEL_MESH или равно нулю.", Error, MB_OK );
+		return false;
+	}
+
+//	_3DModel* New_3D_Model = new _3DModel;	// Создаём объект 3D модели и сохраняем его в списке 3D объектов
+//	_3DModels.push_back ( New_3D_Model );
+
+	int TextureSize = NULL; // размер тектуры которую я буду читать
+	UCHAR* TextuteFile = nullptr; // это файл текстуры который я читаю из общей кучи
+	int g = 0;
+
+	// Загружаем все меши и текстуры
+	for ( UINT i = 0; i < MeshesNumber; ++i )
+	{
+		MeshData* NewMesh = new MeshData;	// Создаём объект Mesh модели и сохраняем его в списке мешей объекта
+		New_3D_Model->Meshes.push_back ( NewMesh );
+
+		// Читаем количество вертексов в меше
+		file.read ( ( UCHAR* ) &NewMesh->VertexBufferSize, sizeof ( int ) ); // читаю размер следующего вертексного буфера
+		New_3D_Model->ObjectVertexesCout += NewMesh->VertexBufferSize; // нахожу сумму вершин всех ранее созданных мной обьектов
+		// Читаем количество индексов в меше
+// !!!!!!!!!!!!!!!!!  НУЖНО ДЕЛАТЬ  !!!
+		//		file.read ( ( UCHAR* ) &NewMesh->IndexBufferSize, sizeof ( int ) ); // читаю размер следующего индексного буфера
+		
+		// Создаём VertexBuffer для загруженного меша и сохраняем его индекс
+		NewMesh->BufferIndex = Create_3D_Obj_Mesh_Buffers ( true, NewMesh->VertexBufferSize );
+
+		// Загружаем вертексы меша из KFO в буфер
+		Vertex_Model3D* Buffer = _3DModelsMeshBuffers[NewMesh->BufferIndex]->Vertexes->MapDiscard ();
+		file.read ( ( UCHAR* ) &Buffer[0], sizeof ( Vertex_Model3D ) * NewMesh->VertexBufferSize );//чтение одним махом
+		_3DModelsMeshBuffers[NewMesh->BufferIndex]->Vertexes->Unmap ();
+// Загружаем индексы меша  из KFO в буфер ( если они есть )
+//
+//
+//
+//
+
+		file.read ( ( UCHAR* ) &TextureSize, sizeof ( int ) );
+
+		// Если для меша есть текстура, то создаём и загружаем её
+		if ( TextureSize )
+		{
+			ID3D11Resource * TextureResurce;
+			ID3D11ShaderResourceView * TextureSRV;
+
+			// чтение и создание текстуры
+			TextuteFile = new UCHAR [ TextureSize ];
+			file.read ( TextuteFile, TextureSize * sizeof ( UCHAR ) );
+
+			hr = DirectX::CreateWICTextureFromMemory ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, &TextuteFile [ 0 ], ( size_t ) TextureSize, &TextureResurce
+													   , &TextureSRV, NULL );
+			if ( hr != S_OK ) // E_FAIL
+			{
+				MessageBox ( 0, L"3D Model Texture creation failure", Error, MB_OK );
+			}
+			else
+			{
+/*
+#if defined( DEBUG ) || defined( _DEBUG )
+				const char c_szName0 [] = "Model Texture Resource MAN";
+				NewMesh->TextureResurce->SetPrivateData ( WKPDID_D3DDebugObjectName, sizeof ( c_szName0 ) - 1, c_szName0 );
+				const char c_szName1 [] = "Model Texture SRV Resource MAN";
+				NewMesh->TextureSRV->SetPrivateData ( WKPDID_D3DDebugObjectName, sizeof ( c_szName0 ) - 1, c_szName1 );
+
+#endif
+*/
+				Texture* NewTexture = new Texture;
+				NewTexture->Resource = TextureResurce;
+				NewTexture->SRV = TextureSRV;
+
+				NewMesh->TextureIndex = GetNewTextureIndex ( NewTexture );	// Сохраняем текстуру и её номер для меша
+			}
+
+
+			RCUBE_DELETE ( TextuteFile );
+		}
+
+		// чтние баундинг бокса (для конкретного мэша)
+
+		file.read ( ( UCHAR* ) &TempFloat3, sizeof ( XMFLOAT3 ) ); // читаю минимальное
+		file.read ( ( UCHAR* ) &TempFloat3_2, sizeof ( XMFLOAT3 ) ); // читаю максимальное
+
+		NewMesh->MeshBox.CreateBoundStruct ( TempFloat3, TempFloat3_2 );
+
+	}
+
+	file.read ( ( UCHAR* ) &TempFloat3, sizeof ( XMFLOAT3 ) ); // читаю минимальное
+	file.read ( ( UCHAR* ) &TempFloat3_2, sizeof ( XMFLOAT3 ) ); // читаю максимальное
+
+	New_3D_Model->ObjectBox.CreateBoundStruct ( TempFloat3, TempFloat3_2 );
+
+	file.close ();
+
+	return true;
+}
+
+
+int ResourceManager::GetNew3D_Obj_Index ( _3DModel* NewModel )
+{
+	int Index = -1;
+	if ( !Unused3DModelsIndex.empty () )
+	{
+		Index = Unused3DModelsIndex.back ();
+		Unused3DModelsIndex.pop_back ();
+		_3DModels [Index] = NewModel;
+	}
+	else
+	{
+		_3DModels.push_back ( NewModel );
+		Index = ( int ) ( _3DModels.size () - 1 );
+	}
+
+	NewModel->_3D_Obj_Index = Index;
+
+	return  Index;
+}
+
+
+int ResourceManager::GetNew3D_Obj_Mesh_Buffer_Index ( _3D_Obj_Buffers* NewBuffer )
+{
+	int Index = -1;
+	if ( !Unused3DModelsMeshBuffersIndex.empty () )
+	{
+		Index = Unused3DModelsMeshBuffersIndex.back ();
+		Unused3DModelsMeshBuffersIndex.pop_back ();
+		_3DModelsMeshBuffers [Index] = NewBuffer;
+	}
+	else
+	{
+		_3DModelsMeshBuffers.push_back ( NewBuffer );
+		Index = ( int ) ( _3DModelsMeshBuffers.size () - 1 );
+	}
+
+	NewBuffer->ThisBufferIndex = Index;
+
+	return  Index;
+}
+
+
+int ResourceManager::Add_3D_Object ( std::wstring FileNameKFO, int InstCount = 1 ) 
+{
+	int Result = -1;
+
+	if ( InstCount < 1 )
+	{
+		MessageBox ( 0, L"Количество объектов 3D Model не может быть нулевым. Создаю одну модель", Error, MB_OK );
+		InstCount = 1;
+//		return -1;
+	}
+
+	_3DModel* Model3DPointer;
+	int c = 0;
+	Model3DPointer = new _3DModel;
+
+	Model3DPointer->InstanceCount = InstCount;
+
+	// Загружаем модель
+	if ( !LoadKFObject ( FileNameKFO, Model3DPointer ) )
+	{
+		RCUBE_DELETE ( Model3DPointer );
+		return -1;
+	}
+
+	size_t Size = sizeof ( PositionType ) * InstCount ;
+
+	Model3DPointer->Positions = new PositionType [ InstCount ];
+	Model3DPointer->PositionsDraw = new  PositionType [ InstCount ];
+
+	memset ( Model3DPointer->Positions, 0, Size );
+	memset ( Model3DPointer->PositionsDraw, 0, Size );
+	
+	// Создаём буфер позиций и поворотов для Instance 3D модели
+	Model3DPointer->InstancePositionsBuffer = new VertexBuffer <PositionType> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, true, InstCount );
+	
+	Result = GetNew3D_Obj_Index ( Model3DPointer );
+
+	return Result;
+}
+
+
+int ResourceManager::Delete_3D_Object_Meshes_Buffers ( int ObjectIndex )
+{
+	size_t i = _3DModels.size ();
+
+	if ( ObjectIndex < i )
+	{
+		size_t j = _3DModels [ObjectIndex]->Meshes.size ();
+		int c = 0;
+		while ( c < j )
+		{
+			int BufferIndextoDelete = _3DModels[ObjectIndex]->Meshes[c]->BufferIndex;
+			// Сохраняем освободившийся индекс буфера меша
+			Unused3DModelsMeshBuffersIndex.push_back ( BufferIndextoDelete );
+			// Удаляем текстуру от меша и сохраняем её номер в свободных
+			DeleteTexture ( _3DModels[ObjectIndex]->Meshes[c]->TextureIndex );
+
+// С МАТЕРИАЛАМИ ПРИДЁТСЯ ЕЩЁ ЧТО_ТО МУТИТЬ ПО УДАЛЕНИЮ !!!!
+			// Удаляем сам меш
+			RCUBE_DELETE ( _3DModels[ObjectIndex]->Meshes[c] );
+			// Удаляем буфер для меша
+			RCUBE_DELETE ( _3DModelsMeshBuffers[BufferIndextoDelete] );
+			++c;
+		}
+		return 0;
+	}
+	return -1;
+}
+
+
+int ResourceManager::Delete_3D_Object ( int ObjectIndex )
+{
+	size_t i = _3DModels.size ();
+
+	if ( ObjectIndex < i )
+	{
+		// Сохраняем освободившийся индекс 3D модели
+		Unused3DModelsIndex.push_back ( _3DModels[ObjectIndex]->_3D_Obj_Index );
+		// Удаляем все : буфера , текстуры , материалы модели
+		Delete_3D_Object_Meshes_Buffers ( ObjectIndex );
+		// Удаляем модель
+		RCUBE_DELETE ( _3DModels[ObjectIndex] );
+		return 0;
+	}
+	return -1;
+}
+
+
+_3D_Obj_Buffers* ResourceManager::Get_Mesh_Buffers_By_Index ( int ObjectIndex )
+{
+	size_t i = _3DModelsMeshBuffers.size ();
+
+	if ( ObjectIndex < i )
+	{
+		return _3DModelsMeshBuffers[ObjectIndex];
+	}
+	return nullptr;
+}
+
+
+_3DModel* ResourceManager::Get3D_Object_Pointer ( int ObjectIndex )
+{
+	size_t i = _3DModels.size ();
+
+	if ( ObjectIndex < i )
+	{
+		return _3DModels[ObjectIndex];
+	}
+	return nullptr;
+}
+
+
+
+bool ResourceManager::Update_3D_Object_InstancesPosBuffer ( int ObjectIndex, int CountingFromInstanceIndex, int Amount  )
+{
+
+	_3DModel* _3D_Model = _3DModels[ObjectIndex];
+
+	PositionType* IndexPtr = _3D_Model->InstancePositionsBuffer->MapDiscard ();
+
+	size_t ElementSize = sizeof ( PositionType );
+
+	if ( CountingFromInstanceIndex < 0 )
+		memcpy ( IndexPtr, _3D_Model->PositionsDraw, ElementSize * Amount );
+	
+	else 
+		memcpy ( IndexPtr + CountingFromInstanceIndex * ElementSize, _3D_Model->PositionsDraw, ElementSize );
+
+	_3D_Model->InstancePositionsBuffer->Unmap ();
+
+	return true;
+}
+
+
+void ResourceManager::Set_3D_Object_Positon ( int IndexOfObject, int InstanceIndex, float PosX, float PosY, float PosZ )
+{
+
+	_3DModels[IndexOfObject]->Positions[InstanceIndex].position.Fl3 = XMFLOAT3 ( PosX, PosY, PosZ );
+
+	_3DModels[IndexOfObject]->PositionsDraw[InstanceIndex].position.Fl3 = _3DModels[IndexOfObject]->Positions[InstanceIndex].position.Fl3;
+
+	Update_3D_Object_InstancesPosBuffer ( IndexOfObject, InstanceIndex, 1 );
+}
+
+
+void ResourceManager::Set_3D_Object_Positon ( int IndexOfObject, int InstanceIndex, XMFLOAT3 &Pos )
+{
+
+	_3DModels[IndexOfObject]->Positions[InstanceIndex].position.Fl3 = _3DModels[IndexOfObject]->PositionsDraw[InstanceIndex].position.Fl3 = Pos;
+
+	Update_3D_Object_InstancesPosBuffer ( IndexOfObject, InstanceIndex, 1 );
+
+}
+
+
+void ResourceManager::Set_3D_Object_Rotation ( int IndexOfObject, int InstanceIndex, XMFLOAT4 &Rotation )
+{
+
+	_3DModels[IndexOfObject]->Positions[InstanceIndex].rotation.Fl4 = _3DModels[IndexOfObject]->PositionsDraw[InstanceIndex].rotation.Fl4 = Rotation;
+
+	Update_3D_Object_InstancesPosBuffer ( IndexOfObject, InstanceIndex, 1 );
+
+}
+
+
+
+void ResourceManager::InitRandInstansingPoses ( int ObjectIndex, float MaxX, float MinX, float MaxY, float MinY
+											, float MaxZ, float MinZ )
+{
+
+	int c = 0;
+	float ValueX = 0, ValueY = 0, ValueZ = 0;
+
+	while ( c < _3DModels[ObjectIndex]->InstanceCount )
+	{
+
+		ValueX = ( ( float ) ( rand () % ( int ) MaxX * 2 * 10 ) / 10 ) + MinX;
+		ValueY = ( ( float ) ( rand () % ( int ) MaxY * 2 * 10 ) / 10 ) + MinY;
+		ValueZ = ( ( float ) ( rand () % ( int ) MaxZ * 2 * 10 ) / 10 ) + MinZ;
+
+		_3DModels[ObjectIndex]->Positions[c].position.Fl3 = _3DModels[ObjectIndex]->PositionsDraw[c].position.Fl3 = XMFLOAT3 ( ValueX, ValueY, ValueZ );
+
+		++c;
+	}
+
+	Update_3D_Object_InstancesPosBuffer ( ObjectIndex , -1, _3DModels[ObjectIndex]->InstanceCount );
+
+}
+
+void ResourceManager::InitRandInstansingRots ( int ObjectIndex )
+{
+
+	int c = 0;
+	float ValueX = 0, ValueY = 0, ValueZ = 0;
+	XMVECTOR TempV;
+
+	while ( c < _3DModels[ObjectIndex]->InstanceCount )
+	{
+
+		ValueX = ( float ) ( rand () % 1000 * ( XM_2PI ) ) / 1000.0f;
+		ValueY = ( float ) ( rand () % 1000 * ( XM_2PI ) ) / 1000.0f;
+		ValueZ = ( float ) ( rand () % 1000 * ( XM_2PI ) ) / 1000.0f;
+
+		TempV = XMQuaternionRotationRollPitchYaw ( ValueX, ValueY, ValueZ );
+
+		_3DModels[ObjectIndex]->Positions[c].rotation.Vec = _3DModels[ObjectIndex]->PositionsDraw[c].rotation.Vec = TempV ;
+
+		++c;
+	}
+
+	Update_3D_Object_InstancesPosBuffer ( ObjectIndex, -1, _3DModels[ObjectIndex]->InstanceCount );
+
+}
+
+
+void ResourceManager::Frustum_3D_Objects ( FrustumClass* Frustum )
+{
+
+	int counter = 0, instanceCounter = 0, CuledInstancesCout = 0;
+
+	_3DModel* Temp;
+	RCube_VecFloat34 TempPositions;
+
+	size_t Size = sizeof ( XMVECTOR ) * 2;
+
+	size_t ModelsAmount = _3DModels.size ();
+
+	while ( counter < ModelsAmount )
+	{
+
+		Temp = _3DModels[counter];
+		CuledInstancesCout = 0;
+		instanceCounter = 0;
+
+		while ( instanceCounter < Temp->InstanceCount )
+		{
+
+
+			TempPositions.Vec = Temp->Positions[instanceCounter].position.Vec + Temp->ObjectBox.CentralPoint.Vec;
+			if ( Frustum->CheckSphere ( TempPositions.Fl3, Temp->ObjectBox.SphereRadius ) )
+			{
+
+				memcpy ( &Temp->PositionsDraw[CuledInstancesCout], &Temp->Positions[instanceCounter], Size );
+
+				++CuledInstancesCout;
+
+			}
+
+			++instanceCounter;
+		}
+
+		Update_3D_Object_InstancesPosBuffer ( counter, -1, CuledInstancesCout );
+
+		Temp->InstanceFrustumPassedAmount = CuledInstancesCout;
+		
+		++counter;
+
+	}
+
+}

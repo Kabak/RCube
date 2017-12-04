@@ -27,14 +27,12 @@ HRESULT MenuControrerClass::Init(D3DGlobalContext* D3DGC,
 	KF2DTextureAnimation *_Animation,
 	XMFLOAT4 BackGroundCoord,
 	ID3D11ShaderResourceView* BackgroundTexture,
-	ResourceManager * GlobalResManager,
-	TextClass* GolobalText 
+	ResourceManager * GlobalResManager
 	)
 {
 	HRESULT result = S_OK ;
 	
 		McD3DGC = D3DGC;
-		 G_Text = GolobalText;
 	GlobalInput = D3DGC->m_EngineInputClass;
 	GlobalResourceManager = GlobalResManager;
 	g_WindowPosX = D3DGC->WindowsPosX;
@@ -56,7 +54,7 @@ HRESULT MenuControrerClass::Init(D3DGlobalContext* D3DGC,
 
 	Animation = _Animation;
 
-	int TempIndex = GlobalResourceManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 1, 6, BackgroundTexture );
+	int TempIndex = GlobalResourceManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 4, 6, BackgroundTexture );
 	Background = new FlatObjectClass;
 	Background->Init( D3DGC->ScreenWidth, D3DGC->ScreenHeight, BackGroundCoord,
 		BackgroundTexture, 
@@ -85,7 +83,7 @@ HRESULT MenuControrerClass::Init(D3DGlobalContext* D3DGC,
 		TempButton = new KFButton ;
 		Buttons.emplace_back (TempButton);
 		KFButton_Elements* ButtonInitData = &ButtonsData[c];
-		TempButton->BuffersIndex = GlobalResourceManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 1, 6, ButtonsData[c].OsnTexture );
+		TempButton->BuffersIndex = GlobalResourceManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 4, 6, ButtonsData[c].OsnTexture );
 
 		// Если к Button присоединен текст, то смотрим его длинну для создания текстовой строки
 		// Которая будет рисоваться поверх кнопки
@@ -100,7 +98,7 @@ HRESULT MenuControrerClass::Init(D3DGlobalContext* D3DGC,
 		   (  ButtonInitData->Data != NULL ))
 		{
 //			ButtonInitData->Data->MaxLength < 0 ? ButtonInitData->Data->MaxLength = 2 : ButtonInitData->Data->MaxLength;
-			SentenceIndex = GolobalText->AddSentence( ButtonInitData->Data, ButtonInitData->Label );
+			SentenceIndex = GlobalResourceManager->AddSentence( ButtonInitData->Data, ButtonInitData->Label );
 			if ( SentenceIndex == -1 )
 				assert("Инициализация названия кнопки не прошла.");
 		}
@@ -138,10 +136,10 @@ HRESULT MenuControrerClass::Init(D3DGlobalContext* D3DGC,
 		ScrollBars.emplace_back ( TempScrollBar );
 
 		KFScrollBar_Elements* TempScrollBarData = &ScrollBarData[c];
-		int IndexMinButton = GlobalResourceManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 1, 6, TempScrollBarData->ButtonsTexture );
-		int IndexMaxButton = GlobalResourceManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 1, 6, TempScrollBarData->ButtonsTexture );
-		int IndexMinTraveler = GlobalResourceManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 1, 6, TempScrollBarData->TravellerTexture );
-		int Body = GlobalResourceManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 1, 6, TempScrollBarData->BodyTexture );
+		int IndexMinButton = GlobalResourceManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 4, 6, TempScrollBarData->ButtonsTexture );
+		int IndexMaxButton = GlobalResourceManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 4, 6, TempScrollBarData->ButtonsTexture );
+		int IndexMinTraveler = GlobalResourceManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 4, 6, TempScrollBarData->TravellerTexture );
+		int Body = GlobalResourceManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 4, 6, TempScrollBarData->BodyTexture );
 
 			TempScrollBar->Init(
 			D3DGC,
@@ -175,14 +173,14 @@ HRESULT MenuControrerClass::Init(D3DGlobalContext* D3DGC,
 		StringsList.push_back( TempStringsList );
 
 		StringsList_Elements* TempStringsListData = &StringsLists[c];
-		int TempIndex = GlobalResourceManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 1, 6, nullptr );
+		int TempIndex = GlobalResourceManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 4, 6, nullptr );
 
 		TempStringsList->Init(
 			D3DGC,
 			ScrCoords,
 			BackGroundCoord,
 			*TempStringsListData,
-			G_Text,
+			GlobalResourceManager,
 			GlobalResourceManager->Get_Flat_ObjectBuffers_ByIndex ( TempIndex )
 		);
 		
@@ -204,13 +202,19 @@ MenuControrerClass::~MenuControrerClass()
 
 }
 
+// Размещает текст поверх элементов меню в центе элемента по Y
 void MenuControrerClass::UpdateObjectText ( KFButton* TempButton, char* Str )
 {
-	// Получаем высоту текста в пикселях, чтобы можно было его выровнять поцентру Объекта содержащего строку
-	long TextHight = ( long ) G_Text->GetSentenceHeight ( TempButton->SentenceIndex ) / 4;
+	int YPos;
+	// Получаем высоту текста в пикселях, чтобы можно было его выровнять поцентру объекта содержащего строку
+	long TextHight = ( long )GlobalResourceManager->GetSentenceHeight ( TempButton->SentenceIndex );
 
-	G_Text->UpdateSentence ( TempButton->SentenceIndex, Str, int ( TempButton->ABSoluteX + 10 ),
-							 int ( TempButton->ABSoluteY + ( TempButton->ABSolute_Height - TextHight ) / 2 ) );
+	if (TempButton->ABSolute_Height > TextHight)
+		YPos = (int)TempButton->ABSoluteY + (TempButton->ABSolute_Height - TextHight) / 2 ;
+	else
+		YPos = (int)TempButton->ABSoluteY + (TextHight - TempButton->ABSolute_Height) / 2;
+	
+	GlobalResourceManager->UpdateSentence ( TempButton->SentenceIndex, Str, int ( TempButton->ABSoluteX + 10 ), YPos );
 }
 
 
@@ -283,13 +287,11 @@ HRESULT MenuControrerClass::Frame( InputClass* InputClass, int UTF16_KeyCODE, FP
 					// Если Edit, то начинаем процесс редактирования строки привязанной к Edit
 					case 3:
 						{
-						int MAXLength = G_Text->GetSentenceMaxLength( TempButton->SentenceIndex );
-						// Получаем высоту текста в пикселях, чтобы можно было его выровнять поцентру Объекта содержащего строку
-//						long TextHight = (long)G_Text->GetSentenceHeight( TempButton->SentenceIndex ) / 4;
+						int MAXLength = GlobalResourceManager->GetSentenceMaxLength( TempButton->SentenceIndex );
 
 						char* TempString = new char [MAXLength];
 
-						strcpy_s( TempString, (size_t)MAXLength, G_Text->GetSentenceText( TempButton->SentenceIndex ) );
+						strcpy_s( TempString, (size_t)MAXLength, GlobalResourceManager->GetSentenceText( TempButton->SentenceIndex ) );
 
 						int RealLength = (int)strlen( TempString );
 
@@ -621,10 +623,7 @@ void MenuControrerClass::PutLabelsInsideButtons()
 		// Которая будет рисоваться поверх кнопки
 		if (TempButton->SentenceIndex > -1 )
 		{
-//			int LabelSize = G_Text->GetSentenceLength( Buttons[c]->SentenceIndex );
-
-		UpdateObjectText ( TempButton, G_Text->GetSentenceText(TempButton->SentenceIndex) );
-		
+			UpdateObjectText ( TempButton, GlobalResourceManager->GetSentenceText(TempButton->SentenceIndex) );
 		}
 
 		++c;
@@ -639,7 +638,7 @@ void MenuControrerClass::PutLabelInsideButton( int ButtonIndex )
 	if (TempButton->SentenceIndex > -1)
 	{
 
-		UpdateObjectText ( TempButton, G_Text->GetSentenceText(TempButton->SentenceIndex));
+		UpdateObjectText ( TempButton, GlobalResourceManager->GetSentenceText(TempButton->SentenceIndex));
 
 	}
 }
@@ -738,13 +737,11 @@ void MenuControrerClass::SwithOFFCursor ( KFButton* Button )
 	{
 		TempButton->CursorOn = false;
 
-		int MAXLength = G_Text->GetSentenceMaxLength( TempButton->SentenceIndex );
-		// Получаем высоту текста в пикселях, чтобы можно было его выровнять поцентру Объекта содержащего строку
-//		long TextHight = (long)G_Text->GetSentenceHeight( TempButton->SentenceIndex ) / 4;
+		int MAXLength = GlobalResourceManager->GetSentenceMaxLength( TempButton->SentenceIndex );
 
 		char* TempString = new char[MAXLength];
 
-		strcpy_s( TempString, (size_t)MAXLength, G_Text->GetSentenceText( TempButton->SentenceIndex ) );
+		strcpy_s( TempString, (size_t)MAXLength, GlobalResourceManager->GetSentenceText( TempButton->SentenceIndex ) );
 
 		int RealLength = (int)strlen( TempString );
 

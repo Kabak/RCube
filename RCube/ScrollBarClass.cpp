@@ -206,39 +206,15 @@ HRESULT ScrollBarClass::Init(
 	Body->Buffers->FlatObjectVB->Update ( BodyVertexes );
 	Body->Buffers->IndexBs->Update ( (Index_Type*)FlatObjectIndices );
 	Body->Buffers->RenderTexture = BodyTexture;
-/*
-	Obj = new KF2DObjClass;
-	Obj->Init(D3DGC, BodyVertexes, FlatObjectIndices, BodyTexture, 4, 6 );
-	if ( FAILED( Result ) )
-	{
-		MessageBox( NULL, L"ScrollBar Obj creation Error", 0, 0 );
-		Result = false;
-	}
-*/
-//	Obj->SetVertexBuffer( BodyVertexes, 4 );
 
 	delete[] BodyVertexes;
 
 	return Result;
 }
 
-void ScrollBarClass::Draw() {
-/*
-	Obj->Render();
-
-	if (MinMixButtonsShow) 
-	{
-		MinButton->Draw();
-		MaxButton->Draw();
-	}
-
-	Traveller->Draw();
-*/
-}
 
 ScrollBarClass::~ScrollBarClass() 
 {
-//	RCUBE_DELETE ( Obj );
 	RCUBE_DELETE ( MinButton ); 
 	RCUBE_DELETE ( MaxButton );
 	RCUBE_DELETE ( Traveller );
@@ -874,7 +850,6 @@ void ScrollBarClass::SetEnable ( bool Value )
 		MinButton->SetObjectTexture( ButtonsTexture );
 		MaxButton->SetObjectTexture( ButtonsTexture );
 		Traveller->SetObjectTexture ( TravellerTexture );
-//		Obj->SetObjectTexture ( BodyTexture );
 		Buffers->RenderTexture = BodyTexture;
 	}
 	else
@@ -898,13 +873,11 @@ void ScrollBarClass::SetEnable ( bool Value )
 		
 		if (NotEnalbledBodyTexture)
 		{
-//			Obj->SetObjectTexture ( NotEnalbledBodyTexture );
 			Buffers->RenderTexture = NotEnalbledBodyTexture;
 		}
 
 		else
 		{
-//			Obj->SetObjectTexture ( BodyTexture );
 			Buffers->RenderTexture = BodyTexture;
 		}
 

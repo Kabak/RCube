@@ -25,9 +25,13 @@ Texture::~Texture ()
 	RCUBE_RELEASE ( DSV );
 	RCUBE_RELEASE ( UAV );
 	RCUBE_RELEASE ( RTV );
-	RCUBE_RELEASE ( Resource );
+	// ≈сли была создана текстура, то Resource релизить нельз€ 
+	if ( Texture1D == nullptr && Texture2D == nullptr && Texture3D == nullptr )
+		RCUBE_RELEASE ( Resource );
+
 	RCUBE_RELEASE ( Texture1D );
 	RCUBE_RELEASE ( Texture2D );
 	RCUBE_RELEASE ( Texture3D );
+
 	RCUBE_ARR_DELETE ( Name );
 }

@@ -10,7 +10,6 @@
 
 #include <dinput.h>
 #include "FlatObjectClass.h"
-#include "TextClass.h"
 #include "D3DGlobalContext.h"
 #include "DX11Buffers.h"
 						
@@ -30,7 +29,6 @@ private :
 	ID3D11ShaderResourceView*	IsButonPressTexture;
 	ID3D11ShaderResourceView*	IsMouseOnButtonTexture;
 	ID3D11ShaderResourceView*	NotEnalbledTexture;
-//		   ID3D11BlendState *   g_BlendState;
 	
 	// Для CheckBox
 	bool Checked;	// Зафиксированна в нажатом состоянии
@@ -97,7 +95,6 @@ public :
 		Flat_Obj_Buffers* _Buffers
 		);
 
-	HRESULT Draw();
 
 	// Возвращает true если произошла смена или активация одного из Edit на форме
 	// Нужно для того, чтобы курсор мигал только в активном Edit для ввода,

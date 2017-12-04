@@ -104,26 +104,15 @@ HRESULT KFButton::Init(
 	vertices[3].TexCoord = XMFLOAT2(1.0f, 0.0f);
 
 
-//	unsigned int indices[6] = { 0, 1, 2, 0, 3, 1 };
 	Buffers->FlatObjectVB->Update ( vertices );
 	Buffers->IndexBs->Update ( (Index_Type*)FlatObjectIndices );
 	Buffers->RenderTexture = ButtonInitData.OsnTexture;
-
-//	Obj = new KF2DObjClass ;
-//	Obj->Init( D3DGC, vertices, FlatObjectIndices, ButtonInitData.OsnTexture, 4, 6 );
 
 	delete [] vertices ;
 	
 	return Result ;
 }
 
-HRESULT KFButton::Draw()
-{
-
-//	Obj->Render() ;
-	
-	return S_OK;
-}
 
 void KFButton::SetIfButtonPressTexture(ID3D11ShaderResourceView* Texture){
 
@@ -158,7 +147,6 @@ void KFButton::ClearButtonState()
 KFButton::~KFButton()
 {
 
-//	RCUBE_DELETE( Obj );
 }
 
 
@@ -192,7 +180,6 @@ void KFButton::ResetButtonParam() {
 	vertices[3].Position = XMFLOAT3(right, top, 0.0f);  // Top right.
 	vertices[3].TexCoord = XMFLOAT2(1.0f, 0.0f);
 
-//	Obj->SetVertexBuffer( vertices ) ;
 	Buffers->FlatObjectVB->Update ( vertices );
 
 	delete [] vertices ;
@@ -254,12 +241,10 @@ bool KFButton::Frame( DXINPUTSTRUCT& InputClass, bool &ObjectBUSY)
 
 				if ( IsButonPressTexture != NULL || Checked )
 				{
-//					SetObjectTexture( IsButonPressTexture );
 					Buffers->RenderTexture = IsButonPressTexture;	// новая попытка )
 				}
 				else
 					Buffers->RenderTexture = OsnButtontexture;	// новая попытка )
-//					SetObjectTexture( OsnButtontexture );
 			}
 			else // Мышка не была нажата на объекте
 			{ 
@@ -323,17 +308,14 @@ bool KFButton::Frame( DXINPUTSTRUCT& InputClass, bool &ObjectBUSY)
 
 				if (IsMouseOnButtonTexture != NULL)
 				{
-//					SetObjectTexture(IsMouseOnButtonTexture);
 					Buffers->RenderTexture = IsMouseOnButtonTexture;
 				}
 				else 
 				{
 					if ( Checked )
 						Buffers->RenderTexture = IsButonPressTexture;
-//						SetObjectTexture( IsButonPressTexture );
 					else
 						Buffers->RenderTexture = OsnButtontexture;
-//						SetObjectTexture( OsnButtontexture );
 				}
 			}	
 
@@ -348,28 +330,18 @@ bool KFButton::Frame( DXINPUTSTRUCT& InputClass, bool &ObjectBUSY)
 
 			if ( Checked )
 			{
-//				SetObjectTexture(IsButonPressTexture);
 				Buffers->RenderTexture = IsButonPressTexture;
 //				g_State.IsPress = true;
 			}
 			else
 			{
-//				SetObjectTexture(OsnButtontexture);
 				Buffers->RenderTexture = OsnButtontexture;
-//				g_State.IsPress = false;
+
 			}
 
 		}
 	} // если кнопка НЕ активна
-/*	else if (NotEnalbledTexture != nullptr) 
-	{
-		SetObjectTexture( NotEnalbledTexture );
-	}
-	else
-	{
-		SetObjectTexture( OsnButtontexture );
-	}
-*/
+
 	return ActiveEditChanged;
 }
 
@@ -411,7 +383,6 @@ void KFButton::SetEnable ( bool Value )
 	if( Value )
 	{
 		Enabled = true;
-//		SetObjectTexture( OsnButtontexture );
 		Buffers->RenderTexture = OsnButtontexture;
 	}
 	else
@@ -419,12 +390,10 @@ void KFButton::SetEnable ( bool Value )
 		Enabled = false;
 		if( NotEnalbledTexture != nullptr )
 		{
-//			SetObjectTexture( NotEnalbledTexture );
 			Buffers->RenderTexture = NotEnalbledTexture;
 		}
 		else
 		{
-//			SetObjectTexture( OsnButtontexture );
 			Buffers->RenderTexture = OsnButtontexture;
 		}
 	}

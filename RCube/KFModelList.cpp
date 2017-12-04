@@ -3,7 +3,7 @@
 
 KFModelList::KFModelList(){
 
-	IsClusteringUse = true;
+//	IsClusteringUse = true;
 	ModelCout = 0;
 
 }
@@ -21,65 +21,30 @@ KFModelList::~KFModelList(){
 
 	}
 
-	c = 0;
-	while (c < ShaderDrawObjArrSize) {
-
-		delete[] ShaderObjArr[c];
-
-
-		++c;
-	}
-
-
-	delete [] CoutObjetcs;
-	delete [] ShaderObjArr;
 	delete [] RCubeModelList;
 
-/*	
-	//	delete [] ObjDescs;
-	size_t j = ObjDescs.size ();
-	for (size_t i = 0; i < j; i++)
-	{
-//		RCUBE_DELETE ( ObjDescs[i]->Meshes );
-		RCUBE_DELETE ( ObjDescs[i]);
-	}
-*/
 	ObjDescs.clear ();
-	
-	
-	delete [] ObjPoses;
-	FrameIndexes.clear();
-	PreviosFrameIndexes.clear();
+		
+//	delete [] ObjPoses;
+
 
 }
 
 
-HRESULT KFModelList::Init(HWND g_Hwnd, D3DGlobalContext * D3DGC
+HRESULT KFModelList::Init(D3DGlobalContext * D3DGC
 	, D3DClass * ActiveLightClass, FrustumClass * ActiveFrustum) {
 
 	gActiveFrustum = ActiveFrustum;
 	g_LightClass = ActiveLightClass;
 	Local_D3DGC = D3DGC;
-	g_Device = D3DGC->DX_device;
-	g_SwapChain = D3DGC->DX_swapChain;
-	g_DevCon = D3DGC->DX_deviceContext;
-	g_HWND = g_Hwnd;
-
-	ShaderObjArr = new int* [30];
-	CoutObjetcs = new int[30];
-
-	ZeroMemory ( CoutObjetcs, sizeof ( CoutObjetcs ) );
-
-	ShaderDrawObjArrSize = 0;
 
 	RCubeModelList = new KFModel*[KF_MAX_MODEL_ARR_SIZE];
-//	ObjDescs = new RCudeObjDesc* [KF_MAX_MODEL_ARR_SIZE];
-	ObjPoses = new PositionType*[KF_MAX_MODEL_ARR_SIZE];
+//	ObjPoses = new PositionType*[KF_MAX_MODEL_ARR_SIZE];
 
 	return S_OK;
 }
 
-void KFModelList::AddObject(std::wstring FileNameKFO, UINT BolobIndex, UINT Shaders, int InstCout){
+void KFModelList::AddObject(std::wstring FileNameKFO, UINT Shaders, int InstCout){
 
 	KFModel * Model3DPointer;
 	int c = 0;
@@ -90,65 +55,28 @@ void KFModelList::AddObject(std::wstring FileNameKFO, UINT BolobIndex, UINT Shad
 	RCubeModelList[ModelCout] = Model3DPointer;
 	// сохран€ю указатели на элементы модэлов (очень подходит дл€ быстрого доступа)
 	ObjDescs.push_back( &Model3DPointer->ThisObjDesc );
-	ObjPoses[ModelCout] = Model3DPointer->ThisObjDesc.Positions;
+//	ObjPoses[ModelCout] = Model3DPointer->ThisObjDesc.Positions;
 
-	// отсейка обьектов по шейдеоам ******************************************************
+	++CoutObjetcs; //   количеству объектов на сцене + 1
 
-	c = 0;
-	int	IndexOfShader = -1;
-	while (c < ShaderDrawObjArrSize) {
-
-		if (ActiveShaderIndexes[c] == Shaders) {
-			IndexOfShader = c;
-			break;
-		}
-
-		++c;
-	}
-
-	if (IndexOfShader == -1) {
-
-		ActiveShaderIndexes.push_back(Shaders);
-		ShaderDrawObjArrSize++;
-		IndexOfShader = ShaderDrawObjArrSize - 1;
-		ShaderObjArr[IndexOfShader] = new int[1000];
-		
-
-	}
-	++CoutObjetcs[IndexOfShader];
-	ShaderObjArr[IndexOfShader][CoutObjetcs[IndexOfShader] - 1] = (int)(ModelCout);
-
-	// отсейка обьектов по шейдеоам ******************************************************
 	++ModelCout;
 }
 
 
 void KFModelList::LightRender(){
-	 g_c = 0, g_p = 0 , g_ActiveObjCout = 0;
-
-	 int * Source = &CoutObjetcs[g_c];
+	 g_c = 0, g_p = 0;
 
 	 KFModel ** Source3 = &RCubeModelList[0];
 	 KFModel * Temp2 = nullptr;
-	// цикл шейдеров
-	while (g_c < ShaderDrawObjArrSize)
-	{
-		// провер€ю есть ли обьeкты дл€ отрисовки вообще
-		if (*Source > 0) {
+	 
 			//бегу по всем модел€м
-			while (g_p < *Source)
+			while (g_p < CoutObjetcs)
 			{// если обьекты дл€ проверки просто напросто не закончились
 				Temp2 = *Source3;
-				if (*Source - 1 >= g_ActiveObjCout) 
-					// провер€ю рисуетс€ ли обьект вообще ( до 25.03.2016&&  и соответствует ли этот обьект этому шейдеру)
 
 					if (Temp2->ThisObjDesc.IsObjDraw ) {
 
-					//	if ( Temp2->ThisObjDesc.InstanceFrustumPassedAmount != -1 )
 							Temp2->LightRender();
-
-						
-						++g_ActiveObjCout;
 					}
 
 				++Source3;
@@ -156,14 +84,10 @@ void KFModelList::LightRender(){
 
 			}
 
-			g_ActiveObjCout = 0;
 			g_p = 0;
 
-		}
-		++Source;
 		++g_c;
 
-	}
 
 }
 
@@ -174,8 +98,10 @@ void KFModelList::Frame() {
 	RCudeObjDesc * Temp;
 	RCube_VecFloat34 TempPositions;
 	
+	size_t Size = sizeof ( XMVECTOR ) * 2;
 
-	while (counter < ModelCout) {
+	while (counter < ModelCout) 
+	{
 
 		Temp = *DescPoinder;
 		CuledInstancesCout = 0;
@@ -187,7 +113,7 @@ void KFModelList::Frame() {
 		 	 TempPositions.Vec = Temp->Positions[instanceCounter].position.Vec + Temp->ObjectBox.CentralPoint.Vec;
 			 if (gActiveFrustum->CheckSphere(TempPositions.Fl3, Temp->ObjectBox.SphereRadius)) {
 
-				 memcpy(&Temp->PositionsDraw[CuledInstancesCout], &Temp->Positions[instanceCounter], sizeof(XMVECTOR) * 2);
+				 memcpy(&Temp->PositionsDraw[CuledInstancesCout], &Temp->Positions[instanceCounter], Size );
 
 				 ++CuledInstancesCout;
 
@@ -263,7 +189,8 @@ void KFModelList::SetPositon(int IndexOfObject , int InstanceIndex, float PosX, 
 void KFModelList::SetPositon(int IndexOfObject, int InstanceIndex, XMFLOAT3 &Pos)
 {
 
-	ObjPoses[IndexOfObject][InstanceIndex].position.Fl3 = Pos;
+	RCubeModelList [ IndexOfObject ]->ThisObjDesc.Positions[ InstanceIndex ].position.Fl3 = Pos;
+//	ObjPoses[IndexOfObject][InstanceIndex].position.Fl3 = Pos;
 
 	RCubeModelList[IndexOfObject]->UpdateInstancingPos();
 
@@ -273,14 +200,15 @@ void KFModelList::SetPositon(int IndexOfObject, int InstanceIndex, XMFLOAT3 &Pos
 void KFModelList::SetRotation(int IndexOfObject, int InstanceIndex, XMFLOAT4 &Rotation)
 {
 
-	ObjPoses[IndexOfObject][InstanceIndex].rotation.Fl4 = Rotation;
+	RCubeModelList [ IndexOfObject ]->ThisObjDesc.Positions [ InstanceIndex ].rotation.Fl4 = Rotation;
+//	ObjPoses[IndexOfObject][InstanceIndex].rotation.Fl4 = Rotation;
 
 	RCubeModelList[IndexOfObject]->UpdateInstancingPos();
 
 }
 
 
-Material::SurfaceMaterial* KFModelList::GetMaterialData(int ObjIndex) {
+Material* KFModelList::GetMaterialData(int ObjIndex) {
 
 	//return &RCubeModelList[ObjIndex]->AllMaterials[ObjIndex];
 	return nullptr;
@@ -288,31 +216,21 @@ Material::SurfaceMaterial* KFModelList::GetMaterialData(int ObjIndex) {
 
 void KFModelList::Render() {
 
-	g_c = 0, g_p = 0, g_ActiveObjCout = 0;
-
-	int * Source = &CoutObjetcs[g_c];
+	g_c = 0, g_p = 0;
 
 	KFModel ** Source3 = &RCubeModelList[0];
 	KFModel * Temp2 = nullptr;
-	// цикл шейдеров
-	while (g_c < ShaderDrawObjArrSize)
-	{
-		// провер€ю есть ли обькты дл€ отрисовки вообще
-		if (*Source > 0) {
+
 			//бегу по всем модел€м
-			while (g_p < *Source)
+			while (g_p < CoutObjetcs)
 			{// если обьекты дл€ проверки просто напросто не закончились
 				Temp2 = *Source3;
-				if (*Source - 1 >= g_ActiveObjCout)
-					// провер€ю рисуетс€ ли обьект вообще ( до 25.03.2016&&  и соответствует ли этот обьект этому шейдеру)
 
 					if (Temp2->ThisObjDesc.IsObjDraw) {
 
 						if (Temp2->ThisObjDesc.InstanceFrustumPassedAmount != -1 || !IsObjUseClustering[g_c])
 							Temp2->Render();
 
-
-						++g_ActiveObjCout;
 					}
 
 				++Source3;
@@ -320,13 +238,8 @@ void KFModelList::Render() {
 
 			}
 
-			g_ActiveObjCout = 0;
 			g_p = 0;
 
-		}
-		++Source;
 		++g_c;
-
-	}
 
 }

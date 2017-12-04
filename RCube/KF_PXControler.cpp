@@ -36,7 +36,7 @@
 KF_PXControler::KF_PXControler(){
 
 	aHeightField = nullptr;
-	g_ModelList = nullptr;
+	MyManager = nullptr;
 	DynamicDataArr = nullptr;
 	DynamicDataArrCounter = 0;
 	StaticNumObjects = 0;
@@ -163,7 +163,7 @@ PxErrorCallback& getSampleErrorCallback(  ) //PxErrorCode::Enum code, const char
 	return gDefaultErrorCallback;
 }
 
-void KF_PXControler::Init(HWND * g_hwnd , D3DGlobalContext *D3DGC, KFModelList * ActiveModelList)
+void KF_PXControler::Init(HWND * g_hwnd , D3DGlobalContext *D3DGC, ResourceManager* ResourceManager )
 {
 
 //	PxErrorCode::Enum code = PxErrorCode::Enum::eABORT;
@@ -172,7 +172,7 @@ void KF_PXControler::Init(HWND * g_hwnd , D3DGlobalContext *D3DGC, KFModelList *
 //	int line = 0;
 
 	g_Hwnd = *g_hwnd;
-	g_ModelList = ActiveModelList;
+	MyManager = ResourceManager;
 
 // !!! allocator должен быть объявлен именно так. Иначе неправильно инициализируется Foundation и не работает PhysX
 	PxDefaultAllocator *allocator = &gDefaultAllocatorCallback;
@@ -565,7 +565,7 @@ int KF_PXControler::CreateObject(std::wstring filename, bool IsDynamic, ObjectDa
 	int spIndex;
 	// создаем материал
 	WorkgMaterial = gPhysics->createMaterial(FizData.StaticFriction, FizData.DynamicFriction, FizData.Restitution);
-	PositionType PosesData = g_ModelList->RCubeModelList[Data->ModelIndex]->ThisObjDesc.Positions[Data->InstanceIndex];
+	PositionType PosesData = MyManager->_3DModels[Data->ModelIndex]->Positions[Data->InstanceIndex];
 	// Создаём Кватернион для PhysX		
 	WorkQuat = XMQuaternionRotationRollPitchYaw(PosesData.rotation.Fl3.x, PosesData.rotation.Fl3.y, PosesData.rotation.Fl3.z);
 	WorkPxQ = { XMVectorGetX(WorkQuat), XMVectorGetY(WorkQuat), XMVectorGetZ(WorkQuat), XMVectorGetW(WorkQuat) };
@@ -660,7 +660,7 @@ int KF_PXControler::CreateObject(std::wstring filename, bool IsDynamic, ObjectDa
 
 void KF_PXControler::CreateInstancingObjects(std::wstring filename, bool IsDynamic , int ObjInex) {
 
-	int InstNum =  g_ModelList->RCubeModelList[ObjInex]->ThisObjDesc.InstanceCount, c = 0;
+	int InstNum = MyManager->_3DModels[ObjInex]->InstanceCount, c = 0;
 
 	ObjectData Temp;
 
@@ -678,17 +678,17 @@ void KF_PXControler::CreateInstancingObjects(std::wstring filename, bool IsDynam
 
 void KF_PXControler::Frame() {
 
-	if (g_ModelList != nullptr) {
+	if ( MyManager != nullptr) {
 
 		PxTransform KinematicData;
 		int c = 0;
 
 		ObjectData * Temp = DynamicDataArr;
-		PositionType ** Temp2 = g_ModelList->ObjPoses;
+		// ЭТО СПЕЦИАЛЬНО ДЛЯ обновления КУБИКОВ !!!!
+		PositionType  * Temp3 = MyManager->_3DModels[0]->Positions;
 
-		while (c < DynamicDataArrCounter) {
-
-			PositionType  * Temp3 = &Temp2[Temp->ModelIndex][Temp->InstanceIndex];
+		while (c < DynamicDataArrCounter) 
+		{
 
 			KinematicData = DymanicRigitArray[c]->getGlobalPose();
 
@@ -697,21 +697,18 @@ void KF_PXControler::Frame() {
 			QuatXMfloat4.Rotation = &KinematicData.q;
 
 			float W = QuatXMfloat4.Temp->w;
-			*QuatXMfloat4.Vec = -*QuatXMfloat4.Vec;// * -1.0f;
+			*QuatXMfloat4.Vec = -*QuatXMfloat4.Vec;// * -1.0f;   В PhysX поворот объекта нужно домножить на -1.0f
 			QuatXMfloat4.Temp->w = W;
 
-//			QuatXMfloat4.Temp->y = -QuatXMfloat4.Temp->y;
-//			QuatXMfloat4.Temp->z = -QuatXMfloat4.Temp->z;
-//			QuatXMfloat4.Temp->x = -QuatXMfloat4.Temp->x;
-			
 			Temp3->rotation.Fl4 = *QuatXMfloat4.Temp;
 			 
-			g_ModelList->RCubeModelList[Temp->ModelIndex]->UpdateInstancingPos();
-
-			++Temp;
+			++Temp3;
 			++c;
 		}
 
+		MyManager->Update_3D_Object_InstancesPosBuffer ( 0, -1, MyManager->_3DModels[0]->InstanceCount );
+
+/*
 		c = 0;
 
 		PxExtendedVec3 position;
@@ -725,9 +722,10 @@ void KF_PXControler::Frame() {
 			Temp4->position.Fl3.y = (float)position.y;
 			Temp4->position.Fl3.z = (float)position.z;
 
-			g_ModelList->RCubeModelList[CharactersDataArr[c].ModelIndex]->UpdateInstancingPos();
 			++c;
 		}
+		MyManager->Update_3D_Object_InstancesPosBuffer ( CharactersDataArr[c].ModelIndex, -1, MyManager->_3DModels[0]->InstanceCount );
+*/
 
 	}
 }
@@ -735,8 +733,8 @@ void KF_PXControler::Frame() {
 PxShape* KF_PXControler::CreateShape(int ModelIndex, ShapeData  Shape) {
 
 	PxGeometry * WorkGeometry = nullptr;
-	KFModel * model = g_ModelList->RCubeModelList[ModelIndex];
-	// Box
+	_3DModel* model = MyManager->_3DModels[ModelIndex];
+// Box
 	
 	if (Shape.GeomData[0] == 'B' && Shape.GeomData[1] == 'o' && Shape.GeomData[2] == 'x') {
 		WorkGeometry = &PxBoxGeometry(Shape.GeomParam1, Shape.GeomParam2, Shape.GeomParam3);
@@ -761,23 +759,23 @@ PxShape* KF_PXControler::CreateShape(int ModelIndex, ShapeData  Shape) {
 
 		int nbVerts, triCount, indexesCout;
 
-		nbVerts = model->ThisObjDesc.ObjectVertexesCout;
-		triCount = model->ThisObjDesc.ObjectVertexesCout / 3;
-		indexesCout = model->ThisObjDesc.ObjectVertexesCout;
+		nbVerts = model->ObjectVertexesCout;
+		triCount = model->ObjectVertexesCout / 3;
+		indexesCout = model->ObjectVertexesCout;
 
 
 		PxVec3 * verts = new PxVec3[nbVerts];
 		PxU32 * indices32 = new PxU32[indexesCout];
 		UINT c = 0, counter = 0, fullCounter = 0, inv_c;
 
-		while (counter < model->ThisObjDesc.MeshesCount ) {
+		while (counter < model->Meshes.size() ) {
 			c = 0;
-			inv_c = model->ThisObjDesc.Meshes[counter].VertexBufferSize;
-			while (c < model->ThisObjDesc.Meshes[counter].VertexBufferSize) {
+			inv_c = model->Meshes[counter]->VertexBufferSize;
+			while (c < model->Meshes[counter]->VertexBufferSize) {
 
-				verts[fullCounter].x = model->ThisObjDesc.Meshes[counter].VertArr[c].Position.x;
-				verts[fullCounter].y = model->ThisObjDesc.Meshes[counter].VertArr[c].Position.y;
-				verts[fullCounter].z = model->ThisObjDesc.Meshes[counter].VertArr[c].Position.z;
+				verts[fullCounter].x = model->Meshes[counter]->VertexArray[c].Position.x;
+				verts[fullCounter].y = model->Meshes[counter]->VertexArray[c].Position.y;
+				verts[fullCounter].z = model->Meshes[counter]->VertexArray[c].Position.z;
 
 				indices32[fullCounter] = inv_c;
 
@@ -850,7 +848,7 @@ int KF_PXControler::CreateCharacter(std::wstring filename , ObjectData * Data) {
 	ReadFIZFile(&FizData, filename);
 
 	PxMaterial* gMaterial = gPhysics->createMaterial(FizData.StaticFriction, FizData.DynamicFriction, FizData.Restitution);
-	PositionType PosesData = g_ModelList->RCubeModelList[Data->ModelIndex]->ThisObjDesc.Positions[Data->InstanceIndex];
+	PositionType PosesData = MyManager->_3DModels[Data->ModelIndex]->Positions[Data->InstanceIndex];
 
 	// Box
 	if (FizData.Shapes[0].GeomData[0] == 'B' && FizData.Shapes[0].GeomData[1] == 'o' && FizData.Shapes[0].GeomData[2] == 'x') {

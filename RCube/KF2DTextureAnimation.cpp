@@ -39,7 +39,6 @@ HRESULT KF2DTextureAnimation::Init(HWND hwnd,
 	
 	ShaderForDraw = DrawShaderIndex;
 	ShaderReturnTo = ReturnShaderIndex;
-//	GlobalResourceManager = GlobalResManager;
 
 	ObjParam = _ObjParam;
 
@@ -69,8 +68,6 @@ HRESULT KF2DTextureAnimation::Init(HWND hwnd,
 		TextcordLeft[UX] = static_cast<float>( UX * OneFrameWidth );
 		++UX;
 	}
-
-//	float h = TextcordTop[0], i = TextcordLeft[0];
 
 	AnimeTextures = new FlatObjectClass;
 	result = AnimeTextures->Init( D3DGC->ScreenWidth, D3DGC->ScreenHeight, ObjParam, animTexture, NO_FLIP, _Buffers );

@@ -6,10 +6,10 @@
 
 #include "FlatObjectClass.h"
 #include "FPSTimers.h"
-#include "FontClass.h"
-#include "TextClass.h"
+#include "D3DGlobalContext.h"
 #include <vector>
 
+class ResourceManager;
 
 class StringsListClass : public FlatObjectClass
 {
@@ -49,12 +49,10 @@ public:
 			   XMFLOAT4& _ScreenCoords,
 			   XMFLOAT4& _FormCoord,
 			   StringsList_Elements& StringsListInit,
-			   TextClass* g_text,
+			   ResourceManager * _GlobalResourceManager,
 			   Flat_Obj_Buffers* _Buffers
 			 );
 																	
-	void Draw();
-
 	bool SaveTextureToPNG( ID3D11ShaderResourceView* );
 
 	void UpdateABSElementAll();
@@ -76,7 +74,7 @@ public:
 private:
 	
 	D3DGlobalContext* Local_D3DGC;
-	TextClass* Global_text;
+	ResourceManager* ResManager;
 
 	vector <char*> Strings;	// Массив строк подлежащих отрисовке
 

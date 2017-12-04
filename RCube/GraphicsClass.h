@@ -22,7 +22,6 @@
 #include "D3DClass.h"
 #include "CameraClass.h"
 #include "ResourceManager.h"
-#include "TextClass.h"
 #include "dinput.h"
 #include "FrustumClass.h"
 #include "RenderTextureClass.h"
@@ -33,9 +32,7 @@
 #include "TorchFireParticles.h"
 // ++++++++++++   Измеряем быстродействие кода   +++++++++++++
 #include "RCubeProfiling.h"
-// ++++++++++++   Свет сцены   +++++++++++
-//#include "LightClass.h"
-// ++++++++++++   Ландшафт   +++++++++++++
+
 #include "Terrain.h"
 // +++++++++++++++++++++++++мои классы++++++++++++++++++
 #include "ScrollBarClass.h"
@@ -60,15 +57,7 @@ const bool FULL_SCREEN = false;
 const bool VSYNC_ENABLED = false;
 const float SCREEN_DEPTH = 1000.0f;
 const float SCREEN_NEAR = 1.0f;
-/*
-union _Float34_Vector
-{
-	_Float34_Vector() {}; //MyData.Vec = { 0.0f, 0.0f, 0.0f, 1.0f };
-	XMFLOAT3 Fl3;
-	XMFLOAT4 Fl4;
-	XMVECTOR Vec;
-};
-*/
+
 
 // We'll need these four globals to start with.
 ////////////////////////////////////////////////////////////////////////////////
@@ -83,6 +72,7 @@ public:
 	~GraphicsClass();
 
 	char* Global; // Нужно для отладки быстродействия движка
+	char* Str1;
 
 	float rotation ;
 	float time;
@@ -148,7 +138,9 @@ public:
 
 				  D3DClass* m_D3D;
 			   CameraClass* m_Camera;
-	   
+			   
+			   FontClass* TempFont;
+
 //	   ParticleSystemClass* m_ParticleSystem;
 	   FireParticleSystem  *FireParticles;
 	   TorchFireParticles  *TorchFire;
@@ -166,9 +158,7 @@ public:
 
 // ++++++++++++   Ландшафт   +++++++++++++
 				 Terrain* KFTerrain;
-// +++++++++++++++++++  Текстовые классы для вывода текста на экран  +++++++++++++++++++++++
-				 TextClass* m_Text;
-// ----------------------------------------------------------------------------------------
+
 // +++++++++++++++++++     Анимация     ++++++++++++++++++++++++++++++		
 	  KF2DTextureAnimation* AnimTexture;
 // -------------------     Анимация     ------------------------------

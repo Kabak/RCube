@@ -5,6 +5,7 @@
 #define _RESORSEMANEGER_H_
 
 #include <fstream>
+#include <DirectXTex.h>
 #include <WICTextureLoader.h>
 #include <DDSTextureLoader.h>
 #include <vector>
@@ -14,6 +15,10 @@
 #include "Buffers_def.h"
 #include "Menu.h"
 #include "Texture.h"
+#include "FontClass.h"
+#include "3DModel.h"
+#include "FrustumClass.h"
+//#include "KFModel.h"
 
 #ifdef RCube_DX11
 #include "DX11Buffers.h"
@@ -31,7 +36,7 @@ private:
 		ID3D11DomainShader *		 DS = nullptr; // домайн шейдер
 		ID3D11GeometryShader *       GS = nullptr; // геометрическии шейдер
 		ID3D11PixelShader  *         PS = nullptr; // пиксельный шейдер
-		wchar_t *			  BunchName = nullptr; // имя связки шейдеров 
+		WCHAR *				  BunchName = nullptr; // имя связки шейдеров 
 		int						 Layout = NULL;	   // Layout Index ( bind to IAS - Shader from enum LayoutTypes )
 		int					VSBlobIndex = NULL;	   // VS Shader Blob index
 //		ID3D11ComputeShader *		 CS = nullptr; // компьют шейдер
@@ -68,23 +73,125 @@ public:
 
 
 // Vertex, Instance, Index Buffers
-	vector< Flat_Obj_Buffers* >			FlatObjectBuffers;	// Vertex, Instance, Index буферы Flat_Object ( кнопки меню )
-	vector< UINT >						UnUsedBuffersIndex;	// Индексы удялённых FlatObjectBuffers доступные для повторного использования
+	vector< Flat_Obj_Buffers* >			FlatObjectBuffers;	// Vertex, Instance, Index буферы Flat_Object ( кнопки меню и BillBoards )
+	vector< UINT >						UnusedFlatObjBuffersIndex;	// Индексы удялённых FlatObjectBuffers доступные для повторного использования
 
 // Textures
 	vector <Texture*>					TexturesArr;		// Массив всех текстур
-	vector <UINT>						UnusedTextures;		// Массив свободных индексов текстур
+	vector <UINT>						UnusedTexturesIndex;// Массив свободных индексов текстур
+
+// Fonts
+// Список доступных шрифтов
+	vector < FontClass* >				RCube_Font;			// Список созданных шрифтов
+
+// Sentances
+// Список текстовых строк для отрисовки
+	vector < SentenceType* >			RCube_Sentences;	// Список созданных текстовых предложений
+	vector <UINT>						UnusedSentenceIndex;// Массив свободных индексов предложений
+	int									TextShaderIndex;	// Номер шейдера для текста в списке шейдеров 
+
+// 3D Models
+// Список 3D объектов на сцене
+	vector <_3DModel* >					_3DModels;			// Список 3D моделей на сцене
+	vector < _3D_Obj_Buffers* >			_3DModelsMeshBuffers;// Список вертексных буферов 3D моделей
+	vector <UINT>						Unused3DModelsIndex;// 
+	vector <UINT>						Unused3DModelsMeshBuffersIndex;// 
 
 	vector< Menu* >						Menus;				// Меню созданные в движке
 
+// + 3D Models Works
+private:
+	bool LoadKFObject ( std::wstring FileName, _3DModel* New_3D_Model ); // достает из кфо файла обьет
+public:	
+	int Add_3D_Object ( wstring FileNameKFO, int InstCout );
+	_3DModel* Get3D_Object_Pointer ( int ModelIndex );	// Получить указатель на объект 3D модели из списка по индексу
+	_3D_Obj_Buffers* ResourceManager::Get_Mesh_Buffers_By_Index ( int ObjectIndex );// Получить буферы мешаж
+	int Delete_3D_Object ( int ObjectIndex );
+	int Delete_3D_Object_Meshes_Buffers ( int ObjectIndex );
+	int GetNew3D_Obj_Index ( _3DModel* NewModel );	// Получить свободный индекс модели в массиве 3D моделей
+	int GetNew3D_Obj_Mesh_Buffer_Index ( _3D_Obj_Buffers* NewModel );
+	// Создание буферов для каждого меша модели
+	int Create_3D_Obj_Mesh_Buffers (
+//		UINT ModelType,			// Тип объекта из возможных в RCube для рисования по LayoutTypes объекта
+		bool CPUAccess,			// способ обновления буфера  
+		UINT InstanceAmount,	// Сколько Instance в модели
+		UINT IndexAmount		// Есть ли индексный массив для меша модели ( 0 - нет или количество индексов в IndexBuffer - IB )
+	);	// Создание буферов для плоского объекта
+
+	void Frustum_3D_Objects ( FrustumClass* Frustum );	// Отсеиваем все невидимые нв кадре объекты моделей
+
+	// Обновление буфера положений и поворотов Instance объекта
+	// Если CountingFromInstanceIndex = -1 - обновляются Instance объекта начиная с нулевого, общим количеством в Amount; 
+	// Если CountingFromInstanceIndex 0 или больше, то обновляется количество Amount начиная с элемента с номером в CountingFromInstanceIndex
+	bool Update_3D_Object_InstancesPosBuffer ( int ObjectIndex, int CountingFromInstanceIndex, int Amount );
+	
+	void InitRandInstansingPoses ( int ObjectIndex, float MaxX, float MinX, float MaxY, float MinY, float MaxZ, float MinZ );
+	void InitRandInstansingRots ( int ObjectIndex );
+	// Обновление позиции объектам
+	void Set_3D_Object_Positon ( int IndexOfObject, int InstanceIndex, float PosX, float PosY, float PosZ );
+	void Set_3D_Object_Positon ( int IndexOfObject, int InstanceIndex, XMFLOAT3 &Pos );
+	void Set_3D_Object_Rotation ( int IndexOfObject, int InstanceIndex, XMFLOAT4 &Rotation );
+	
+//	vector <RCudeObjDesc*>ObjDescs;	// Список 3D объектов на сцене
+//	KFModel ** RCubeModelList; // в этом массиве все обьекты
+
+	Material* GetMaterialData ( int ObjIndex );
+	PositionType ** ObjPoses;// это массив который хранит данные об указателях на позиции и поворота для наиболее скоростного доступа без посредников
+// !!!!!!!!!!!!!!
+	vector<bool> IsObjUseClustering; //массив описывающий использует ли тип модели кластеринг true использует false не использует формат заполнения [индекс типа модели]
+// !!!!!!!!!!!!!!
+//	int ModelCout; // количество моделей
+	int * CoutObjetcs;
+	vector<int> ActiveShaderIndexes;// массив котопый хранит все индексы активных шейдеров
+// !!!!!!!!!!!	
+	int ShaderDrawObjArrSize;
+// !!!!!!!!!!!
+
+// - 3D Models Works
+
+
+
+// + Sentence Works
+// Добавляет предложение и возвращает его номер в списке или -1 если не удалось добавить предложение
+	int AddSentence ( SENTENCE_INIT_DATA* data, char* String );
+
+	// Вытирает конкретное предложение
+	int DeleteSentence ( int SentenceNumber );
+
+	// Вытирает все предложения
+	void DeleteAllSentences ();
+
+	// Обновляет текст и позицию предложения на экране
+	void UpdateSentence ( int SentenceNumber, char* text, int positionX, int positionY, float RenderFontSize = 36.0f );
+	
+	// Получить максимальную длинну предложения
+	int GetSentenceMaxLength ( int SentenceNumber );
+	
+	// Получить высоту текста в предложения в пикселях
+	UINT GetSentenceHeight ( int SentenceNumber );
+
+	// Получить высоту текстуры шрифта в пикселях
+	int GetFontHeightInPixels ( int FontNumber );
+
+	int GetPosX ( int SentenceNumber );
+	int GetPosY ( int SentenceNumber );
+	// Получить указатель на строку
+	char* GetSentenceText ( int SentenceNumber );
+// - Sentence Works
+
 // + Textures Works
+	int GetNewTextureIndex ( Texture* NewTexture );	// Получить свободный индекс текстуры в системе
+
 	bool DeleteTexture ( int Index );
 
-	int CreateTexture ( TextureData _Data ); // Создание текстуры
+	int CreateTexture ( TextureData& _Data ); // Создание текстуры
 
-	int CloneTexture ( int Index );	// Создание коппии текстуры
-
-	int SaveTextureToFile ( int Index ); // Сохранить текстуру в файл
+	// Возвращает индекс созданной текстуры,
+	// или -2, если Source создана как STAGING, 
+	// или -1, если клонировать текстуру не получилось
+	int CloneTextureStaging ( int Source );	// Создание коппии текстуры
+	
+	bool SaveTextureToFile ( int Index, WCHAR* Name ); // Сохранить текстуру в файл
 
 	bool RenderTextureOnTexture ( int Index1, int Index2 ); // Нарисовать текстуру 1 на текструре 2
 
@@ -94,7 +201,6 @@ public:
 	bool CreateLayouts ();	// Создаются все нужные Layout для шейдеров по умолчанию
 
 	int Create_Flat_Obj_Buffers (
-//		UINT ModelType,			// Тип объекта из возможных в RCube для рисования по LayoutTypes объекта
 		bool CPUAccess,			// способ обновления буфера  
 		UINT InstanceAmount,	// Сколько Instance в модели
 		UINT IndexAmount,		// Есть ли индексный массив для меша модели ( 0 - нет или количество индексов в IndexBuffer - IB )
@@ -131,6 +237,12 @@ public:
 	void SetNullAllShaders();
 
 private:
+// + Sentence Works	
+	bool InitializeSentence ( SentenceType*, int& maxLength );
+	void BuildSentanceVertexArray ( FontClass* Font, void* vertices, char* sentence, float& drawX, float& drawY, float& RenderFontSize );
+	int GetNewSentenceIndex ( SentenceType* NewSentence );	// Получить свободный индекс предложения в системе
+// - Sentence Works
+
 	HRESULT hr;
 	const WCHAR *Error = L"ResourceManager Error";
 	int TexturesNum;

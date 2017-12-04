@@ -1,6 +1,31 @@
 ========================================================================
     WIN32 APPLICATION : RCube Project Overview
 ========================================================================
+// Огромный Terrain
+https://docs.unrealengine.com/latest/INT/Engine/Landscape/  // UE4 Landscape
+https://www.google.by/search?q=effective+terrain+rendering&gws_rd=cr&dcr=0&ei=JiYlWp6gHYSIaMugqfAO
+// То, что нужно 
+https://www.google.by/url?sa=t&rct=j&q=&esrc=s&source=web&cd=3&cad=rja&uact=8&ved=0ahUKEwik55bLlfDXAhXIqKQKHZ9_BLsQFgg5MAI&url=https%3A%2F%2Fwww.cosc.canterbury.ac.nz%2Fresearch%2Freports%2FHonsReps%2F2005%2Fhons_0502.pdf&usg=AOvVaw2AORkFu8Z2xd-FYtncoKS_
+https://developer.nvidia.com/gpugems/GPUGems2/gpugems2_chapter02.html
+
+http://www.gamedev.ru/code/forum/?id=92154					// ИДЕЯ !
+http://www.gamedev.ru/code/forum/?id=196939
+http://www.rastertek.com/tutterr.html 						// Rastertek
+http://www.rastertek.com/tertut05.html						// Rastertek
+
+http://www.gamedev.ru/code/forum/?id=135570
+http://www.gamedev.ru/community/nsfgd/articles/terrain_experiment
+// FBX Material UE4 spec.
+https://docs.unrealengine.com/latest/INT/Engine/Content/FBX/Materials/
+//Source code 
+https://github.com/GameTechDev
+// Materials
+// https://www.3dgep.com/texturing-lighting-directx-11/#Materials
+// http://paulbourke.net/dataformats/mtl/
+Зачем нужно опережающее объявление класса в заголовке? - C++
+http://www.cyberforum.ru/cpp-beginners/thread643145.html
+http://www.cyberforum.ru/qt/thread628947.html
+https://ru.wikipedia.org/wiki/%D0%9F%D1%80%D0%B5%D0%B4%D0%B2%D0%B0%D1%80%D0%B8%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D0%BE%D0%B5_%D0%BE%D0%B1%D1%8A%D1%8F%D0%B2%D0%BB%D0%B5%D0%BD%D0%B8%D0%B5
 Шаблонные функции в реализация в Н файле, не CPP
 https://ru.stackoverflow.com/questions/429903/%D0%92-%D0%BA%D0%B0%D0%BA%D0%BE%D0%BC-%D1%81%D0%BB%D1%83%D1%87%D0%B0%D0%B5-%D0%BD%D1%83%D0%B6%D0%BD%D0%BE-%D0%BE%D0%BF%D1%80%D0%B5%D0%B4%D0%B5%D0%BB%D1%8F%D1%82%D1%8C-%D1%84%D1%83%D0%BD%D0%BA%D1%86%D0%B8%D1%8E-%D0%B2-%D0%B7%D0%B0%D0%B3%D0%BE%D0%BB%D0%BE%D0%B2%D0%BE%D1%87%D0%BD%D0%BE%D0%BC-%D1%84%D0%B0%D0%B9%D0%BB%D0%B5
 Типы данных как аргументы

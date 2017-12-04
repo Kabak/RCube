@@ -141,18 +141,21 @@ public:
 	//private:
 	DXBuffer* Buffer;
 	ID3D11DeviceContext* DX11Context;
+	UINT InstanceAmount;
 
 private:
 
 	bool CPU_Access;
 	UINT BufferSize;
+
 };
 
 
 template <typename T>
-VertexBuffer<T>::VertexBuffer ( ID3D11Device* d3dDevice, ID3D11DeviceContext* D3DContext, bool _CPUAccess, UINT InstanceAmount )
+VertexBuffer<T>::VertexBuffer ( ID3D11Device* d3dDevice, ID3D11DeviceContext* D3DContext, bool _CPUAccess, UINT _InstanceAmount )
 {
 #ifdef RCube_DX11
+	InstanceAmount = _InstanceAmount;
 	BufferSize = sizeof ( T ) * InstanceAmount;
 	CD3D11_BUFFER_DESC desc (
 		BufferSize,
@@ -324,7 +327,7 @@ public:
 
 	DXBuffer* GetBuffer () { return mBuffer; }
 	ID3D11UnorderedAccessView* GetUnorderedAccess () { return mUnorderedAccess; }
-	ID3D11ShaderResourceView* GetShaderResource () { return mShaderResource; }
+	DXTextureSRV* GetShaderResource () { return mShaderResource; }
 
 	// Only valid for dynamic buffers
 	// TODO: Support NOOVERWRITE ring buffer?
@@ -338,7 +341,7 @@ private:
 
 	int mElements;
 	DXBuffer* mBuffer;
-	ID3D11ShaderResourceView* mShaderResource;
+	DXTextureSRV* mShaderResource;
 	ID3D11UnorderedAccessView* mUnorderedAccess;
 };
 
@@ -427,6 +430,32 @@ public:
 };
 
 
+class _3D_Obj_Buffers
+{
+public:
+	_3D_Obj_Buffers () : Vertexes ( 0 ), Indexes ( 0 )
+	{
+		Vertexes = nullptr;
+		Indexes = nullptr;
+		ThisBufferIndex = -1;
+};
+
+	~_3D_Obj_Buffers ()
+	{
+		RCUBE_DELETE ( Vertexes )
+		RCUBE_DELETE ( Indexes )
+	}
+
+	void SetVertexBuffer ()
+	{
+		//		FlatObjectVB.
+
+	}
+	VertexBuffer <Vertex_Model3D>* Vertexes;
+	IndexBuffer < Index_Type >* Indexes;
+	int ThisBufferIndex;
+
+};
 #endif //RCube_DX11
 
 

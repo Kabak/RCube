@@ -17,10 +17,10 @@ public:
 	KFModelList();
 	~KFModelList();
 
-	HRESULT Init(HWND g_Hwnd, D3DGlobalContext * D3DGC
+	HRESULT Init(D3DGlobalContext * D3DGC
 		, D3DClass * ActiveLightClass ,  FrustumClass * ActiveFrustum);
 
-	void AddObject(wstring FileNameKFO, UINT BolobIndex, UINT Shaders, int InstCout);
+	void AddObject(wstring FileNameKFO, UINT Shaders, int InstCout);
 
 	void LightRender();
 	void Render();
@@ -33,40 +33,29 @@ public:
 	void SetRotation(int IndexOfObject, int InstanceIndex, XMFLOAT4 &Rotation);
 
 	void Frame();
-	vector <KFModel*> RCubeModelListNoClustring; // не используют кластеринг
-	vector <KFModel*> RCubeModelListClustring; // используют кластеринг
 	
 	vector <RCudeObjDesc*>ObjDescs;	// Список 3D объектов на сцене
-//	RCudeObjDesc ** ObjDescs;
 
 	KFModel ** RCubeModelList; // в этом массиве все обьекты
-	vector <int> FrameIndexes;
-	bool IsClusteringUse;
 
-	Material::SurfaceMaterial* GetMaterialData(int ObjIndex);
-	PositionType ** ObjPoses;// это массив который хранит данные об указателях на позиции и поворота для наиболее скоростного доступа без посредников
+	Material* GetMaterialData(int ObjIndex);
+//	PositionType ** ObjPoses;// это массив который хранит данные об указателях на позиции и поворота для наиболее скоростного доступа без посредников
 
 private:
  
 	D3DGlobalContext * Local_D3DGC;
 	FrustumClass * gActiveFrustum;
 	vector<bool> IsObjUseClustering; //массив описывающий использует ли тип модели кластеринг true использует false не использует формат заполнения [индекс типа модели]
-	vector <int> PreviosFrameIndexes;// эта фигня нужна для оптимизации проверять предыдущий кадр
-	int ModelCoutClustring, ModelCoutNoClustring;
+
 	int ModelCout; // количество моделей
 	ResourceManager * myResourceManeger;
-	ID3D11Device * g_Device;
-	IDXGISwapChain * g_SwapChain;
-	ID3D11DeviceContext *  g_DevCon;
-	HWND g_HWND;
-	//MyStruct * ShaderDrawObjArr;
-	int * CoutObjetcs;
+
+	int CoutObjetcs; // Количество объектов на сцене
 	vector<int> ActiveShaderIndexes;// массив котопый хранит все индексы активных шейдеров
-	int ** ShaderObjArr;
-	int ShaderDrawObjArrSize;
+
 	D3DClass * g_LightClass;
 
-	int g_c , g_p , g_ActiveObjCout;
+	int g_c, g_p;
 
 };
 

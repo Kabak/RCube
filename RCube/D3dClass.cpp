@@ -26,8 +26,8 @@ D3DClass::D3DClass()
 	D3DGC->hwnd							= nullptr;
 	D3DGC->Adapter						= nullptr;
 	D3DGC->DX_device					= nullptr;
-	D3DGC->DX_deviceContext			= nullptr;
-	D3DGC->DX_swapChain				= nullptr;
+	D3DGC->DX_deviceContext				= nullptr;
+	D3DGC->DX_swapChain					= nullptr;
 	D3DGC->D10_device					= nullptr;
 	D3DGC->BackBuffer2DT				= nullptr;
 	D3DGC->BackBuffer_SRV				= nullptr;

@@ -41,9 +41,9 @@ bool KFModel::LoadKFObject(std::wstring FileName){
 
 		file.read((unsigned char*)&tempMesh->VertexBufferSize, sizeof(int)); // читаю размер следующего вертексного буфера
 		ThisObjDesc.ObjectVertexesCout += tempMesh->VertexBufferSize; // нахожу сумму вершин всех ранее созданных мной обьектов
-		tempMesh->VertArr = new Vertex_Model3D[tempMesh->VertexBufferSize]; // выдел€ю пам€ть под конкреный мверт буф
+		tempMesh->VertexArray = new Vertex_Model3D[tempMesh->VertexBufferSize]; // выдел€ю пам€ть под конкреный мверт буф
 
-		file.read((unsigned char*)&tempMesh->VertArr[0] , sizeof( Vertex_Model3D ) * tempMesh->VertexBufferSize);//чтение одним махом
+		file.read((unsigned char*)&tempMesh->VertexArray[0] , sizeof( Vertex_Model3D ) * tempMesh->VertexBufferSize);//чтение одним махом
 
 
 		file.read((unsigned char*)&TextureSize , sizeof(int));
@@ -56,12 +56,20 @@ bool KFModel::LoadKFObject(std::wstring FileName){
 			file.read( TextuteFile, TextureSize * sizeof( unsigned char ) );
 
 			hr = DirectX::CreateWICTextureFromMemory( d3d11Device, d3d11DevCon, &TextuteFile[0], ( size_t ) TextureSize, &tempMesh->TextureResurce
-													  , &tempMesh->Texture, NULL );
+													  , &tempMesh->TextureSRV, NULL );
 			if ( hr == E_FAIL )
 			{
-				MessageBox( g_hwnd, L"файл записаный в KAF поврежден.ResourceManager", L"Error", MB_OK );
+				MessageBox( 0, L"файл записаный в KAF поврежден.ResourceManager", L"Error", MB_OK );
 			}
+/*
+#if defined( DEBUG ) || defined( _DEBUG )
+			const char c_szName0 [] = "Model Texture";
+			tempMesh->TextureResurce->SetPrivateData ( WKPDID_D3DDebugObjectName, sizeof ( c_szName0 ) - 1, c_szName0 );
+			const char c_szName1 [] = "Model Texture SRV";
+			tempMesh->TextureSRV->SetPrivateData ( WKPDID_D3DDebugObjectName, sizeof ( c_szName0 ) - 1, c_szName1 );
 
+#endif
+*/
 			delete[] TextuteFile;
 			// чтение и создание текстуры
 		}
@@ -77,7 +85,7 @@ bool KFModel::LoadKFObject(std::wstring FileName){
 
 
 		// Give the subresource structure a pointer to the vertex data.
-		InitData.pSysMem = tempMesh->VertArr;
+		InitData.pSysMem = tempMesh->VertexArray;
 		InitData.SysMemPitch = 0;
 		InitData.SysMemSlicePitch = 0;
 
@@ -199,20 +207,20 @@ bool KFModel::UpdateInstancingPos() {
 
 	IndexPtr = (PositionType*)mappedResource.pData;
 
-	if (ThisObjDesc.InstanceFrustumPassedAmount != -1 ) {
+//	if (ThisObjDesc.InstanceFrustumPassedAmount != -1 ) {
 
-		Instance = ThisObjDesc.InstanceFrustumPassedAmount ;
-		ThisObjDesc.InstanceFrustumPassedAmount = (-1);
+//		Instance = ThisObjDesc.InstanceFrustumPassedAmount ;
+//		ThisObjDesc.InstanceFrustumPassedAmount = (-1);
 
-	}
+//	}
 
-	int help = sizeof(PositionType);
-	help = sizeof(XMFLOAT4);
+//	int help = sizeof(PositionType);
+//	help = sizeof(XMFLOAT4);
 
-	if(ThisObjDesc.InstanceCount > 1)
-	    memcpy(IndexPtr, (void*)ThisObjDesc.PositionsDraw, (sizeof(PositionType) * Instance));
-	else
-		memcpy(IndexPtr, (void*)ThisObjDesc.PositionsDraw, sizeof(PositionType));
+//	if(ThisObjDesc.InstanceCount > 1)
+	    memcpy(IndexPtr, (void*)ThisObjDesc.PositionsDraw, (sizeof(PositionType) * ThisObjDesc.InstanceFrustumPassedAmount ));
+//	else
+//		memcpy(IndexPtr, (void*)ThisObjDesc.PositionsDraw, sizeof(PositionType));
 
 	d3d11DevCon->Unmap(m_posesBuffer, 0);
 
@@ -229,7 +237,7 @@ void KFModel::LightRender() {
 	MeshData * tempMesh = ThisObjDesc.Meshes;
 	UpdateInstancingPos();
 
-	if (Instance != 0) {
+	if ( ThisObjDesc.InstanceFrustumPassedAmount != 0) {
 
 		// Set vertex buffer stride and offset.
 		strides[0] = sizeof( Vertex_Model3D );
@@ -252,7 +260,7 @@ void KFModel::LightRender() {
 			d3d11DevCon->IASetVertexBuffers(0, 2, bufferPointers, strides, offsets);
 
 
-			g_ActiveLightClass->RenderClustered(tempMesh->Texture, tempMesh->VertexBufferSize, Instance);
+			g_ActiveLightClass->RenderClustered(tempMesh->TextureSRV, tempMesh->VertexBufferSize, ThisObjDesc.InstanceFrustumPassedAmount );
 
 			++tempMesh;
 			++c;
@@ -272,7 +280,7 @@ void KFModel::Render() {
 	MeshData * tempMesh = ThisObjDesc.Meshes;
 	UpdateInstancingPos();
 
-	if (Instance != 0) {
+	if ( ThisObjDesc.InstanceFrustumPassedAmount != 0) {
 
 		// Set vertex buffer stride and offset.
 		strides[0] = sizeof( Vertex_Model3D );
@@ -295,8 +303,8 @@ void KFModel::Render() {
 			d3d11DevCon->IASetVertexBuffers(0, 2, bufferPointers, strides, offsets);
 
 
-			if (Instance > 1)
-				d3d11DevCon->DrawInstanced(tempMesh->VertexBufferSize, Instance, 0, 0);
+			if ( ThisObjDesc.InstanceFrustumPassedAmount > 1)
+				d3d11DevCon->DrawInstanced(tempMesh->VertexBufferSize, ThisObjDesc.InstanceFrustumPassedAmount, 0, 0);
 			else
 				d3d11DevCon->Draw( tempMesh->VertexBufferSize, 0);
 
@@ -338,19 +346,6 @@ void KFModel::UpdateInstancingDrawData() {
 
 	ThisObjDesc.InstanceFrustumPassedAmount = CounterInstanceNeedDraw;
 
-}
-
-
-void BoundingBox::CreateBoundStruct(RCube_VecFloat34 minValues, RCube_VecFloat34 maxValues) {
-
-	MinValues.Fl4 = minValues.Fl4;
-	MaxValues.Fl4 = maxValues.Fl4;
-
-
-	CentralPoint.Vec = (MaxValues.Vec + MinValues.Vec) / 2;
-
-
-	SphereRadius = sqrt(pow(MaxValues.Fl3.x - MinValues.Fl3.x, 2) + pow(MaxValues.Fl3.y - MinValues.Fl3.y, 2) + pow(MaxValues.Fl3.z - MinValues.Fl3.z, 2));
 }
 
 

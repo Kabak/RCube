@@ -3,7 +3,6 @@
 #ifndef _KFMODEL_H_
 #define _KFMODEL_H_
 
-#include <vector>
 #include <fstream>
 #include "DirectXMath.h"
 #include <sstream>
@@ -50,15 +49,7 @@ public :
 
 protected:
 
-struct CameraBufferType
-{
-	XMFLOAT3 cameraPosition;
-	float padding;
-};
-
-int Instance = 0; // необходима для перевося данных о количество прошедшик кулинги инстэнсов из обдейта в рендел
-
-HWND g_hwnd; // глобальный швнд используемы для вывода ошибок
+//int Instance = 0; // необходима для перевося данных о количество прошедшик кулинги инстэнсов из обдейта в рендел
 
 D3DClass * g_ActiveLightClass; // лайт класс он необходим для орисовки со свотом
 

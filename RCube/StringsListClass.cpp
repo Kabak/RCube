@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "StringsListClass.h"
+#include "ResourceManager.h"
 
 StringsListClass::StringsListClass()
 {
@@ -8,13 +9,12 @@ StringsListClass::StringsListClass()
 			Scroll_Y_Pos = 0;
 	 First_Visible_Index = 0;
 	  Last_Visible_Index = 0;
-//					 Obj = nullptr;
 }
 
 
 StringsListClass::~StringsListClass()
 {
-//	RCUBE_DELETE( Obj );
+
 }
 
 
@@ -24,7 +24,7 @@ void StringsListClass::ShutDown()
 	int Size = (int)SentencesResIndex.size();
 	for (int i = 0; i < Size ; ++i)
 	{
-		Global_text->DeleteSentence( SentencesResIndex[i] );
+		ResManager->DeleteSentence( SentencesResIndex[i] );
 	}
 
 	SentencesResIndex.clear();
@@ -36,7 +36,7 @@ HRESULT StringsListClass::Init(
 	XMFLOAT4& _ScreenCoords,
 	XMFLOAT4& _FormCoord,
 	StringsList_Elements& StringsListClassInit,
-	TextClass* g_text,
+	ResourceManager * _GlobalResourceManager,
 	Flat_Obj_Buffers* _Buffers
 	)
 {
@@ -49,7 +49,7 @@ HRESULT StringsListClass::Init(
 
 		  Buffers = _Buffers;
 
-	 Global_text  = g_text;
+	  ResManager = _GlobalResourceManager;
 
 		 Strings = StringsListClassInit.Strings;
 
@@ -83,7 +83,7 @@ First_Visible_Index = 0;
 
   SetStringsListParam();
 
-FontHeightInPixel = Global_text->GetFontHeightInPixels( FontIndex );
+FontHeightInPixel = ResManager->GetFontHeightInPixels( FontIndex );
 
 if ( FontHeightInPixel == -1 )
 {
@@ -114,32 +114,20 @@ Result = SetInitFrameData();
 
 	vertices[0].Position = XMFLOAT3( left, top, 0.0f );  // Top left.
 	vertices[0].TexCoord = TextureLeftTop;
-//	vertices[0].texture = XMFLOAT2( 0.0f, 0.0f );
 
 	vertices[1].Position = XMFLOAT3( right, bottom, 0.0f );  // Bottom right.
 	vertices[1].TexCoord = TextureRightBottom;
-//	vertices[1].texture = XMFLOAT2( 1.0f, 1.0f );
 
 	vertices[2].Position = XMFLOAT3( left, bottom, 0.0f );  // Bottom left.
 	vertices[2].TexCoord = TextureLeftBottom;
-//	vertices[2].texture = XMFLOAT2( 0.0f, 1.0f );
 
 	vertices[3].Position = XMFLOAT3( right, top, 0.0f );  // Top right.
 	vertices[3].TexCoord = TextureRightTop;
-//	vertices[3].texture = XMFLOAT2( 1.0f, 0.0f );
 
-//	unsigned int indices[6] = { 0, 1, 2, 0, 3, 1 };
 	Buffers->FlatObjectVB->Update ( vertices );
 	Buffers->IndexBs->Update ( (Index_Type*)FlatObjectIndices );
 	Buffers->RenderTexture = StrList_SRV;
-/*
-	Obj = new KF2DObjClass;
-	Result = Obj->Init( D3DGC, vertices, FlatObjectIndices, StrList_SRV, 4, 6 );
-	if ( FAILED( Result ) )
-	{
-		MessageBox( NULL, L"StringsList Obj creation Error", 0, 0 );
-	}
-*/
+
 	delete[] vertices;
 
 return Result;
@@ -186,7 +174,7 @@ bool StringsListClass::SetInitFrameData()
 		Data.PosY += OffsetY;
 		// Резервируем и создаём количество предложений помещающихся в окошко StringsList + одно резервное для скролинга
 		// Если предложений больше чем помещается в окошко скролинга.
-		HaveIndex = Global_text->AddSentence( &Data, Strings[i] );
+		HaveIndex = ResManager->AddSentence( &Data, Strings[i] );
 		if ( HaveIndex != -1 )
 			SentencesResIndex.emplace_back( HaveIndex );
 		else
@@ -211,7 +199,7 @@ void StringsListClass::ScrollStringsList( bool ScrollDir )
 		if ( Last_Visible_Index == StringsNumber - 1 )
 		{
 			// Последняя строка видна полностью ?  Если нет, то скролим все видимые строки вверх.
-			int a = Global_text->GetPosY( SentencesResIndex[MaxVisibleIndex - 1] );
+			int a = ResManager->GetPosY( SentencesResIndex[MaxVisibleIndex - 1] );
 			if ( a + StringsHeigh >= ObjParam_Y + ObjParam_W )
 				ScrollUp();
 		}
@@ -230,7 +218,7 @@ void StringsListClass::ScrollStringsList( bool ScrollDir )
 		if ( First_Visible_Index == 0 )
 		{
 			// Если позиция 1-го предложения выше окна скролинга, то можно скролить все строки вниз
-			if ( Global_text->GetPosY( SentencesResIndex[0] ) < ObjParam_Y )
+			if (ResManager->GetPosY( SentencesResIndex[0] ) < ObjParam_Y )
 				ScrollDown();
 		}
 		// Если вверху StringsList видно не первое предложение из общего списка, то можно скролить вниз
@@ -250,7 +238,7 @@ void StringsListClass::UpdateVisibleSentence( bool ScrollDir )
 	// Скролим вверх
 	if ( ScrollDir )
 	{
-		int a = Global_text->GetPosY( SentencesResIndex[0] ) + StringsHeigh;
+		int a = ResManager->GetPosY( SentencesResIndex[0] ) + StringsHeigh;
 		// Первое предложение скрылось из виду сверху
 		if ( a <= ObjParam_Y )
 		{
@@ -260,11 +248,11 @@ void StringsListClass::UpdateVisibleSentence( bool ScrollDir )
 
 			int LastIndex = (int)SentencesResIndex.size();
 
-			Global_text->UpdateSentence( 
+			ResManager->UpdateSentence(
 			TempIndex, 
 			Strings[ Last_Visible_Index + 1 ],
 			ObjParam_X,
-			Global_text->GetPosY( SentencesResIndex[LastIndex - 1] ) + StringsHeigh
+			ResManager->GetPosY( SentencesResIndex[LastIndex - 1] ) + StringsHeigh
 			);
 
 			SentencesResIndex.emplace_back( TempIndex );
@@ -277,7 +265,7 @@ void StringsListClass::UpdateVisibleSentence( bool ScrollDir )
 	// Скролим вниз
 	else
 	{
-		int a = Global_text->GetPosY( SentencesResIndex[MaxVisibleIndex - 1] );
+		int a = ResManager->GetPosY( SentencesResIndex[MaxVisibleIndex - 1] );
 		// Первое предложение скрылось из виду сверху
 		if ( a >= ObjParam_Y + ObjParam_W )
 		{
@@ -287,11 +275,11 @@ void StringsListClass::UpdateVisibleSentence( bool ScrollDir )
 
 			int LastIndex = ( int ) SentencesResIndex.size();
 
-			Global_text->UpdateSentence(
+			ResManager->UpdateSentence(
 				TempIndex,
 				Strings[First_Visible_Index - 1],
 				ObjParam_X,
-				Global_text->GetPosY( SentencesResIndex[0] ) - StringsHeigh
+				ResManager->GetPosY( SentencesResIndex[0] ) - StringsHeigh
 				);
 
 			SentencesResIndex.emplace( SentencesResIndex.begin(), TempIndex );
@@ -326,35 +314,15 @@ void StringsListClass::UpdateVisibleSentance()
 
 	do
 	{
-		Global_text->UpdateSentence( 
+		ResManager->UpdateSentence(
 		SentencesResIndex[i],
-		Global_text->GetSentenceText( SentencesResIndex[i] ),
+			ResManager->GetSentenceText( SentencesResIndex[i] ),
 		ObjParam_X,
-		Global_text->GetPosY( SentencesResIndex[i] ) + Scroll_Y_Pos
+		ResManager->GetPosY( SentencesResIndex[i] ) + Scroll_Y_Pos
 		);
 	++i;
 	}
 	while ( i < Size );
-}
-
-
-void StringsListClass::Draw()
-{
-	// Подставляем текстуру для отрисовки строк StrinsList
-	Local_D3DGC->DX_deviceContext->ClearRenderTargetView( StrList_RTV, Local_D3DGC->ZeroColor );
-	Local_D3DGC->DX_deviceContext->OMSetRenderTargets( 1, &StrList_RTV, NULL );
-
-	// Рисуем строки в текстуру для скролинга
-	Global_text->Render( SentencesIndex );
-
-	// Сохраняем в файл для визуальной отладки
-//	SaveTextureToPNG( StrList_SRV );
-
-	// Восстанавливае BackBuffer для отрисовки по умолчанию
-	Local_D3DGC->DX_deviceContext->OMSetRenderTargets( 1, &Local_D3DGC->BackBuffer_RTV, Local_D3DGC->m_depthStencilView );
-
-	// Рисуем StringsList на реальном экране
-//	Obj->Render();
 }
 
 
@@ -419,7 +387,7 @@ void StringsListClass::SetStringsListParam()
 	bottom = top - ObjParam.w;
 }
 
-
+/*
 bool StringsListClass::SaveTextureToPNG( ID3D11ShaderResourceView* Texture )
 {
 	bool Result = true;
@@ -513,3 +481,4 @@ END:
 
 	return Result;
 }
+*/

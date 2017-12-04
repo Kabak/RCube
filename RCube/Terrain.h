@@ -65,8 +65,8 @@ private :
 
 	D3DGlobalContext* Local_D3DGC;
 
-	ID3D11Buffer* m_posesBuffer;
-	D3DClass* g_ActiveLight;
+	ID3D11Buffer* m_posesBuffer;	// Буфер позиций вертексов
+	D3DClass* g_ActiveLight;		// Световой класс для отрисовки
 
 	bool GenersteRandTerrain( KFLandscapeParam* LandParam, float VertixesIndent);
 	bool ReadTerrainFromTexture(KFLandscapeParam* LandParam, float VertixesIndent);
@@ -82,18 +82,18 @@ private :
 
 	int ComeputeIndex(int X, int Z);
 
-	int m_vertexCount;
-	int m_indexCount;
-	int g_ClusterHeight , g_ClusterWidth;
+	int m_vertexCount;	// ОБщее количество вертексов в терейне
+	int m_indexCount;	// ОБщее количество индексов в терейне
+	int g_ClusterHeight , g_ClusterWidth;	// Размеры кластера на которые побита земля
 	int NumXVerticesInCluster, NumZVerticesInCluster;
 	int NumOfVerticesOnCluster;
-	int g_DrawLength;
+	int g_DrawLength;	// Дальность отрисовки от камеры в кроличестве кластеров
 	int NumOfDrawingClusters;
 	Vertex_Model3D ** ClusterVertices;
 	int NumOfClusters;
 	ID3D11Device* g_Device;
 	int * ClusterNumOfinitElements;
-	int VertixesDrawLengthX, VertixesDrawLengthZ;
+//	int VertixesDrawLengthX, VertixesDrawLengthZ;
 	int NumOfDrawingXVertixes, NumOfDrawingZVertixes;
 	int NumOfIndexesOnCluster;
 	HWND g_hwnd;

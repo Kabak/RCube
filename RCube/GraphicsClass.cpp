@@ -19,7 +19,6 @@ GraphicsClass::GraphicsClass()
 				   m_Frustum = nullptr;
 					m_Camera = nullptr;
 				   MyManager = nullptr;
-					  m_Text = nullptr;
 					m_Bitmap = nullptr;
 					 Mapping = nullptr;
 
@@ -40,7 +39,10 @@ GraphicsClass::GraphicsClass()
 				  ShadowWork = nullptr;
 				  RCubeRender = nullptr;
 
-			Global = new  char[100];
+			Global = new  char[260];
+			Global[0] = NULL;
+
+			Str1   = new  char[STRMAXLENGTH];
 
 	   CamLook.Vec = XMVectorSet( 0.0f, 0.0f, 0.0f, 0.0 );
 
@@ -64,7 +66,10 @@ GraphicsClass::GraphicsClass(const GraphicsClass& other)
 GraphicsClass::~GraphicsClass()
 {
 
+//	RCUBE_DELETE ( TempFont )
+
 	delete [] Global;
+	delete [] Str1;
 
 	UINT i = 0;
 	UINT j = (UINT) FontList.size();
@@ -92,7 +97,6 @@ GraphicsClass::~GraphicsClass()
 	RCUBE_DELETE ( MainMenu );
 	RCUBE_DELETE ( Mapping );
 	RCUBE_DELETE ( m_Bitmap );
-  RCUBE_SHUTDOWN ( m_Text );
 	RCUBE_DELETE ( MyManager );
     RCUBE_DELETE ( m_Camera );
 	RCUBE_DELETE ( m_Frustum );
@@ -161,17 +165,13 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	m_Camera = new CameraClass;
 
 	m_Camera->GetViewMatrix(m_D3D->D3DGC->ViewMatrix);
-//	m_Camera->Render();
-//	m_Camera->SetPosition(0.0f, 30.0f, -30.0f);
 	m_Camera->FirstPersonCam = false;
 	m_Camera->SetPosition( -3.05f, 14.25f, -4.97f );
 	m_Camera->SetLookAt( -3.16f, 13.35f, -5.35f );
 	m_Camera->Render();
-//	m_Camera->FirstPersonCam = true;
 
 	MyManager = new ResourceManager;
 	MyManager->Init(m_D3D->D3DGC);
-//	m_D3D->D3DGC->ShaderManager = MyManager;
 
 // Грузим ресурсы
 	hr = MyManager->InitTextures(L"Textures/Result.kaf");
@@ -632,12 +632,30 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 //5
 	FontList.push_back( FontOnTexture );
 
-	// Create the text object.
-	m_Text = new TextClass;
-	// Initialize the text object.
-	result = m_Text->Initialize(m_D3D->D3DGC, FontList );
+	MyManager->TextShaderIndex = MyManager->GetShaderIndexByName ( L"Font" );
+	// Инициализируем систему рисования 
+	RCubeRender = new RenderClass ( m_D3D->D3DGC, MyManager, m_D3D);
 
-	m_Text->TextShaderIndex = MyManager->GetShaderIndexByName(L"Font");
+	// Новая система шрифтов
+	char* Text = new char [50];
+	WCHAR* WText = new WCHAR [50];
+	size_t FontsNumber = FontList.size ();
+	for (size_t i = 0; i < FontsNumber; ++i)
+	{
+		MyManager->RCube_Font.push_back ( RCubeRender->CreateRFont ( FontList[i], CharStr ) );
+/*
+		sprintf_s ( Text, 50, "1MyFont%d.png", (int)i );
+		size_t cSize = strlen ( Text );
+		size_t Dest= 0;
+		mbstowcs_s (&Dest, WText, cSize+1, Text, cSize+1 );
+		MyManager->SaveTextureToFile ( MyManager->RCube_Font[i]->FontTextureIndex, WText );
+*/
+	}
+
+	RCUBE_ARR_DELETE ( Text );
+	RCUBE_ARR_DELETE ( WText );
+
+
 
 	RCUBE_RELEASE( LinearGradientBrush6 );
 	RCUBE_RELEASE( SolidBrushOutline6 );
@@ -669,14 +687,11 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 		return false;
 	}
 
-	// Инициализируем систему рисования 
-	RCubeRender = new RenderClass ( m_D3D->D3DGC, MyManager, m_D3D, m_Text );
-	
 // +++++++++++++++++++++   Custom Cursor   ++++++++++++++++++++++++++++++++++
 	XMFLOAT4 MouseCursorPos = {0.0f, 0.0f, 30.0f, 30.0f};
 	{
 		// Инициализируцем буферы для m_Bitmap
-		int TempIndex = MyManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 1, 6, MyManager->TexturesArr[10]->SRV );
+		int TempIndex = MyManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 4, 6, MyManager->TexturesArr[10]->SRV );
 		m_Bitmap = new FlatObjectClass;
 		hr = m_Bitmap->Init ( m_D3D->D3DGC->ScreenWidth, m_D3D->D3DGC->ScreenHeight,
 			MouseCursorPos,
@@ -835,6 +850,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	RCUBE_RELEASE( SolidBrushOutline );
 	RCUBE_RELEASE( GradientStops );
 
+
 	delete FontOnTexture;
 // ------------------------------    Рисуем текстом на текстурах    -------------------------------
 
@@ -843,6 +859,26 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	SENTENCE_INIT_DATA* Data = new SENTENCE_INIT_DATA;
 	ZeroMemory(Data, sizeof(SENTENCE_INIT_DATA));
 	int Number;
+	Data->MaxLength = 128;
+	Data->PosX = 100;
+	Data->PosY = 90;
+	Data->ShowType = SHOW;
+	Data->Colour = { 0.0f, 1.0f, 0.0f, 1.0f };
+	Data->Render = true;
+	Data->FontType = 1;
+	Data->Level = INGAME_TEXT;
+	Number = MyManager->AddSentence ( Data, "FPS" );
+
+	Data->MaxLength = 128;
+	Data->PosX = 100;
+	Data->PosY = 90;
+	Data->ShowType = SHOW;
+	Data->Colour = { 0.0f, 1.0f, 0.0f, 1.0f };
+	Data->Render = true;
+	Data->FontType = 5;
+	Data->Level = INGAME_TEXT;
+	Number = MyManager->AddSentence ( Data, "CPU" );
+
 
 	Data->MaxLength = 128;
 	Data->PosX = 100;
@@ -852,7 +888,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Data->Render = true;
 	Data->FontType = 2;
 	Data->Level = INGAME_TEXT;
-	Number = m_Text->AddSentence(Data, "W - Вперёд, S - Назад");
+	Number = MyManager->AddSentence(Data, "W - Вперёд, S - Назад");
 
 	Data->MaxLength = 128;
 	Data->PosY = 130;
@@ -860,7 +896,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Data->Colour = { 0.0f, 1.0f, 0.0f, 1.0f };
 	Data->Render = true;
 	Data->FontType = 2;
-	Number = m_Text->AddSentence(Data, "R - Вверх, F - вниз");
+	Number = MyManager->AddSentence(Data, "R - Вверх, F - вниз");
 
 	Data->MaxLength = 128;
 	Data->PosY = 160;
@@ -868,7 +904,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Data->Colour = { 1.0f, 1.0f, 0.0f, 1.0f };
 	Data->Render = true;
 	Data->FontType = 4;
-	Number = m_Text->AddSentence(Data, "A - Влево, D - вправо");
+	Number = MyManager->AddSentence(Data, "A - Влево, D - вправо");
 
 	Data->MaxLength = 128;
 	Data->PosY = 190;
@@ -876,7 +912,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Data->Colour = { 0.0f, 1.0f, 0.0f, 1.0f };
 	Data->Render = true;
 //	Data->Level = 0;
-	Number = m_Text->AddSentence(Data, "Это тест Scrolling строки.");
+	Number = MyManager->AddSentence(Data, "Это тест Scrolling строки.");
 
 	Data->MaxLength = 128;
 	Data->PosY = 190;
@@ -885,7 +921,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Data->Render = true;
 	Data->FontType = 0;
 //	Data->Level = 0;
-	Number = m_Text->AddSentence(Data, m_D3D->GetVideoCardString());
+	Number = MyManager->AddSentence(Data, m_D3D->GetVideoCardString());
 
 	Data->MaxLength = 128;
 	Data->PosY = 190;
@@ -894,7 +930,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Data->Render = true;
 	Data->FontType = 0;
 	//	Data->Level = 0;
-	Number = m_Text->AddSentence( Data, m_D3D->GetVideoCardString() );
+	Number = MyManager->AddSentence( Data, m_D3D->GetVideoCardString() );
 
 	Data->MaxLength = 128;
 	Data->PosY = 190;
@@ -903,38 +939,38 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Data->Render = true;
 	Data->FontType = 0;
 	//	Data->Level = 0;
-	Number = m_Text->AddSentence( Data, m_D3D->GetVideoCardString() );
+	Number = MyManager->AddSentence( Data, m_D3D->GetVideoCardString() );
 	// 9
 	Data->MaxLength = 128;
 	Data->PosY = 900;
 	Data->FontType = 3;
-	Number = m_Text->AddSentence(Data, "Keys: W,S,A,D,R,F | 8,9 - Light Rotate | Num key -/+ Sound | P - Exit");
+	Number = MyManager->AddSentence(Data, "Keys: W,S,A,D,R,F | 8,9 - Light Rotate | Num key -/+ Sound | P - Exit");
 
 	// 10
 	Data->FontType = 2;
 	Data->MaxLength = 128;
 	Data->PosY = 370;
 	Data->ShowType = SHOW;
-	Number = m_Text->AddSentence( Data, "         " );
+	Number = MyManager->AddSentence( Data, "         " );
 	// 11
 	Data->PosY = 400;
-	Number = m_Text->AddSentence( Data, "         " );
+	Number = MyManager->AddSentence( Data, "         " );
 	// 12
 	Data->PosY = 430;
-	Number = m_Text->AddSentence( Data, "         " );
+	Number = MyManager->AddSentence( Data, "         " );
 	// 13
 	Data->PosY = 400;
-	Number = m_Text->AddSentence(Data, "         ");
+	Number = MyManager->AddSentence(Data, "         ");
 
 	// 14
 	Data->FontType = 0;
 	Data->PosY = 470;
-	Number = m_Text->AddSentence(Data, "         ");
+	Number = MyManager->AddSentence(Data, "         ");
 
 	// 15
 	Data->FontType = 0;
 	Data->PosY = 500;
-	Number = m_Text->AddSentence(Data, "         ");
+	Number = MyManager->AddSentence(Data, "         ");
 
 	// 15 Текст о Видеоплате
 	Data->MaxLength = 128;
@@ -947,7 +983,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	char Str[256];
 	strcpy_s(Str, 249, m_D3D->GetVideoCardString());
 	strcat_s(Str, 249, " | Clustered Shading with Spotlight shadows DEMO");
-	Number = m_Text->AddSentence(Data, Str);
+	Number = MyManager->AddSentence(Data, Str);
 
 	delete Data;
 
@@ -1132,8 +1168,8 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 					 NULL,		// Нет анимации
 					 { 112.0f, 84.0f, 800.0f, 600.0f },
 					 MyManager->TexturesArr[18]->SRV,
-					 MyManager,
-					 m_Text
+					 MyManager
+					 //m_Text
 					 );
 
 	MyManager->AddMenu ( dynamic_cast<Menu*> (MainMenu) );	// Добавляем меню в список существующих
@@ -1458,7 +1494,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	AnimTexture = new KF2DTextureAnimation;
 	XMFLOAT4 ObjData = { 100.0f, 800.0f, 100.0f, 100.0f };
 	{
-		int TempIndex = MyManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 1, 6, MyManager->TexturesArr[10]->SRV );
+		int TempIndex = MyManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 4, 6, MyManager->TexturesArr[10]->SRV );
 		AnimTexture->Init ( hwnd, m_D3D->D3DGC, 8, 8, MyManager->TexturesArr[8]->SRV,
 			MyManager->GetShaderIndexByName ( L"FireAnimation" ),	// анимация в меню FireAnimation_vs
 			MyManager->GetShaderIndexByName ( L"KF2DObj" ),			// возвращаем KF2DObj_vs
@@ -1477,8 +1513,8 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 		AnimTexture,	// Передаём объект анимации в меню
 		{ float(screenWidth - 250) , 0.0f, 250.0f, float(screenHeight) },
 		MyManager->TexturesArr[18]->SRV,
-		MyManager,
-		m_Text
+		MyManager
+		//m_Text
 		);
 	
 	MyManager->AddMenu ( dynamic_cast<Menu*> (Hud) );	// Добавляем меню в список существующих
@@ -1823,8 +1859,8 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 
 		ModelList = new KFModelList;
 
-		ModelList->Init(hwnd, m_D3D->D3DGC, m_D3D, m_Frustum);
-		ModelList->IsClusteringUse = false;
+		ModelList->Init(m_D3D->D3DGC, m_D3D, m_Frustum);
+//		ModelList->IsClusteringUse = false;
 
 //		ClusterMap = new KFClusterMap(100, 100, 100, 50, 50, 50);
 
@@ -1846,12 +1882,19 @@ bool GraphicsClass::Frame( FPSTimers &Counters, DXINPUTSTRUCT& InputStruct1)
 {
 	bool result = true;
 	
-	char Str1[128];
+//	char Str1[STRMAXLENGTH];
 
 	++ShadowFrameCounts;
 	fpstimers = Counters;
 // делаем доступ к скоросити компьютера для текста. Чтобы отрисовывать его синхронно с FPS системы
-	m_Text->fpstimers = Counters;
+//	m_Text->fpstimers = Counters;
+	RCubeRender->fpstimers = Counters;
+
+	sprintf_s ( Str1, STRMAXLENGTH, "Fps : %d", Counters.FpsRate );
+	MyManager->UpdateSentence ( 0, Str1, 20, 20 );
+
+	sprintf_s ( Str1, STRMAXLENGTH, "ИСПОЛЬЗОВАНИЕ ПРОЦЕССОРА: %d %%", Counters.CpuVal );
+	MyManager->UpdateSentence ( 1, Str1, 20, 50 );
 
 // ++++++++++++++++++++     Вращаем свет     ++++++++++++++++++++++++++++++++++++
 /*
@@ -1895,13 +1938,13 @@ bool GraphicsClass::Frame( FPSTimers &Counters, DXINPUTSTRUCT& InputStruct1)
 //	_beginthreadex(NULL,0, reinterpret_cast<_beginthreadex_proc_type>(SnowThread), &fpstimers , CREATE_SUSPENDED , &ThreadAdr );
 
 //	Profile->StopTimer( Str );
-//	m_Text->UpdateSentence( 4, Str, 100, 160 );
+//	MyManager->->UpdateSentence( 4, Str, 100, 160 );
 
 	TorchFire->Frame( Counters );
 	FireParticles->Frame( Counters );
 	// Измеряем быстродействие
 //	Profile->StopTimer(Str);
-//	m_Text->UpdateSentence(5, Str, 100, 160);
+//	MyManager->->UpdateSentence(5, Str, 100, 160);
 	// Измеряем быстродействие
 // --------------------------------------------------  PARTICLE SYSTEM  -----------------------------
 
@@ -1920,7 +1963,7 @@ bool GraphicsClass::Frame( FPSTimers &Counters, DXINPUTSTRUCT& InputStruct1)
 	}
 	// Измеряем быстродействие
 //		Profile->StopTimer(Str);
-//		m_Text->UpdateSentence(5, Str, m_Text->GetPosX(5), m_Text->GetPosY(5));
+//		MyManager->->UpdateSentence(5, Str, MyManager->GetPosX(5), MyManager->GetPosY(5));
 	// Измеряем быстродействие
 
 // ++++++++++++++  FRUSTUM +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1947,9 +1990,9 @@ bool GraphicsClass::Frame( FPSTimers &Counters, DXINPUTSTRUCT& InputStruct1)
 
 // Измеряем быстродействие
 	Profile->StopTimer(Str);
-	strcpy_s(Str1, 128, "LightsFrame() : ");
-	strcat_s(Str1, 128, Str);
-	m_Text->UpdateSentence(13, Str1, m_Text->GetPosX( 13 ), m_Text->GetPosY( 13 ) );
+	strcpy_s(Str1, STRMAXLENGTH, "LightsFrame() : ");
+	strcat_s(Str1, STRMAXLENGTH, Str);
+	MyManager->UpdateSentence(13, Str1, MyManager->GetPosX( 13 ), MyManager->GetPosY( 13 ) );
 // Измеряем быстродействие
 
 
@@ -1965,7 +2008,6 @@ bool GraphicsClass::Frame( FPSTimers &Counters, DXINPUTSTRUCT& InputStruct1)
 
 bool GraphicsClass::Render(int& mouseX, int& mouseY )
 {
-	bool result;
 
 	// Clear the buffers to begin the scene.
 	m_D3D->SetBackBufferRenderTarget();
@@ -1978,65 +2020,67 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 // Инициализируем массив матриц для всех шейдеров 
 	UpdateConstantBuffer();
 
-	char Str[128];
-	char Str1[128];
+	char Str[STRMAXLENGTH];
+	char Str1[STRMAXLENGTH];
 //	sprintf_s(Str, 50, "Spec Power = %8.5f", m_Light->GetSpecularPower());
-//	m_Text->UpdateSentence(4, Str, 100, 160);
+//	MyManager->UpdateSentence(4, Str, 100, 160);
 
 //	sprintf_s(Str, 70, "Cam pos: X: %4.2f , Y: %4.2f , Z: %4.2f", m_D3D->D3DGC->CameraPosition.x, m_D3D->D3DGC->CameraPosition.y, m_D3D->D3DGC->CameraPosition.z );
-//	m_Text->UpdateSentence(3, Str, 100, 130);
+//	MyManager->UpdateSentence(3, Str, 100, 130);
 	float angel = Hud->GetScrollBarValue( 2 );
 	sprintf_s( Str, 70, "DepthBias : %4.2f", angel );
-	m_Text->UpdateSentence( 3, Str, 100, 130 );
+	MyManager->UpdateSentence( 3, Str, 100, 130 );
 
 //	float angel = atan2(0.0f - m_D3D->D3DGC->CameraPosition.x, 0.0f - m_D3D->D3DGC->CameraPosition.z) * 57.29578049f;
 
 	m_Camera->GetLookAt( CamLook.Vec );
 //	sprintf_s( Str, 70, "Cam LookAt: X: %4.2f , Y: %4.2f , Z: %4.2f , W: %4.2f", CamLook.Fl4.x, CamLook.Fl4.y, CamLook.Fl4.z, CamLook.Fl4.w );
-//	m_Text->UpdateSentence( 2, Str, 100, 100 );
+//	MyManager->UpdateSentence( 2, Str, 100, 100 );
 	angel = Hud->GetScrollBarValue( 3 );
 	sprintf_s(Str, 70, "SlopeScaledDepthBias : %4.2f", angel );
-	m_Text->UpdateSentence(2, Str, 100, 100);
+	MyManager->UpdateSentence(2, Str, 100, 100);
 
 	angel = Hud->GetScrollBarValue ( 1 );
 	sprintf_s ( Str, 50, "DiffuseX = %6.5f", angel );
   //	sprintf_s( Str, 50, "Active P = %i", m_ParticleSystem->GetActiveParticleAmmount() );
-	m_Text->UpdateSentence ( 4, Str, 100, 160 );
+	MyManager->UpdateSentence ( 4, Str, 100, 160 );
 
 	angel = Hud->GetScrollBarValue( 4 );
 	sprintf_s( Str, 50, "PCF_Amount = %4.2f", angel );
-	m_Text->UpdateSentence( 5, Str, 100, 190 );
+	MyManager->UpdateSentence( 5, Str, 100, 190 );
 
 	angel = Hud->GetScrollBarValue( 5 );
 	sprintf_s( Str, 50, "PCF_Step = %4.2f", angel );
-	m_Text->UpdateSentence( 6, Str, 100, 220 );
+	MyManager->UpdateSentence( 6, Str, 100, 220 );
 //	sprintf_s( Str, 50, "Lights %i", m_Light->GetActiveLghtNumber() );
-//	m_Text->UpdateSentence( 5, Str, 100, 160 );
+//	MyManager->UpdateSentence( 5, Str, 100, 160 );
 
-	angel = Hud->GetScrollBarValue( 6 );
-	sprintf_s( Str, 50, "ShadowCLAMP = %1.4f", angel );
-	m_Text->UpdateSentence( 7, Str, 100, 250 );
+//	angel = Hud->GetScrollBarValue( 6 );
+//	sprintf_s( Str, 50, "ShadowCLAMP = %1.4f", angel );
+//	MyManager->UpdateSentence( 7, Str, 100, 250 );
+	sprintf_s ( Str1, STRMAXLENGTH - 1, "Время рисования всех строк текста : %s", Global );
+	MyManager->UpdateSentence ( 7, Str1, 100, 250 );
 
 	angel = Hud->GetScrollBarValue( 7 );
 	sprintf_s( Str, 50, "Shadow Divider = %4.1f", angel );
-	m_Text->UpdateSentence( 8, Str, 100, 280 );
+	MyManager->UpdateSentence( 8, Str, 100, 280 );
 
 // LightInfo
 	sprintf_s( Str, 50, "Active Lights = %d", m_D3D->mActiveLights );
-	m_Text->UpdateSentence( 11, Str, 100, 310 );
+	MyManager->UpdateSentence( 11, Str, 100, 310 );
 
 	sprintf_s( Str, 50, "Visible Lights = %d", m_D3D->mVisibleLights );
-	m_Text->UpdateSentence( 12, Str, 100, 340 );
+	MyManager->UpdateSentence( 12, Str, 100, 340 );
 
 	angel = Hud->GetScrollBarValue(8);
 	sprintf_s(Str, 50, "DiffuseY = %1.5f", angel);
-	m_Text->UpdateSentence(14, Str, 100, 470);
+	MyManager->UpdateSentence(14, Str, 100, 470);
 
 	angel = Hud->GetScrollBarValue(9);
 	sprintf_s(Str, 50, "DiffuseZ = %1.5f", angel);
-	m_Text->UpdateSentence(15, Str, 100, 500);
+	MyManager->UpdateSentence(15, Str, 100, 500);
 
-	m_Text->UpdateSentence(16, m_Text->GetSentenceText(16), m_Text->GetPosX(16), m_Text->GetPosY(16));
+	MyManager->UpdateSentence(16, MyManager->GetSentenceText(16), MyManager->GetPosX(16), MyManager->GetPosY(16));
 
 // +++++++++++++++++++++    РИСУЕМ ОБЪЕКТЫ НА СЦЕНЕ    +++++++++++++++++++++++++++++++++++++++++++
 	MyManager->SetActiveShadersInProgramm( m_D3D->LightShaderForDraw );
@@ -2053,7 +2097,7 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 	KFTerrain->Frame(true, m_Camera->position);
 	// Измеряем быстродействие
 //		Profile->StopTimer(Str);
-//		m_Text->UpdateSentence(5, Str, 100, 160);
+//		MyManager->UpdateSentence(5, Str, 100, 160);
 	// Измеряем быстродействие
 
 	KFTerrain->LightRender();
@@ -2065,11 +2109,14 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 
 	Profile->StopTimer(Str);
 
-	strcpy_s(Str1, 128, "Frustum объектам : ");
-	strcat_s(Str1, 128, Str);
-	m_Text->UpdateSentence(10, Str1, m_Text->GetPosX( 10 ), m_Text->GetPosY( 10 ) );
+	strcpy_s(Str1, STRMAXLENGTH, "Frustum объектам : ");
+	strcat_s(Str1, STRMAXLENGTH, Str);
+	MyManager->UpdateSentence(10, Str1, MyManager->GetPosX( 10 ), MyManager->GetPosY( 10 ) );
 	
 	ModelList->LightRender();
+
+	MyManager->Frustum_3D_Objects ( m_Frustum );
+	RCubeRender->RenderScene ();
 
 	m_D3D->TurnOffAlphaBlending();
 
@@ -2077,7 +2124,7 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 
 	// Измеряем быстродействие
 //	Profile->StopTimer(Str);
-//	m_Text->UpdateSentence(4, Str, 100, 160);
+//	MyManager->UpdateSentence(4, Str, 100, 160);
 	// Измеряем быстродействие
 
 	// Обязательно для систем частиц
@@ -2094,7 +2141,7 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 	// ++++++++    FXAA    +++++++++++	
 	// Измеряем быстродействие
 //			Profile->StopTimer(Str);
-//			m_Text->UpdateSentence(4, Str, 100, 160);
+//			MyManager->UpdateSentence(4, Str, 100, 160);
 	// Измеряем быстродействие
 
 //	m_D3D->TurnOnAlphaBlending();
@@ -2109,7 +2156,7 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 	SnowParticles->Render();
 
 //	Profile->StopTimer( Str );
-//	m_Text->UpdateSentence( 5, Str, 100, 160 );
+//	MyManager->UpdateSentence( 5, Str, 100, 160 );
 
 
 	// Измеряем быстродействие
@@ -2120,7 +2167,7 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 	MyManager->SetActiveShadersInProgramm( FireParticles->ShaderForDraw );
 	FireParticles->Render();
 //	Profile->StopTimer( Str );
-//	m_Text->UpdateSentence( 5, Str, 100, 160 );
+//	MyManager->UpdateSentence( 5, Str, 100, 160 );
 	// TorchFire Факел, костёр
 
 	// Измеряем быстродействие
@@ -2131,7 +2178,7 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 	MyManager->SetActiveShadersInProgramm( TorchFire->ShaderForDraw );
 	TorchFire->Render();
 //	Profile->StopTimer( Str );
-//	m_Text->UpdateSentence( 4, Str, 100, 160 );
+//	MyManager->UpdateSentence( 4, Str, 100, 160 );
 
 	// Измеряем быстродействие
 	m_D3D->TurnZBufferOn();
@@ -2154,15 +2201,19 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 
 	// ++++++++++++++++++++++++     Рисуем Текст в игре     +++++++++++++++++++++++++++++
 
-	// Измеряем быстродействие
-	// Федя 540 ns    Мой  517 ns   
-	//	char Str[25];// = new char [25];
-	//	Profile->StartTimer();
-	// Измеряем быстродействие
+
 	if (!Hud->GetButtonState(7))
 	{
-		MyManager->SetActiveShadersInProgramm( m_Text->TextShaderIndex );
-		result = m_Text->Render( 0 );
+		MyManager->SetActiveShadersInProgramm( MyManager->TextShaderIndex );
+// Измеряем быстродействие
+// Федя 540 ns    Мой  517 ns   
+//	char Str[25];// = new char [25];
+	Profile->StartTimer();
+// Измеряем быстродействие
+		RCubeRender->RenderText ( 0 );
+// Измеряем быстродействие
+	Profile->StopTimer( Global );
+// Измеряем быстродействие
 	}
 
 /*
@@ -2171,10 +2222,7 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 	else
 	m_Light->LightRender(0, 1);
 */
-	// Измеряем быстродействие
-	//	Profile->StopTimer(Str);
-	//	m_Text->UpdateSentence(4, Str, 100, 160);
-	// Измеряем быстродействие
+
 /*	if (!result)
 	{
 		return false;
@@ -2197,10 +2245,10 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 //		Hud->Draw();
 		// Измеряем быстродействие
 		//	Profile->StopTimer(Str);
-		//	m_Text->UpdateSentence(4, Str, 100, 160);
+		//	MyManager->UpdateSentence(4, Str, 100, 160);
 		// Измеряем быстродействие
-		MyManager->SetActiveShadersInProgramm( m_Text->TextShaderIndex );
-		result = m_Text->Render( 2 ); // Рисуем текст для HUD
+		MyManager->SetActiveShadersInProgramm( MyManager->TextShaderIndex );
+		RCubeRender->RenderText( 2 ); // Рисуем текст для HUD
 //		MyManager->SetActiveShadersInProgramm(2);
 	}
 
@@ -2246,12 +2294,12 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 		m_D3D->BlurScene(MyManager->GetComputeShader( m_D3D->BlureHorizComputeShaderIndex ), MyManager->GetComputeShader( m_D3D->BlureVertComputeShaderIndex ), 2);
 		// Измеряем быстродействие
 //			Profile->StopTimer(Str);
-//			m_Text->UpdateSentence(13, Str, m_Text->GetPosX( 13 ), m_Text->GetPosY( 13 ) );
+//			MyManager->UpdateSentence(13, Str, MyManager->GetPosX( 13 ), MyManager->GetPosY( 13 ) );
 		MyManager->SetActiveShadersInProgramm ( MainMenu->ShaderForDraw );
 		RCubeRender->RenderMenu ( 0 );
 //		MainMenu->Draw();
-		MyManager->SetActiveShadersInProgramm( m_Text->TextShaderIndex );
-		result = m_Text->Render( 1 );	// Рисуем текст для меню
+		MyManager->SetActiveShadersInProgramm( MyManager->TextShaderIndex );
+		RCubeRender->RenderText ( 1 );	// Рисуем текст для меню
 
 	}
 // ++++++++++++++++++++++++     Рисуем текст для меню     +++++++++++++++++++++++++++++

@@ -251,6 +251,8 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
   <ItemGroup>
     <ClInclude Include="..\DirectXTex-master\DDSTextureLoader\DDSTextureLoader.h" />
     <ClInclude Include="..\DirectXTex-master\WICTextureLoader\WICTextureLoader.h" />
+    <ClInclude Include="3DModel.h" />
+    <ClInclude Include="BoundingBox.h" />
     <ClInclude Include="BillBord.h" />
     <ClInclude Include="ClusterShadingFragmentFactory.h" />
     <ClInclude Include="D3DGlobalContext.h" />
@@ -259,6 +261,7 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClInclude Include="EffectsManager.h" />
     <ClInclude Include="Emiters.h" />
     <ClInclude Include="FireParticleSystem.h" />
+    <ClInclude Include="FontClass.h" />
     <ClInclude Include="FPSTimers.h" />
     <ClInclude Include="IndexesArray.h" />
     <ClInclude Include="KF2DTextureAnimation.h" />
@@ -269,11 +272,10 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClInclude Include="KFPicking.h" />
     <ClInclude Include="Light_def.h" />
     <ClInclude Include="Menu.h" />
+    <ClInclude Include="Mesh_Data.h" />
     <ClInclude Include="RenderClass.h" />
-    <ClInclude Include="RObject.h" />
     <ClInclude Include="ResourceManager.h" />
     <ClInclude Include="KFShadowWork.h" />
-    <ClInclude Include="RResources.h" />
     <ClInclude Include="SceneObject.h" />
     <ClInclude Include="Terrain.h" />
     <ClInclude Include="KF_PXControler.h" />
@@ -291,7 +293,6 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClInclude Include="KFButton.h" />
     <ClInclude Include="D3dClass.h" />
     <ClInclude Include="EngineKernel.h" />
-    <ClInclude Include="FontClass.h" />
     <ClInclude Include="FrustumClass.h" />
     <ClInclude Include="GraphicsClass.h" />
     <ClInclude Include="MenuControler.h" />
@@ -303,8 +304,8 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="StringsListClass.h" />
     <ClInclude Include="targetver.h" />
-    <ClInclude Include="TextClass.h" />
     <ClInclude Include="Texture.h" />
+    <ClInclude Include="Text_def.h" />
     <ClInclude Include="TimerClass.h" />
     <ClInclude Include="TorchFireParticles.h" />
     <ClInclude Include="Buffers_def.h" />
@@ -312,10 +313,13 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
   <ItemGroup>
     <ClCompile Include="..\DirectXTex-master\DDSTextureLoader\DDSTextureLoader.cpp" />
     <ClCompile Include="..\DirectXTex-master\WICTextureLoader\WICTextureLoader.cpp" />
+    <ClCompile Include="3DModel.cpp" />
+    <ClCompile Include="BoundingBox.cpp" />
     <ClCompile Include="ClusterShadingFragmentFactory.cpp" />
     <ClCompile Include="EffectsManager.cpp" />
     <ClCompile Include="Emiters.cpp" />
     <ClCompile Include="FireParticleSystem.cpp" />
+    <ClCompile Include="FontClass.cpp" />
     <ClCompile Include="IndexesArray.cpp" />
     <ClCompile Include="KF2DTextureAnimation.cpp" />
     <ClCompile Include="KFClusterMap.cpp" />
@@ -324,6 +328,7 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClCompile Include="KFModelList.cpp" />
     <ClCompile Include="KFPicking.cpp" />
     <ClCompile Include="Menu.cpp" />
+    <ClCompile Include="Mesh_Data.cpp" />
     <ClCompile Include="RenderClass.cpp" />
     <ClCompile Include="ResourceManager.cpp" />
     <ClCompile Include="KFShadowWork.cpp" />
@@ -342,7 +347,6 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClCompile Include="KFButton.cpp" />
     <ClCompile Include="D3dClass.cpp" />
     <ClCompile Include="EngineKernel.cpp" />
-    <ClCompile Include="FontClass.cpp" />
     <ClCompile Include="FrustumClass.cpp" />
     <ClCompile Include="GraphicsClass.cpp" />
     <ClCompile Include="MenuControler.cpp" />
@@ -357,7 +361,6 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="StringsListClass.cpp" />
-    <ClCompile Include="TextClass.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="TimerClass.cpp" />
     <ClCompile Include="TorchFireParticles.cpp" />
