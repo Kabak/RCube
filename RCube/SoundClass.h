@@ -75,7 +75,7 @@ public:
 	long MusicVolume;
 	long EffectsVolume;
 
-	// Максимальный размер буфера для музыкального файла ( декодированного ) - 10 000 000 байт = 10 Мбайт
+	// Максимальный размер буферы для музыкального файла ( декодированного ) - 10 000 000 байт = 10 Мбайт
 	bool LoadStereoWaveFile(unsigned char*, IDirectSoundBuffer8**);
 	bool LoadMonoWaveFile(unsigned char*, IDirectSoundBuffer8**, IDirectSound3DBuffer8**);
 	bool LoadOggMusicFile(unsigned char*, IDirectSoundBuffer8**, int size);

@@ -82,7 +82,9 @@ ID3D11ShaderResourceView* sharedTex11_SRV;	// SRV Текстуры на которой рисуются ш
 // Для Clustering
 		ID3D11Texture2D* m_depthStencilBuffer;
   ID3D11RasterizerState* DefaultRasterizerState;
+  ID3D11RasterizerState* WireFrameRasterizerState;
 ID3D11DepthStencilState* m_depthStencilState;
+ID3D11DepthStencilState* CubeMap_DepthStencilState;
  	   ID3D11BlendState* mGeometryBlendState;
 // Для системы частиц, чтобы был эффект кристаликов
 	   ID3D11RasterizerState* RasterStateCullNone;

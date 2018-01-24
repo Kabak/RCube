@@ -21,21 +21,29 @@ void ResourceManager::ShutDown()
 {
 	int c = 0;
 	size_t i = 0;
-// 3D MODELS
-//	Delete_3D_Object ( 0 );
-/*
-// 3D Models Buffers
+// CUBEMAPS
 	c = 0;
-	i = _3DModelsMeshBuffers.size ();
+	i = CubeMaps.size ();
 	while ( c < i )
 	{
-		RCUBE_DELETE ( _3DModelsMeshBuffers[c] );									// Удаляем сам шрифт
+		Delete_Flat_ObjectBuffers ( CubeMaps[c]->CubeMapBuffersIndex );
+		DeleteTexture ( CubeMaps[c]->CubeMapTextureIndex );
 		++c;
 	}
-	_3DModelsMeshBuffers.clear ();
-	Unused3DModelsIndex.clear ();
-	Unused3DModelsMeshBuffersIndex.clear ();
-*/
+	CubeMaps.clear ();
+	
+// TERRAIN
+	c = 0;
+	i = Terrains.size ();
+	while ( c < i )
+	{
+		Delete_Terrain ( c );
+		++c;
+	}
+	Terrains.clear ();
+	UnusedTerrainsIndex.clear ();
+	UnusedTerrainsBuffersIndex.clear ();
+
 // 3D MODELS
 	c = 0;
 	i = _3DModels.size ();
@@ -1136,7 +1144,7 @@ int ResourceManager::Create_Flat_Obj_Buffers (bool CPUAccess, UINT InstanceAmoun
 
 	VertexBuffer <Vertex_FlatObject>* FlatObjectVB = nullptr;
 
-	VertexBuffer <PositionType>* InstanceVB = nullptr;
+//	VertexBuffer <PositionType>* InstanceVB = nullptr;
 
 //	VertexBuffer <Colour_Particles_Instance>* Instances_Colour_Particles = nullptr;
 
@@ -1794,11 +1802,11 @@ bool ResourceManager::LoadKFObject ( std::wstring FileName, _3DModel* New_3D_Mod
 		New_3D_Model->Meshes.push_back ( NewMesh );
 
 		// Читаем количество вертексов в меше
-		file.read ( ( UCHAR* ) &NewMesh->VertexBufferSize, sizeof ( int ) ); // читаю размер следующего вертексного буфера
+		file.read ( ( UCHAR* ) &NewMesh->VertexBufferSize, sizeof ( int ) ); // читаю размер следующего вертексного буферы
 		New_3D_Model->ObjectVertexesCout += NewMesh->VertexBufferSize; // нахожу сумму вершин всех ранее созданных мной обьектов
 		// Читаем количество индексов в меше
 // !!!!!!!!!!!!!!!!!  НУЖНО ДЕЛАТЬ  !!!
-		//		file.read ( ( UCHAR* ) &NewMesh->IndexBufferSize, sizeof ( int ) ); // читаю размер следующего индексного буфера
+		//		file.read ( ( UCHAR* ) &NewMesh->IndexBufferSize, sizeof ( int ) ); // читаю размер следующего индексного буферы
 		
 		// Создаём VertexBuffer для загруженного меша и сохраняем его индекс
 		NewMesh->BufferIndex = Create_3D_Obj_Mesh_Buffers ( true, NewMesh->VertexBufferSize );
@@ -1967,7 +1975,7 @@ int ResourceManager::Delete_3D_Object_Meshes_Buffers ( int ObjectIndex )
 		while ( c < j )
 		{
 			int BufferIndextoDelete = _3DModels[ObjectIndex]->Meshes[c]->BufferIndex;
-			// Сохраняем освободившийся индекс буфера меша
+			// Сохраняем освободившийся индекс буферы меша
 			Unused3DModelsMeshBuffersIndex.push_back ( BufferIndextoDelete );
 			// Удаляем текстуру от меша и сохраняем её номер в свободных
 			DeleteTexture ( _3DModels[ObjectIndex]->Meshes[c]->TextureIndex );
@@ -1993,7 +2001,7 @@ int ResourceManager::Delete_3D_Object ( int ObjectIndex )
 	{
 		// Сохраняем освободившийся индекс 3D модели
 		Unused3DModelsIndex.push_back ( _3DModels[ObjectIndex]->_3D_Obj_Index );
-		// Удаляем все : буфера , текстуры , материалы модели
+		// Удаляем все : буферы , текстуры , материалы модели
 		Delete_3D_Object_Meshes_Buffers ( ObjectIndex );
 		// Удаляем модель
 		RCUBE_DELETE ( _3DModels[ObjectIndex] );
@@ -2174,4 +2182,961 @@ void ResourceManager::Frustum_3D_Objects ( FrustumClass* Frustum )
 
 	}
 
+}
+
+/*
+bool ResourceManager::GenerateRandTerrain ( Terrain* TerrainObj, TerrainParam* LandParam, float VertixesIndent )
+{
+
+	int  i, j, k, index = 0;
+	float RealPixelVertexX, RealPixelVertexY;
+
+	RealPixelVertexX = -( VertixesIndent * ( ( TerrainObj->g_Rows - 1 ) / 2 ) );
+	RealPixelVertexY = -( VertixesIndent * ( ( TerrainObj->g_Columns - 1 ) / 2 ) );
+
+	// Create the structure to hold the height map data.
+	TerrainObj->m_heightMap = new HeightMapType[TerrainObj->g_Rows * TerrainObj->g_Columns];
+	if ( !TerrainObj->m_heightMap )
+	{
+		return false;
+	}
+
+	// Initialize the position in the image data buffer.
+	k = 0;
+
+//	int sj = -( TerrainObj->g_Columns / 2 ), si = -( TerrainObj->g_Rows / 2 );
+
+	// Read the image data into the height map.
+	for ( j = 0; j < TerrainObj->g_Columns; j++ )
+	{
+//		si = -( TerrainObj->g_Rows / 2 );
+		RealPixelVertexX = -( VertixesIndent * ( ( TerrainObj->g_Rows - 1 ) / 2 ) );
+		for ( i = 0; i < TerrainObj->g_Rows; i++ )
+		{
+			//height = -10000000.0f;
+
+//			si++;
+			index = ( TerrainObj->g_Rows * j ) + i;
+
+			TerrainObj->m_heightMap[index].x = RealPixelVertexX;
+			TerrainObj->m_heightMap[index].y = 0.0f;
+			TerrainObj->m_heightMap[index].z = RealPixelVertexY;
+
+			//++index;
+			RealPixelVertexX += VertixesIndent;
+
+			k += 3;
+		}
+
+		RealPixelVertexY += VertixesIndent;
+//		sj++;
+	}
+
+	GenerateLandScape ( TerrainObj, LandParam, TerrainObj->m_heightMap );
+
+	return true;
+
+}
+*/
+/*
+bool  ResourceManager::ReadTerrainFromTexture ( Terrain* TerrainObj, TerrainParam* LandParam, float VertixesIndent )
+{
+
+	FILE* filePtr;
+	int error;
+	unsigned int count;
+	BITMAPFILEHEADER bitmapFileHeader;
+	BITMAPINFOHEADER bitmapInfoHeader;
+	int imageSize;
+	unsigned char* bitmapImage;
+	int  i, j, index = 0, index2 = 0;
+	float LandX = 0.0f, LandY = 0.0f; // кортинаты в текстуре
+
+	float RealPixelVertexX, RealPixelVertexY;
+
+	RealPixelVertexX = -( VertixesIndent * ( ( TerrainObj->g_Rows - 1 ) / 2 ) );
+	RealPixelVertexY = -( VertixesIndent * ( ( TerrainObj->g_Columns - 1 ) / 2 ) );
+
+	int TextureWidth, TextureHeight;
+
+	// Open the height map file in binary.
+	error = fopen_s ( &filePtr, LandParam->filename, "rb" );
+	if ( error != 0 )
+	{
+		return false;
+	}
+
+	// Read in the file header.
+	count = ( UINT ) fread ( &bitmapFileHeader, sizeof ( BITMAPFILEHEADER ), 1, filePtr );
+	if ( count != 1 )
+	{
+		return false;
+	}
+
+	// Read in the bitmap info header.
+	count = ( UINT ) fread ( &bitmapInfoHeader, sizeof ( BITMAPINFOHEADER ), 1, filePtr );
+	if ( count != 1 )
+	{
+		return false;
+	}
+
+	// Save the dimensions of the terrain.
+	TextureWidth = bitmapInfoHeader.biWidth;
+	TextureHeight = bitmapInfoHeader.biHeight;
+
+	// Calculate the size of the bitmap image data.
+	imageSize = TextureWidth * TextureHeight * 4;
+
+	// Allocate memory for the bitmap image data.
+	bitmapImage = new unsigned char[imageSize];
+	if ( !bitmapImage )
+	{
+		return false;
+	}
+
+	// Move to the beginning of the bitmap data.
+	fseek ( filePtr, bitmapFileHeader.bfOffBits, SEEK_SET );
+
+	// Read in the bitmap image data.
+	count = ( UINT ) fread ( bitmapImage, 1, imageSize, filePtr );
+	if ( count != imageSize )
+	{
+		return false;
+	}
+
+	// Close the file.
+	error = fclose ( filePtr );
+	if ( error != 0 )
+	{
+		return false;
+	}
+
+	int sj = -( TerrainObj->g_Columns / 2 ), si = -( TerrainObj->g_Rows / 2 );
+
+	// Create the structure to hold the height map data.
+	TerrainObj->m_heightMap = new HeightMapType[TerrainObj->g_Rows * TerrainObj->g_Columns];
+	if ( !TerrainObj->m_heightMap )
+	{
+		return false;
+	}
+
+
+	// Read the image data into the height map.
+	for ( j = 0;  j < TerrainObj->g_Columns; j++ )
+	{
+		si = -( TerrainObj->g_Rows / 2 );
+		RealPixelVertexX = -( VertixesIndent * ( ( TerrainObj->g_Rows - 1 ) / 2 ) );
+		for ( i = 0; i < TerrainObj->g_Rows; i++ )
+		{
+			//height = -10000000.0f;
+
+			si++;
+
+			LandX = ( float ) ( ( float ) i / TerrainObj->g_Rows ) * TextureWidth;
+			LandY = ( float ) ( ( float ) j / TerrainObj->g_Columns ) * TextureHeight;
+
+			// индекс в массиве m_heightMap
+			index = ( TerrainObj->g_Rows * j ) + i;
+			// индекс в текстуре
+			index2 = ( TextureWidth * ( int ) LandY ) + ( int ) LandX;
+
+			TerrainObj->m_heightMap[index].x = RealPixelVertexX;
+			TerrainObj->m_heightMap[index].y = ( float ) bitmapImage[index2 * 4] - 127;
+			TerrainObj->m_heightMap[index].z = RealPixelVertexY;
+
+			//	index2 += 3;
+			//++index;
+			RealPixelVertexX += VertixesIndent;
+
+		}
+
+		RealPixelVertexY += VertixesIndent;
+		sj++;
+	}
+
+	delete []bitmapImage;
+
+	return true;
+}
+*/
+
+
+void ResourceManager::LandParamChecker (TerrainParam* LandParam )
+{
+
+	if ( LandParam->MinRadius < 1 )
+	{
+
+		MessageBox ( 0, L"Мининальный радиус высот/низин меньше 1, привожу к 1.Terrain", L"Error", MB_OK );
+		LandParam->MinRadius = 1;
+
+	}
+
+	if ( LandParam->MaxRadius <= LandParam->MinRadius )
+	{
+
+		MessageBox ( 0, L"максимальный радиус гор должен дыть больше чем минимальный.Привожу к коректным значениям.Terrain", L"Error", MB_OK );
+		LandParam->MaxRadius = LandParam->MinRadius + 1;
+
+	}
+
+	if ( LandParam->HeightesCout < 0 )
+	{
+
+		MessageBox ( 0, L"количество высот не может быть меньше 0. привожу к 0.Terrain", L"Error", MB_OK );
+		LandParam->HeightesCout = 0;
+
+	}
+
+	if ( LandParam->LowlandsCout < 0 )
+	{
+
+		MessageBox ( 0, L"количество низин не может быть меньше 0. привожу к 0.Terrain", L"Error", MB_OK );
+		LandParam->LowlandsCout = 0;
+
+	}
+
+	if ( LandParam->MaxHeight < 0 )
+	{
+
+		MessageBox ( 0, L"максимальное значение высоты гор не может быть меньше 0. привожу к 0.Terrain", L"Error", MB_OK );
+		LandParam->MaxHeight = 0;
+
+	}
+
+	if ( LandParam->MinHeight < 0 )
+	{
+
+		MessageBox ( 0, L"минимальное значение размера низин не может быть меньше 0. привожу к 0.Terrain", L"Error", MB_OK );
+		LandParam->MinHeight = 0;
+
+	}
+}
+
+
+Point ResourceManager::GenerateRandPoint ( Terrain* TerrainObj )
+{
+	Point Result;
+
+	Result.x = rand () % TerrainObj->VertexInX_Row;
+	Result.y = rand () % TerrainObj->VertexInZ_Col;
+
+	return Result;
+}
+
+
+int ResourceManager::GenerateRandRadius ( int MaxRadius, int MinRadius )
+{
+	int Result = MinRadius - 1;
+
+	while ( Result < MinRadius )
+		Result = rand () % MaxRadius;
+
+	return Result;
+}
+
+
+void ResourceManager::GenerateLandScape ( Terrain* TerrainObj, TerrainParam* LandParam, HeightMapType* m_heightMap )
+{
+	// тут генеририрую низины
+	int c = 0, f, e;
+	Point PosePoint;
+	float HeighValue;
+	int index;
+	float MinXRadiusComute, MinYRadiusComute, MaxXRadiusComute, MaxYRadiusComute;
+	float Radius, distFromPointToCent;
+
+	LandParamChecker ( LandParam );
+
+	while ( c < LandParam->LowlandsCout )
+	{
+		PosePoint = GenerateRandPoint ( TerrainObj );
+
+		HeighValue = -( float ) ( rand () % LandParam->MinHeight );
+		index = ( TerrainObj->VertexInX_Row * PosePoint.y ) + PosePoint.x;
+		m_heightMap[index].y = HeighValue;
+
+		Radius = ( float ) GenerateRandRadius ( LandParam->MaxRadius, LandParam->MinRadius );
+
+		MinXRadiusComute = PosePoint.x - Radius;
+		MinYRadiusComute = PosePoint.y - Radius;
+		MaxXRadiusComute = PosePoint.x + Radius;
+		MaxYRadiusComute = PosePoint.y + Radius;
+
+		f = ( int ) MinYRadiusComute;
+		while ( f < MaxYRadiusComute )
+		{
+			e = ( int ) MinXRadiusComute;
+			while ( e < MaxXRadiusComute )
+			{
+
+				if ( ( e > 0 && e < TerrainObj->VertexInX_Row ) && ( f > 0 && f < TerrainObj->VertexInZ_Col ) )
+				{
+
+					distFromPointToCent = ( float ) sqrt ( ( f - PosePoint.y )*( f - PosePoint.y ) + ( e - PosePoint.x )*( e - PosePoint.x ) );
+					if ( distFromPointToCent <= Radius )
+					{
+						index = ( TerrainObj->VertexInX_Row * f ) + e;
+						m_heightMap[index].y = ( HeighValue - ( distFromPointToCent * HeighValue ) / Radius ) * TerrainObj->QuadVertexStep;
+
+					}
+
+				}
+				++e;
+			}
+
+			++f;
+		}
+
+
+		c++;
+	}
+
+	c = 0;
+	while ( c < LandParam->HeightesCout )
+	{
+		PosePoint = GenerateRandPoint ( TerrainObj );
+		HeighValue = ( float ) ( rand () % LandParam->MaxHeight );
+
+		index = ( TerrainObj->VertexInX_Row * PosePoint.y ) + PosePoint.x;
+		m_heightMap[index].y = HeighValue;
+
+		Radius = ( float ) GenerateRandRadius ( LandParam->MaxRadius, LandParam->MinRadius );
+
+		MinXRadiusComute = PosePoint.x - Radius;
+		MinYRadiusComute = PosePoint.y - Radius;
+		MaxXRadiusComute = PosePoint.x + Radius;
+		MaxYRadiusComute = PosePoint.y + Radius;
+
+		f = ( int ) MinYRadiusComute;
+		while ( f < MaxYRadiusComute )
+		{
+			e = ( int ) MinXRadiusComute;
+			while ( e < MaxXRadiusComute )
+			{
+
+				if ( ( e > 0 && e < TerrainObj->VertexInX_Row ) && ( f > 0 && f < TerrainObj->VertexInZ_Col ) )
+				{
+
+					distFromPointToCent = ( float ) sqrt ( ( f - PosePoint.y )*( f - PosePoint.y ) + ( e - PosePoint.x )*( e - PosePoint.x ) );
+					if ( distFromPointToCent <= Radius )
+					{
+						index = ( TerrainObj->VertexInX_Row * f ) + e;
+						m_heightMap[index].y = ( HeighValue - ( distFromPointToCent * HeighValue ) / Radius ) * TerrainObj->QuadVertexStep;
+
+					}
+
+				}
+				++e;
+			}
+
+			++f;
+		}
+
+
+		c++;
+	}
+
+}
+
+
+void ResourceManager::CalculateNormals ( Terrain* TerrainObj )
+{
+	int i, j, index1, index2, index3, index, count;
+	float vertex1[3], vertex2[3], vertex3[3], vector1[3], vector2[3], sum[3], length;
+	TerrainVectorType* normals;
+
+
+	// Create a temporary array to hold the un-normalized normal vectors.
+	normals = new TerrainVectorType[( TerrainObj->VertexInZ_Col - 1 ) * ( TerrainObj->VertexInX_Row - 1 )];
+
+	// Go through all the faces in the mesh and calculate their normals.
+	for ( j = 0; j<( TerrainObj->VertexInZ_Col - 1 ); j++ )
+	{
+		for ( i = 0; i<( TerrainObj->VertexInX_Row - 1 ); i++ )
+		{
+			index1 = ( j * TerrainObj->VertexInX_Row ) + i;
+			index2 = ( j * TerrainObj->VertexInX_Row ) + ( i + 1 );
+			index3 = ( ( j + 1 ) * TerrainObj->VertexInX_Row ) + i;
+
+			// Get three vertices from the face.
+			vertex1[0] = TerrainObj->VB_Data[index1].Position.x;
+			vertex1[1] = TerrainObj->VB_Data[index1].Position.y;
+			vertex1[2] = TerrainObj->VB_Data[index1].Position.z;
+
+			vertex2[0] = TerrainObj->VB_Data[index2].Position.x;
+			vertex2[1] = TerrainObj->VB_Data[index2].Position.y;
+			vertex2[2] = TerrainObj->VB_Data[index2].Position.z;
+
+			vertex3[0] = TerrainObj->VB_Data[index3].Position.x;
+			vertex3[1] = TerrainObj->VB_Data[index3].Position.y;
+			vertex3[2] = TerrainObj->VB_Data[index3].Position.z;
+
+			// Calculate the two vectors for this face.
+			vector1[0] = vertex1[0] - vertex3[0];
+			vector1[1] = vertex1[1] - vertex3[1];
+			vector1[2] = vertex1[2] - vertex3[2];
+			vector2[0] = vertex3[0] - vertex2[0];
+			vector2[1] = vertex3[1] - vertex2[1];
+			vector2[2] = vertex3[2] - vertex2[2];
+
+			index = ( j * ( TerrainObj->VertexInX_Row - 1 ) ) + i;
+
+			// Calculate the cross product of those two vectors to get the un-normalized value for this face normal.
+			normals[index].x = ( vector1[1] * vector2[2] ) - ( vector1[2] * vector2[1] );
+			normals[index].y = ( vector1[2] * vector2[0] ) - ( vector1[0] * vector2[2] );
+			normals[index].z = ( vector1[0] * vector2[1] ) - ( vector1[1] * vector2[0] );
+		}
+	}
+
+	// Now go through all the vertices and take an average of each face normal 	
+	// that the vertex touches to get the averaged normal for that vertex.
+	for ( j = 0; j < TerrainObj->VertexInZ_Col; j++ )
+	{
+		for ( i = 0; i < TerrainObj->VertexInX_Row; i++ )
+		{
+			// Initialize the sum.
+			sum[0] = 0.0f;
+			sum[1] = 0.0f;
+			sum[2] = 0.0f;
+
+			// Initialize the count.
+			count = 0;
+
+			// Bottom left face.
+			if ( ( ( i - 1 ) >= 0 ) && ( ( j - 1 ) >= 0 ) )
+			{
+				index = ( ( j - 1 ) * ( TerrainObj->VertexInX_Row - 1 ) ) + ( i - 1 );
+
+				sum[0] += normals[index].x;
+				sum[1] += normals[index].y;
+				sum[2] += normals[index].z;
+				count++;
+			}
+
+			// Bottom right face.
+			if ( ( i < ( TerrainObj->VertexInX_Row - 1 ) ) && ( ( j - 1 ) >= 0 ) )
+			{
+				index = ( ( j - 1 ) * ( TerrainObj->VertexInX_Row - 1 ) ) + i;
+
+				sum[0] += normals[index].x;
+				sum[1] += normals[index].y;
+				sum[2] += normals[index].z;
+				count++;
+			}
+
+			// Upper left face.
+			if ( ( ( i - 1 ) >= 0 ) && ( j < ( TerrainObj->VertexInZ_Col - 1 ) ) )
+			{
+				index = ( j * ( TerrainObj->VertexInX_Row - 1 ) ) + ( i - 1 );
+
+				sum[0] += normals[index].x;
+				sum[1] += normals[index].y;
+				sum[2] += normals[index].z;
+				count++;
+			}
+
+			// Upper right face.
+			if ( ( i < ( TerrainObj->VertexInX_Row - 1 ) ) && ( j < ( TerrainObj->VertexInZ_Col - 1 ) ) )
+			{
+				index = ( j * ( TerrainObj->VertexInX_Row - 1 ) ) + i;
+
+				sum[0] += normals[index].x;
+				sum[1] += normals[index].y;
+				sum[2] += normals[index].z;
+				count++;
+			}
+
+			// Take the average of the faces touching this vertex.
+			sum[0] = ( sum[0] / ( float ) count );
+			sum[1] = ( sum[1] / ( float ) count );
+			sum[2] = ( sum[2] / ( float ) count );
+
+			// Calculate the length of this normal.
+			length = sqrt ( ( sum[0] * sum[0] ) + ( sum[1] * sum[1] ) + ( sum[2] * sum[2] ) );
+
+			// Get an index to the vertex location in the height map array.
+			index = ( j * TerrainObj->VertexInX_Row ) + i;
+
+			// Normalize the final shared normal for this vertex and store it in the height map array.
+			TerrainObj->VB_Data->Normal = XMFLOAT3 ( sum[0] / length, sum[1] / length, sum[2] / length );
+
+		}
+	}
+
+	// Release the temporary normals.
+	delete [] normals;
+	normals = 0;
+
+}
+
+
+void ResourceManager::Calculate_FirstVertexPos ( Terrain* TerrainObj )
+{
+
+	float HalfStep = TerrainObj->QuadVertexStep / 2;// Всё выравнивается относительно координаты 0,0,0
+	int HalfROW = TerrainObj->VertexInX_Row / 2;	// количество вертексов слева и справа от x = 0
+	int HalfCOL = TerrainObj->VertexInZ_Col / 2;	// количество вертексов сверху и снизу от z = 0
+
+	TerrainObj->First_Vertex_Data.Fl3.x = -TerrainObj->QuadVertexStep * HalfROW + HalfStep;
+	TerrainObj->First_Vertex_Data.Fl3.z = TerrainObj->QuadVertexStep * HalfCOL + HalfStep;
+
+}
+
+
+void ResourceManager::GenerateVertexes ( Terrain* TerrainObj )
+{
+	int index = 0;
+
+	float XvStep = 0.0f;
+	float ZvStep = 0.0f;
+
+	float XSetPos = 0.0f;
+	float ZSetPos = 0.0f;
+
+	float Texture_X_U = 0.0f;
+	float Texture_Z_V = 0.0f;
+
+	Calculate_FirstVertexPos ( TerrainObj );
+
+	float Height = 0.0f;
+
+	for ( int i = 0; i < TerrainObj->VertexInX_Row; ++i )
+	{
+		XSetPos = TerrainObj->First_Vertex_Data.Fl3.x + XvStep;	// Позиция по X_Row 
+
+		for ( int j = 0; j < TerrainObj->VertexInZ_Col; ++j )
+		{
+			index = ( TerrainObj->VertexInZ_Col * i ) + j;	// Вычисляем индекс Vertex в массиве
+			
+			ZSetPos = TerrainObj->First_Vertex_Data.Fl3.z - ZvStep; // Позиция по Z_Col
+
+			//Height  = -( float ) ( rand () % 10 );
+			// Устанавливаем позицию вертексу
+			TerrainObj->VB_Data[index].Position = XMFLOAT3(XSetPos, Height, ZSetPos);
+
+			// Устанавливаем текстурные координаты
+			TerrainObj->VB_Data[index].TexCoord = XMFLOAT2 ( Texture_X_U, Texture_Z_V ); ;// XMFLOAT2 ( ( ( float ) i / ( float ) TerrainObj->VertexInX_Row ) * 1.0f, ( ( float ) j / ( float ) TerrainObj->VertexInZ_Col ) * 1.0f );//XMFLOAT2 ( Texture_X_U, Texture_Z_V );
+			
+			++Texture_Z_V;// текстурные координаты по V
+
+			ZvStep += TerrainObj->QuadVertexStep;
+		}
+		Texture_Z_V = 0.0f;
+		++Texture_X_U;	// текстурные координаты по U
+
+		XvStep += TerrainObj->QuadVertexStep;
+		ZvStep = 0.0f;
+	}
+
+}
+
+
+bool ResourceManager::ReadTerrainFromTexture ( Terrain* TerrainObj, char* FileName )
+{
+	return false;
+}
+
+
+int ResourceManager::Delete_Terrain_Buffers ( int BufferIndex )
+{
+	size_t i = TerrainVertexBuffers.size ();
+	if ( BufferIndex < i )
+	{
+		// Сохраняем освободившийся индекс Terrain
+		UnusedTerrainsBuffersIndex.push_back ( Terrains[BufferIndex]->TerrainBuffersIndex );
+		// Удаляем буферы
+		RCUBE_DELETE ( TerrainVertexBuffers[BufferIndex] );
+		return 0;
+	}
+
+	return -1;
+}
+
+
+int ResourceManager::Delete_Terrain ( int ObjectIndex )
+{
+	size_t i = Terrains.size ();
+
+	if ( ObjectIndex < i )
+	{
+		// Сохраняем освободившийся индекс Terrain
+		UnusedTerrainsIndex.push_back ( Terrains[ObjectIndex]->Terrain_Object_Index );
+		// Удаляем все : буферы , текстуры , материалы модели
+		Delete_Terrain_Buffers ( Terrains[ObjectIndex]->TerrainBuffersIndex );
+		// Удаляем сам Terrain
+		RCUBE_DELETE ( Terrains[ObjectIndex] );
+		return 0;
+	}
+	return -1;
+}
+
+
+int ResourceManager::Get_New_Terrain_Index ( Terrain* TerrainObj )
+{
+	int Index = -1;
+	if ( !UnusedTerrainsIndex.empty () )
+	{
+		Index = UnusedTerrainsIndex.back ();
+		UnusedTerrainsIndex.pop_back ();
+		Terrains[Index] = TerrainObj;
+	}
+	else
+	{
+		Terrains.push_back ( TerrainObj );
+		Index = ( int ) ( Terrains.size () - 1 );
+	}
+
+	TerrainObj->Terrain_Object_Index = Index;
+
+	return  Index;
+}
+
+
+int ResourceManager::Get_Terrain_VB_Index ( _3D_Obj_Buffers* NewBuffer )
+{
+	int Index = -1;
+	if ( !UnusedTerrainsBuffersIndex.empty () )
+	{
+		Index = UnusedTerrainsBuffersIndex.back ();
+		UnusedTerrainsBuffersIndex.pop_back ();
+		TerrainVertexBuffers[Index] = NewBuffer;
+	}
+	else
+	{
+		TerrainVertexBuffers.push_back ( NewBuffer );
+		Index = ( int ) ( TerrainVertexBuffers.size () - 1 );
+	}
+
+	NewBuffer->ThisBufferIndex = Index;
+
+	return  Index;
+}
+
+
+int ResourceManager::Create_Terrain_Mesh_Buffer ( Terrain* TerrainObj )
+{
+	_3D_Obj_Buffers *Terrain_Buffers = new _3D_Obj_Buffers ();
+
+	int ReturnIndex = Get_Terrain_VB_Index ( Terrain_Buffers );
+
+	Terrain_Buffers->Vertexes = new VertexBuffer <Vertex_Model3D> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, false , TerrainObj->TotalVertex );	// Создаём буфер вертексов Terrain
+
+	Terrain_Buffers->Indexes = new IndexBuffer <Index_Type> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, false, TerrainObj->TotalIndex );
+
+	// Обновляем Вертексный буфер
+	TerrainVertexBuffers[TerrainObj->TerrainBuffersIndex]->Vertexes->Update ( TerrainObj->VB_Data );
+	// Обновляем Индексный буфер
+	TerrainVertexBuffers[TerrainObj->TerrainBuffersIndex]->Indexes->Update ( TerrainObj->IB_Data );
+
+	TerrainObj->TerrainBuffersIndex = ReturnIndex;
+
+	return  ReturnIndex;
+}
+
+
+void ResourceManager::GetQuadIndex ( Terrain* TerrainObj, int UL, int DR, Point* _Result )
+{
+	// Проверка, чтобы индексы верхнего левого и нижнего правого вертекса квадрата были правильные
+	if ( UL < 0 || DR <= UL )
+	{
+		_Result->x = -1;
+		_Result->y = -1;
+		return;
+	}
+
+
+
+
+}
+
+
+Terrain* ResourceManager::Get_Terrain_Object_Pointer ( int ObjectIndex )
+{
+	size_t i = Terrains.size ();
+
+	if ( ObjectIndex < i )
+	{
+		return Terrains[ObjectIndex];
+	}
+	return nullptr;
+}
+
+
+_3D_Obj_Buffers* ResourceManager::Get_Terrain_Buffers_By_Index ( int ObjectIndex )
+{
+	size_t i = TerrainVertexBuffers.size ();
+
+	if ( ObjectIndex < i )
+	{
+		return TerrainVertexBuffers[ObjectIndex];
+	}
+	return nullptr;
+}
+
+
+void ResourceManager::GenerateIndexes ( Terrain* TerrainObj, int GridScale )
+{
+	int CurrentIndex = 0;
+	int Index0, Index1, Index2, Index3;
+
+	int ZDone = ( TerrainObj->VertexInZ_Col - 1 );
+	int XDone = ( TerrainObj->VertexInX_Row - 1 );
+	for ( int j = 0; j < XDone; ++j )
+	{
+		for ( int i = 0; i < ZDone; ++i )
+		{
+			// Index in square
+			// 0  3
+			// 2  1
+			Index0 = i + j * TerrainObj->VertexInZ_Col;
+			Index3 = Index0 + TerrainObj->VertexInZ_Col;
+			Index1 = Index3 + 1;
+			Index2 = Index0 + 1;
+
+			TerrainObj->IB_Data[CurrentIndex++] = Index0;
+			TerrainObj->IB_Data[CurrentIndex++] = Index2; //Index1; CounterClock
+			TerrainObj->IB_Data[CurrentIndex++] = Index1; //Index2; CounterClock
+			TerrainObj->IB_Data[CurrentIndex++] = Index0;
+			TerrainObj->IB_Data[CurrentIndex++] = Index1; //Index3; CounterClock
+			TerrainObj->IB_Data[CurrentIndex++] = Index3; //Index1; CounterClock
+		}
+	}
+}
+
+
+int ResourceManager::Create_Terrain_Clusters ( Terrain* TerrainObj )
+{
+
+	return  0;
+}
+
+
+int ResourceManager::AddTerrain ( int _TerrainTextureIndex,
+				 TerrainInitData* NewTerraindata )
+{
+	int Result = -1;
+	bool bool_result = false;
+
+	Terrain* NewTerrain = new Terrain;
+
+	NewTerrain->TerrainTextureIndex = _TerrainTextureIndex;
+	NewTerrain->QuadVertexStep = NewTerraindata->_QuadVertexStep;	// Шаг между вертексами
+	NewTerrain->QuadsPerCluster = NewTerraindata->_QuadsPerCluster; // Количество примитивов в одном секторе 7 * 7 , 15 * 15 , 31 * 31 , 63 * 63 , 127 * 127 , 255 * 255
+	NewTerrain->ClustersX_ROW = NewTerraindata->_ClustersX_ROW;		// Количество секторов по X - ROW
+	NewTerrain->ClustersZ_COL = NewTerraindata->_ClustersZ_COL;		// Количество секторов по Z - COLUMN
+
+	NewTerrain->ClustersAmount = NewTerrain->ClustersX_ROW * NewTerrain->ClustersZ_COL;				// Количество секторов в Terrain  X * Z
+	NewTerrain->VertexInX_Row = ( NewTerrain->QuadsPerCluster + 1 ) * NewTerrain->ClustersX_ROW;	// Количество вертексов в ряду
+	NewTerrain->VertexInZ_Col = ( NewTerrain->QuadsPerCluster + 1 ) * NewTerrain->ClustersZ_COL;	// Количество вертексов в столбце
+	NewTerrain->TotalVertex = NewTerrain->VertexInX_Row * NewTerrain->VertexInZ_Col;				// ОБщее количество вертексов в терейне
+
+	NewTerrain->VB_Data = new Vertex_Model3D[NewTerrain->TotalVertex];	// Создаём массив вертексов
+
+	// Расчёт количества индексов
+//	int TotalIndex = 6 +
+//			( NewTerrain->VertexInX_Row - 2 ) * 6 +
+//			( NewTerrain->VertexInZ_Col - 2 ) * 6 +
+//		  ( ( NewTerrain->VertexInZ_Col - 2 ) * ( NewTerrain->VertexInX_Row - 2 ) * 6);
+	NewTerrain->TotalIndex = (( NewTerrain->VertexInX_Row - 1 ) * ( NewTerrain->VertexInZ_Col - 1 )) * 6;
+	NewTerrain->IB_Data = new Index_Type[NewTerrain->TotalIndex]; // Создаём массив индексов
+
+	// Создаём буфер позицию для одного Instance Terrain
+	NewTerrain->InstancePositionsBuffer = new VertexBuffer <PositionType> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, false, 1 );
+
+	if ( NewTerraindata->HightFileName == nullptr )
+		GenerateVertexes ( NewTerrain );	// Размещаем вертексы в соответствии с размерами и формой Terrain
+	else
+	{
+		bool_result = ReadTerrainFromTexture ( NewTerrain, NewTerraindata->HightFileName );
+		if ( !bool_result )
+		{
+			return -1;
+		}
+	}
+	
+	GenerateIndexes ( NewTerrain, 1 );	// Заполняем индексный буфер
+
+	CalculateNormals ( NewTerrain );
+
+	Create_Terrain_Mesh_Buffer ( NewTerrain );
+/*
+	// Обновляем Вертексный буфер
+	TerrainVertexBuffers[NewTerrain->TerrainBuffersIndex]->Vertexes->Update ( NewTerrain->VB_Data );
+	// Обновляем Индексный буфер
+	TerrainVertexBuffers[NewTerrain->TerrainBuffersIndex]->Indexes->Update ( NewTerrain->IB_Data );
+*/
+	Create_Terrain_Clusters ( NewTerrain );
+
+	Result = Get_New_Terrain_Index ( NewTerrain );
+
+	PositionType Terrain_DefaultPosRot;
+
+	Terrain_DefaultPosRot.position.Vec = XMVECTOR{ 0.0f, 0.0f, 0.0f, 0.0f };
+	Terrain_DefaultPosRot.rotation.Vec = XMVECTOR { 0.0f, 0.0f, 0.0f, 0.0f };
+
+	if (Result > -1 )
+		Update_Terrain_Position ( Result, &Terrain_DefaultPosRot );
+
+	return Result;
+}
+
+
+bool ResourceManager::Update_Terrain_Position ( int ObjectIndex, PositionType* PositionRotation )
+{
+	Terrain* _Terrain = Terrains[ObjectIndex];
+
+	_Terrain->InstancePositionsBuffer->Update ( PositionRotation );
+
+	return true;
+}
+
+
+int ResourceManager::Add_CubeMap ( WCHAR* TextureName )
+{
+	int Result = -1;
+
+	int TempTextureIndex = 0;
+	int TempShaderIndex = 0;
+	int CubeMapBufferIndex = 0;
+
+	int LatLines = 10;
+	int LongLines = 10;
+	int NumSphereVertices = ( ( LatLines - 2 ) * LongLines ) + 2;
+	int NumSphereFaces = ( ( LatLines - 3 )*( LongLines ) * 2 ) + ( LongLines * 2 );
+
+	float sphereYaw = 0.0f;
+	float spherePitch = 0.0f;
+
+	XMMATRIX Rotationx, Rotationy;
+
+	vector<Vertex_FlatObject> vertices ( NumSphereVertices );
+	vector<Index_Type> indices ( NumSphereFaces * 3 );
+
+	RCube_VecFloat34 currVertPos;
+
+	TempShaderIndex = GetShaderIndexByName ( L"CubeMap" );// Получаем индекс Шейдера для отрисовки CubeMap
+
+	if ( TempShaderIndex < 0 )
+	{
+		MessageBox ( 0, L"Can't get CubeMap shader by index", Error, MB_OK );
+		return -1;
+	}
+
+	TempTextureIndex = InitOneTexture ( TextureName );	// Инициализируем текстуру и сохраняем её индекс
+	if ( TempTextureIndex < 0 )
+	{
+		MessageBox ( 0, L"Can't init CubeMap texture", Error, MB_OK );
+//		return -1;
+		goto ERROR_END;
+	}
+
+	currVertPos.Vec = XMVectorSet ( 0.0f, 0.0f, 1.0f, 0.0f );
+	vertices[0].Position = currVertPos.Fl3;
+
+	for ( int i = 0; i < LatLines - 2; ++i )
+	{
+		spherePitch = float ( ( i + 1 ) * ( XM_PI / ( LatLines - 1 ) ) );
+		Rotationx = XMMatrixRotationX ( spherePitch );
+		for ( int j = 0; j < LongLines; ++j )
+		{
+			sphereYaw = float ( j * ( XM_2PI / ( LongLines ) ) );
+			Rotationy = XMMatrixRotationZ ( sphereYaw );
+			currVertPos.Vec = XMVector3TransformNormal ( XMVectorSet ( 0.0f, 0.0f, 1.0f, 0.0f ), ( Rotationx * Rotationy ) );
+			currVertPos.Vec = XMVector3Normalize ( currVertPos.Vec );
+
+			vertices[i*LongLines + j + 1].Position = currVertPos.Fl3;
+		}
+	}
+
+	vertices[NumSphereVertices - 1].Position = { 0.0f, 0.0f, -1.0f };
+
+	int k = 0;
+	for ( int l = 0; l < LongLines - 1; ++l )
+	{
+		indices[k] = 0;
+		indices[k + 1] = l + 1;
+		indices[k + 2] = l + 2;
+		k += 3;
+	}
+
+	indices[k] = 0;
+	indices[k + 1] = LongLines;
+	indices[k + 2] = 1;
+	k += 3;
+
+	for ( int i = 0; i < LatLines - 3; ++i )
+	{
+		for ( int j = 0; j < LongLines - 1; ++j )
+		{
+			indices[k] = i*LongLines + j + 1;
+			indices[k + 1] = i*LongLines + j + 2;
+			indices[k + 2] = ( i + 1 )*LongLines + j + 1;
+
+			indices[k + 3] = ( i + 1 )*LongLines + j + 1;
+			indices[k + 4] = i*LongLines + j + 2;
+			indices[k + 5] = ( i + 1 )*LongLines + j + 2;
+
+			k += 6; // next quad
+		}
+
+		indices[k] = ( i*LongLines ) + LongLines;
+		indices[k + 1] = ( i*LongLines ) + 1;
+		indices[k + 2] = ( ( i + 1 )*LongLines ) + LongLines;
+
+		indices[k + 3] = ( ( i + 1 )*LongLines ) + LongLines;
+		indices[k + 4] = ( i*LongLines ) + 1;
+		indices[k + 5] = ( ( i + 1 )*LongLines ) + 1;
+
+		k += 6;
+	}
+
+	for ( int l = 0; l < LongLines - 1; ++l )
+	{
+		indices[k] = NumSphereVertices - 1;
+		indices[k + 1] = ( NumSphereVertices - 1 ) - ( l + 1 );
+		indices[k + 2] = ( NumSphereVertices - 1 ) - ( l + 2 );
+		k += 3;
+	}
+
+	indices[k] = NumSphereVertices - 1;
+	indices[k + 1] = ( NumSphereVertices - 1 ) - LongLines;
+	indices[k + 2] = NumSphereVertices - 2;
+
+	CubeMapBufferIndex = Create_Flat_Obj_Buffers ( false, NumSphereVertices, NumSphereFaces * 3, TexturesArr[TempTextureIndex]->SRV );
+	if ( CubeMapBufferIndex < 0 )
+	{
+		MessageBox ( 0, L"Can't init CubeMap Buffers", Error, MB_OK );
+//		return -1;
+		goto ERROR_END;
+	}
+
+	FlatObjectBuffers[CubeMapBufferIndex]->FlatObjectVB->Update ( &vertices[0] );
+	FlatObjectBuffers[CubeMapBufferIndex]->IndexBs->Update ( &indices[0] );
+
+	// Добавляем CubeMap в список
+	CubeMap* NewCubemap = new CubeMap;
+
+	NewCubemap->CubeMapBuffersIndex = CubeMapBufferIndex;
+	NewCubemap->CubeMapTextureIndex = TempTextureIndex;
+	NewCubemap->ShaderIndex = TempShaderIndex;
+	NewCubemap->NumSphereFaces = NumSphereFaces * 3;
+	CubeMaps.push_back ( NewCubemap );
+
+	Result = (int)CubeMaps.size () - 1;
+
+	vertices.clear ();
+	indices.clear ();
+
+	return Result;
+
+ERROR_END:
+	vertices.clear ();
+	indices.clear ();
+
+	if ( TempTextureIndex > -1 )
+		DeleteTexture ( TempTextureIndex );
+	if ( CubeMapBufferIndex > -1 )
+		Delete_Flat_ObjectBuffers ( CubeMapBufferIndex );
+	return Result;
 }

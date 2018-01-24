@@ -6,7 +6,7 @@
 #include "ResourceManager.h"
 #include "D3DClass.h"
 #include "FrustumClass.h"
-#include "Terrain.h"
+#include "KFTerrain.h"
 #include "KFModelList.h"
 
 #ifndef _KFSHADOWWORK_H_
@@ -48,7 +48,7 @@ public:
 	struct ObjectUsingShadows {
 
 		KFModelList * ModelList;
-		Terrain * Terrain;
+		KFTerrain * Terrain;
 
 	} DrawShadowsObjects;
 

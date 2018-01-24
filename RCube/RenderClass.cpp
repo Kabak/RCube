@@ -113,6 +113,8 @@ void RenderClass::RenderScene ()
 	{
 		Render3D_Object_With_Light ( i );
 	}
+
+	RenderTerrain_With_Light ( 0 );
 }
 
 
@@ -557,7 +559,7 @@ bool RenderClass::CopyTextTextureOnTexture ( ID3D11ShaderResourceView* textureFo
 	}
 
 
-	// Копируем описание входной текстуры для скорости заполнения буфера CutTextureCopyForMapDesc
+	// Копируем описание входной текстуры для скорости заполнения буферы CutTextureCopyForMapDesc
 	memcpy ( CutTextureCopyForMapDesc, CutTextureDesc, sizeof ( D3D11_TEXTURE2D_DESC ) );
 	CutTextureCopyForMapDesc->Usage = D3D11_USAGE_STAGING;
 	CutTextureCopyForMapDesc->CPUAccessFlags = D3D11_CPU_ACCESS_WRITE | D3D11_CPU_ACCESS_READ;
@@ -1628,6 +1630,64 @@ void RenderClass::Render3D_Object ( int ObjectIndex )
 	}
 
 
+
+}
+
+
+void RenderClass::RenderTerrain_With_Light ( int ObjectIndex )
+{
+	UINT strides[2];
+	UINT offsets[2];
+	ID3D11Buffer* bufferPointers[2];
+
+	// Set vertex buffer stride and offset.
+	strides[0] = sizeof ( Vertex_Model3D );
+	strides[1] = sizeof ( PositionType );
+
+	// Set the buffer offsets.
+	offsets[0] = 0;
+	offsets[1] = 0;
+
+	Terrain* _Terrain = ResManager->Get_Terrain_Object_Pointer ( ObjectIndex );
+
+	_3D_Obj_Buffers* Buffers = ResManager->Get_Terrain_Buffers_By_Index ( _Terrain->TerrainBuffersIndex );
+
+	// Set the array of pointers to the vertex and instance buffers.
+	bufferPointers[0] = Buffers->Vertexes->Buffer;// m_vertexBuffer;
+	bufferPointers[1] = _Terrain->InstancePositionsBuffer->Buffer;//m_posesBuffer;
+
+	// Set the vertex buffer to active in the input assembler so it can be rendered.
+	Local_D3DGC->DX_deviceContext->IASetVertexBuffers ( 0, 2, bufferPointers, strides, offsets );
+
+	// Set the index buffer to active in the input assembler so it can be rendered.
+	Local_D3DGC->DX_deviceContext->IASetIndexBuffer ( Buffers->Indexes->Buffer/*m_indexBuffer*/, DXGI_FORMAT_R32_UINT, 0 );
+
+	// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
+	Local_D3DGC->DX_deviceContext->IASetPrimitiveTopology ( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+
+	// Render the triangle.
+	Local_D3D->RenderIndextedClustered ( ResManager->TexturesArr[_Terrain->TerrainTextureIndex]->SRV, _Terrain->TotalIndex, 1 );
+}
+
+
+void RenderClass::RenderCubeMap ( int ObjectIndex )
+{
+
+	UINT stride = sizeof ( Vertex_FlatObject );
+	UINT offset = 0;
+	Local_D3DGC->DX_deviceContext->IASetPrimitiveTopology ( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+
+	Local_D3DGC->DX_deviceContext->IASetIndexBuffer ( ResManager->FlatObjectBuffers[ResManager->CubeMaps[ObjectIndex]->CubeMapBuffersIndex]->IndexBs->Buffer, DXGI_FORMAT_R32_UINT, 0 );
+
+	Local_D3DGC->DX_deviceContext->IASetVertexBuffers ( 0, 1, &ResManager->FlatObjectBuffers[ResManager->CubeMaps[ObjectIndex]->CubeMapBuffersIndex]->FlatObjectVB->Buffer, &stride, &offset );
+
+	Local_D3DGC->DX_deviceContext->PSSetShaderResources ( 0, 1, &ResManager->TexturesArr[ResManager->CubeMaps[ObjectIndex]->CubeMapTextureIndex]->SRV );
+
+	ResManager->SetActiveShadersInProgramm ( ResManager->CubeMaps[ObjectIndex]->ShaderIndex );
+
+	Local_D3DGC->DX_deviceContext->OMSetDepthStencilState ( Local_D3DGC->CubeMap_DepthStencilState, 0 );
+
+	Local_D3DGC->DX_deviceContext->DrawIndexed ( ResManager->CubeMaps[ObjectIndex]->NumSphereFaces, 0, 0 );
 
 }
 

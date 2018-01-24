@@ -35,6 +35,10 @@ public:
 	void Render3D_Object ( int ObjectIndex );
 	void Render3D_Object_With_Light ( int ObjectIndex );
 
+	void RenderCubeMap ( int ObjectIndex );
+
+	void RenderTerrain ( int ObjectIndex );
+	void RenderTerrain_With_Light ( int ObjectIndex );
 
 // + Font Works
 

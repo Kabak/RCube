@@ -1,14 +1,28 @@
 ========================================================================
     WIN32 APPLICATION : RCube Project Overview
 ========================================================================
+// Типы данных справка
+https://msdn.microsoft.com/en-us/library/s3f49ktz.aspx?f=255&MSPPError=-2147217396
+// Dynamic Resolution Rendering Article
+https://software.intel.com/en-us/articles/dynamic-resolution-rendering-article
+// Смешивание текстур на ландшафте
+https://habrahabr.ru/post/180743/
 // Огромный Terrain
+https://skytiger.wordpress.com/2010/11/28/xna-large-terrain/
+https://philliphamlyn.wordpress.com/2013/04/05/large-scale-terrain/
+https://electronicmeteor.wordpress.com/page/3/
 https://docs.unrealengine.com/latest/INT/Engine/Landscape/  // UE4 Landscape
 https://www.google.by/search?q=effective+terrain+rendering&gws_rd=cr&dcr=0&ei=JiYlWp6gHYSIaMugqfAO
 // То, что нужно 
+// Intel
+https://software.intel.com/en-us/articles/terrain-rendering
+https://software.intel.com/en-us/articles/snb-terrain-sample?cid=sw%3AISNnews_82_Eng_6646
+
 https://www.google.by/url?sa=t&rct=j&q=&esrc=s&source=web&cd=3&cad=rja&uact=8&ved=0ahUKEwik55bLlfDXAhXIqKQKHZ9_BLsQFgg5MAI&url=https%3A%2F%2Fwww.cosc.canterbury.ac.nz%2Fresearch%2Freports%2FHonsReps%2F2005%2Fhons_0502.pdf&usg=AOvVaw2AORkFu8Z2xd-FYtncoKS_
 https://developer.nvidia.com/gpugems/GPUGems2/gpugems2_chapter02.html
 
 http://www.gamedev.ru/code/forum/?id=92154					// ИДЕЯ !
+http://www.gamedev.ru/code/forum/?id=63126					// тема Андрея
 http://www.gamedev.ru/code/forum/?id=196939
 http://www.rastertek.com/tutterr.html 						// Rastertek
 http://www.rastertek.com/tertut05.html						// Rastertek
@@ -45,6 +59,8 @@ https://msdn.microsoft.com/en-us/library/dn934203(v=vs.85).aspx
 Dx12 Samples
 https://github.com/Microsoft/DirectX-Graphics-Samples
 https://msdn.microsoft.com/en-us/library/windows/desktop/mt186624(v=vs.85).aspx
+Привязка ресурсов в Microsoft DirectX 12
+https://habrahabr.ru/company/intel/blog/265525/
 
 Проблема с мультисемплированием и шейдером Texture2DMS
 http://www.gamedev.ru/code/forum/?id=211108

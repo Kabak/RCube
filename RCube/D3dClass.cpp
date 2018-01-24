@@ -38,11 +38,13 @@ D3DClass::D3DClass()
 	D3DGC->m_alphaDisableBlendingState	= nullptr;
 	D3DGC->m_alpha_TOnT_BlendingState	= nullptr;	// Текст на текстуре
 	D3DGC->m_depthStencilState			= nullptr;
+	D3DGC->CubeMap_DepthStencilState	= nullptr;
 	D3DGC->m_depthStencilView			= nullptr;
 	D3DGC->mGeometryBlendState			= nullptr;
 	D3DGC->m_alphaParticleBlendingState = nullptr;
 	D3DGC->m_depthStencilBuffer			= nullptr;
 	D3DGC->DefaultRasterizerState		= nullptr;
+	D3DGC->WireFrameRasterizerState		= nullptr;
 	D3DGC->m_EngineInputClass			= nullptr;
 	D3DGC->RasterStateCullNone			= nullptr;
 	m_depthDisabledStencilState			= nullptr;
@@ -578,6 +580,18 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 		return false;
 	}
 
+	ZeroMemory ( &depthStencilDesc, sizeof ( depthStencilDesc ) );
+	depthStencilDesc.DepthEnable = true;
+	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	depthStencilDesc.DepthFunc = D3D11_COMPARISON_EQUAL;
+	result = D3DGC->DX_device->CreateDepthStencilState ( &depthStencilDesc, &D3DGC->CubeMap_DepthStencilState );
+	if ( FAILED ( result ) )
+	{
+		MessageBox ( hwnd, L"Direct3D CreateDepthStencilState.", 0, 0 );
+		Shutdown ();
+		return false;
+	}
+
 	// With the created depth stencil state we can now set it so that it takes effect. Notice we use the device context to set it.
 
 	// Set the depth stencil state.
@@ -638,7 +652,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 		Shutdown();
 		return false;
 	}
-	rasterDesc.FrontCounterClockwise = true;
+//	rasterDesc.FrontCounterClockwise = true;
 	rasterDesc.CullMode = D3D11_CULL_NONE;
 	rasterDesc.DepthClipEnable = false;
 	result = D3DGC->DX_device->CreateRasterizerState(&rasterDesc, &D3DGC->RasterStateCullNone );
@@ -646,6 +660,17 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	{
 		MessageBox(hwnd, L"Direct3D CreateRasterizerState CULLNONE.", 0, 0);
 		Shutdown();
+		return false;
+	}
+
+	rasterDesc.CullMode = D3D11_CULL_NONE;
+	rasterDesc.DepthClipEnable = false;
+	rasterDesc.FillMode = D3D11_FILL_WIREFRAME;
+	result = D3DGC->DX_device->CreateRasterizerState ( &rasterDesc, &D3DGC->WireFrameRasterizerState );
+	if ( FAILED ( result ) )
+	{
+		MessageBox ( hwnd, L"Direct3D CreateRasterizerState FILL_WIREFRAME.", 0, 0 );
+		Shutdown ();
 		return false;
 	}
 
@@ -1103,9 +1128,12 @@ void D3DClass::Shutdown()
 	RCUBE_RELEASE( D3DGC->m_alphaEnableBlendingState );
 	RCUBE_RELEASE( m_depthDisabledStencilState );
 	RCUBE_RELEASE( D3DGC->DefaultRasterizerState );
+	RCUBE_RELEASE ( D3DGC->DefaultRasterizerState );
+	RCUBE_RELEASE ( D3DGC->WireFrameRasterizerState );
 	RCUBE_RELEASE( D3DGC->RasterStateCullNone );
 	RCUBE_RELEASE( D3DGC->m_depthStencilView );
 	RCUBE_RELEASE( D3DGC->m_depthStencilState );
+	RCUBE_RELEASE( D3DGC->CubeMap_DepthStencilState );
 	RCUBE_RELEASE( D3DGC->mGeometryBlendState );
 	RCUBE_RELEASE( D3DGC->m_depthStencilBuffer );
 	RCUBE_RELEASE( D3DGC->BackBuffer_RTV );
@@ -1329,6 +1357,12 @@ char* D3DClass::GetVideoCardString()
 void D3DClass::SetDefaultResterizeState()
 {
 	D3DGC->DX_deviceContext->RSSetState(D3DGC->DefaultRasterizerState );
+}
+
+
+void D3DClass::RenderWireFrameResterizeState ()
+{
+	D3DGC->DX_deviceContext->RSSetState ( D3DGC->WireFrameRasterizerState );
 }
 
 

@@ -43,6 +43,12 @@
     <Filter Include="Render\Materials">
       <UniqueIdentifier>{7b69c3d6-6385-478a-a380-84cef673b0b8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Render\Terrain">
+      <UniqueIdentifier>{0f10ac86-4228-4129-9138-5df13658a9a6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Render\CubeMap">
+      <UniqueIdentifier>{79e1fe07-068f-4838-93a4-c291b9f6e02b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -171,12 +177,6 @@
     <ClInclude Include="Material.h">
       <Filter>Render\Materials</Filter>
     </ClInclude>
-    <ClInclude Include="Terrain.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CubeMappingClass.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Light_def.h">
       <Filter>Render</Filter>
     </ClInclude>
@@ -224,6 +224,21 @@
     </ClInclude>
     <ClInclude Include="KFModelList.h">
       <Filter>Render\3DModel</Filter>
+    </ClInclude>
+    <ClInclude Include="KFTerrain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Terrain.h">
+      <Filter>Render\Terrain</Filter>
+    </ClInclude>
+    <ClInclude Include="CubeMap.h">
+      <Filter>Render\CubeMap</Filter>
+    </ClInclude>
+    <ClInclude Include="TerrainCluster.h">
+      <Filter>Render\Terrain</Filter>
+    </ClInclude>
+    <ClInclude Include="Terrain_def.h">
+      <Filter>Render\Terrain</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -332,12 +347,6 @@
     <ClCompile Include="D3dClass.cpp">
       <Filter>Render</Filter>
     </ClCompile>
-    <ClCompile Include="Terrain.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="CubeMappingClass.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ResourceManager.cpp">
       <Filter>Render</Filter>
     </ClCompile>
@@ -370,6 +379,18 @@
     </ClCompile>
     <ClCompile Include="KFModelList.cpp">
       <Filter>Render\3DModel</Filter>
+    </ClCompile>
+    <ClCompile Include="KFTerrain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Terrain.cpp">
+      <Filter>Render\Terrain</Filter>
+    </ClCompile>
+    <ClCompile Include="CubeMap.cpp">
+      <Filter>Render\CubeMap</Filter>
+    </ClCompile>
+    <ClCompile Include="TerrainCluster.cpp">
+      <Filter>Render\Terrain</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -20,7 +20,6 @@ GraphicsClass::GraphicsClass()
 					m_Camera = nullptr;
 				   MyManager = nullptr;
 					m_Bitmap = nullptr;
-					 Mapping = nullptr;
 
 					MainMenu = nullptr;
 				 AnimTexture = nullptr;
@@ -33,7 +32,7 @@ GraphicsClass::GraphicsClass()
 // - Particel systems
 
 
-				   KFTerrain = nullptr;
+				   KFTerrain1 = nullptr;
 				   ModelList = nullptr;
 //				  ClusterMap = nullptr;
 				  ShadowWork = nullptr;
@@ -53,6 +52,7 @@ GraphicsClass::GraphicsClass()
 		  rotation = 0.0f;
 
  ShadowFrameCounts = 0;
+	  CubeMapIndex = -1;
 
 }
 
@@ -88,14 +88,13 @@ GraphicsClass::~GraphicsClass()
 //    RCUBE_DELETE ( ClusterMap );
 
 	RCUBE_DELETE ( ModelList );
-	RCUBE_DELETE ( KFTerrain );
+	RCUBE_DELETE ( KFTerrain1 );
   RCUBE_SHUTDOWN ( FireParticles );
   RCUBE_SHUTDOWN ( TorchFire );
   RCUBE_SHUTDOWN ( SnowParticles );
 	RCUBE_DELETE ( Hud );
 	RCUBE_DELETE ( AnimTexture );
 	RCUBE_DELETE ( MainMenu );
-	RCUBE_DELETE ( Mapping );
 	RCUBE_DELETE ( m_Bitmap );
 	RCUBE_DELETE ( MyManager );
     RCUBE_DELETE ( m_Camera );
@@ -1538,10 +1537,14 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	delete Data4;
 	delete Data5;
 	// --------------------- это коробка
-	Mapping = new CubeMapping;
-	Mapping->ShaderForDraw = MyManager->GetShaderIndexByName ( L"CubeMap" );
-	Mapping->Init(m_D3D->D3DGC, 
-	MyManager->TexturesArr[MyManager->InitOneTexture(L"Textures/skymap.dds")]->SRV) ;
+	
+	// Создаю CubeMap
+	CubeMapIndex = MyManager->Add_CubeMap ( L"Textures/skymap.dds" );
+	if ( CubeMapIndex < 0 )
+	{
+		MessageBox ( hwnd, L"Could not initialize CubeMap", Error, MB_OK );
+		return false;
+	}
 
 // ++++++++++++++++++++++++++++++++++++++++     LIGHT & ShadowMap    ++++++++++++++++++++++++++++++++++++++++++++	
 //	m_Light = new LightClass;
@@ -1819,7 +1822,18 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 		//int Index = MyManager->InitOneTexture(hwnd, L"Textures/land.jpg", m_D3D->D3DGC->DX_device, m_D3D->D3DGC->DX_deviceContext);
 		//MyManager->InitTextures(hwnd, L"Textures/RcubeTextures.kaf", m_D3D->D3DGC->DX_device, m_D3D->D3DGC->DX_deviceContext);
 
-		Terrain::KFLandscapeParam Land;
+		TerrainInitData NewTerrainData;
+		NewTerrainData._QuadVertexStep = 100.0f;
+		NewTerrainData._QuadsPerCluster = 8;
+		NewTerrainData._ClustersX_ROW = 1;
+		NewTerrainData._ClustersZ_COL = 1;
+		NewTerrainData.HightFileName = nullptr;
+
+		int TerrainNumber = MyManager->AddTerrain ( 9, &NewTerrainData );
+//		MyManager->Delete_Terrain ( TerrainNumber );
+
+
+		KFTerrain::KFLandscapeParam Land;
 
 		Land.LowlandsCout = 50;// количество ям
 		Land.HeightesCout = 50;// количество гор
@@ -1833,11 +1847,17 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 
 		//\//\/\/\/!!!!!ОБЯЗАТЕЛЬНО ЧИТАЙ НЮАНСЫ ПОСЛЕ ИНИЦИАЛИЗАЦИИ!!!!!!/\/\/\/\/\/\
 
-		KFTerrain = new Terrain;
-		KFTerrain->Initialize(hwnd, m_D3D->D3DGC,
-		MyManager->TexturesArr[21]->SRV, //MyManager->ShaderResourceArr[MyManager->InitOneTexture(hwnd , L"Textures/moonTexture.png" , m_D3D->D3DGC->DX_device , m_D3D->D3DGC->DX_deviceContext)] 
-		Rows , Columns , &Land, 1.0f/* расстояние между точками */, 100 /* количество кластеров на которые разбит тераин по X оси */,
-			100/* количество кластеров на которые разбит тераин по Z оси  */, 49 /* дальность прорисовки в кластерах */, m_D3D);
+		KFTerrain1 = new KFTerrain;
+		KFTerrain1->Initialize(hwnd, m_D3D->D3DGC,
+		MyManager->TexturesArr[21]->SRV,
+		Rows , 
+		Columns , 
+		&Land, 
+		1.0f/* расстояние между точками */, 
+		100 /* количество кластеров на которые разбит тераин по X оси */,
+		100/* количество кластеров на которые разбит тераин по Z оси  */, 
+		49 /* дальность прорисовки в кластерах */, 
+		m_D3D);
 
 		/*
 		НЮАНСЫ
@@ -1869,7 +1889,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 		KFShadowWork::ObjectUsingShadows  SWobjects;
 
 		SWobjects.ModelList = ModelList;
-		SWobjects.Terrain = KFTerrain;
+		SWobjects.Terrain = KFTerrain1;
 
 		ShadowWork->Init(hwnd, m_D3D->D3DGC, m_D3D, m_Frustum, SWobjects);
 		ShadowWork->ShaderFordraw = MyManager->GetShaderIndexByName ( L"LightRenderSM" );
@@ -2094,13 +2114,14 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 //			char Str[25];// = new char [25];
 //		Profile->StartTimer();
 	// Измеряем быстродействие
-	KFTerrain->Frame(true, m_Camera->position);
+// OLD TERRAIN OFF
+//	KFTerrain1->Frame(true, m_Camera->position);
 	// Измеряем быстродействие
 //		Profile->StopTimer(Str);
 //		MyManager->UpdateSentence(5, Str, 100, 160);
 	// Измеряем быстродействие
-
-	KFTerrain->LightRender();
+// OLD TERRAIN OFF
+//	KFTerrain1->LightRender();
 
 //	char Str[25];// = new char [25];
 	Profile->StartTimer();
@@ -2189,8 +2210,9 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 	// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	// + Рисуем CUBEMAP	
 	// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	MyManager->SetActiveShadersInProgramm( Mapping->ShaderForDraw );
-	Mapping->Render();
+//	m_D3D->RenderWireFrameResterizeState ();
+	RCubeRender->RenderCubeMap ( CubeMapIndex );
+//	m_D3D->SetCullNoneResterizeState ();
 	// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	// - Рисуем CUBEMAP	
 	// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -2359,7 +2381,7 @@ void GraphicsClass::UpdateConstantBuffer()
 	// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	ConstantBufferData cbPerObj;
 	// Расчёт матрицы для CubeMap
-	XMMATRIX Scale = XMMatrixScaling(5000.0f, 5000.0f, 5000.0f);
+	XMMATRIX Scale = XMMatrixScaling( MATRIX_SCALING, MATRIX_SCALING, MATRIX_SCALING );
 	XMMATRIX Translation = XMMatrixTranslation(m_D3D->D3DGC->CameraPosition.x, m_D3D->D3DGC->CameraPosition.y, m_D3D->D3DGC->CameraPosition.z);
 	XMMATRIX mtr = Scale * Translation * m_D3D->D3DGC->ViewProjection;
 

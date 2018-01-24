@@ -302,7 +302,7 @@ void KF_PXControler::Init(HWND * g_hwnd , D3DGlobalContext *D3DGC, ResourceManag
 
 }
 
-void KF_PXControler::CreateHeildHield(int HFRows, int HFCollums , float VertixesInderect , Terrain::HeightMapType* terrainData ,
+void KF_PXControler::CreateHeildHield(int HFRows, int HFCollums , float VertixesInderect , HeightMapType* terrainData ,
 	std::wstring filename ) {
 
 	FIZFileData FizData;

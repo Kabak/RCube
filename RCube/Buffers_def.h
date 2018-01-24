@@ -13,7 +13,7 @@ enum LayoutTypes
 	NOLAYOUT = -1
 };
 
-// Системные константные буфера - их индексы жёстко закреплены ( пока не используется )
+// Системные константные буферы - их индексы жёстко закреплены ( пока не используется )
 enum ConstantBuffers_Types
 {
 	GLOBAL_CONSTANTS = 0,
@@ -47,12 +47,13 @@ namespace
 	UINT FlatObjectIndices[6] = { 0, 1, 2, 0, 3, 1 };
 }
 
-
+typedef UINT Index_Type;
+/*
 struct Index_Type
 {
 	UINT Index;
 };
-
+*/
 
 // 3D model Vertex structure
 struct Vertex_Model3D
@@ -72,6 +73,33 @@ struct Vertex_Model3D
 	//XMFLOAT3 biTangent;
 };
 
+
+// + Terrain
+struct HeightMapType
+{
+	float x, y, z;
+	float tu, tv;
+	float nx, ny, nz;
+};
+
+struct Point
+{
+	int x, y;
+};
+
+struct TerrainPositionType
+{
+	XMFLOAT3 position;
+	float padding;
+	XMFLOAT4 rotation;
+};
+
+struct TerrainVectorType
+{
+	float x, y, z;
+};
+
+// - Terrain
 
 // +++++++++++++++++   Instancing   ++++++++++++++++++++++++++++++++
 struct PositionType

@@ -39,7 +39,7 @@ bool KFModel::LoadKFObject(std::wstring FileName){
 	// цикл заполнени€ мэшей
 	while (c < ThisObjDesc.MeshesCount ) {
 
-		file.read((unsigned char*)&tempMesh->VertexBufferSize, sizeof(int)); // читаю размер следующего вертексного буфера
+		file.read((unsigned char*)&tempMesh->VertexBufferSize, sizeof(int)); // читаю размер следующего вертексного буферы
 		ThisObjDesc.ObjectVertexesCout += tempMesh->VertexBufferSize; // нахожу сумму вершин всех ранее созданных мной обьектов
 		tempMesh->VertexArray = new Vertex_Model3D[tempMesh->VertexBufferSize]; // выдел€ю пам€ть под конкреный мверт буф
 
@@ -73,7 +73,7 @@ bool KFModel::LoadKFObject(std::wstring FileName){
 			delete[] TextuteFile;
 			// чтение и создание текстуры
 		}
-		 // создание вершинного буфера*****
+		 // создание вершинного буферы*****
 		hr = S_OK;
 		// Set up the description of the static vertex buffer.
 		bd.Usage = D3D11_USAGE_DYNAMIC;
@@ -91,7 +91,7 @@ bool KFModel::LoadKFObject(std::wstring FileName){
 
 		hr = d3d11Device->CreateBuffer(&bd, &InitData, &tempMesh->VertBuff);
 
-		// создание вершинного буфера*****
+		// создание вершинного буферы*****
 
 
 

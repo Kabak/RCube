@@ -4,122 +4,64 @@
 #ifndef _TERRAIN_H_
 #define _TERRAIN_H_
 
-#include <d3d11.h>
 #include <DirectXMath.h>
-#include <fstream>
-#include "D3DClass.h"
-#include "D3DGlobalContext.h"
 #include "Buffers_def.h"
+#include "TerrainCluster.h"
+#include "DX11Buffers.h"
+#include <vector>
+
 
 using namespace DirectX;
+using namespace std;
 
+struct TerrainParam
+{
 
-const int TEXTURE_REPEAT = 8;
+	//*********************** для рандомной генерации вершин*****************************
+	int HeightesCout, LowlandsCout;
+	int MaxHeight, MinHeight;
+	int MaxRadius, MinRadius;
+	//*********************** для рандомной генерации вершин*****************************
 
-class Terrain {
-public:
-
-	// эта структура указывает террэйну как он должен создаваться если char* filename = nullptr; то он генерит террэйн рандомно
-	struct KFLandscapeParam
-	{
-
-		//*********************** для рандомной генерации вершин*****************************
-		int HeightesCout, LowlandsCout;
-		int MaxHeight, MinHeight;
-		int MaxRadius, MinRadius;
-		//*********************** для рандомной генерации вершин*****************************
-
-		//*********************** для генерации по зананной текстуре ************************
-		char* filename;
-		//*********************** для генерации по зананной текстуре ************************
-
-	};
-
-	struct HeightMapType
-	{
-		float x, y, z;
-		float tu, tv;
-		float nx, ny, nz;
-	};
-
-	struct Point
-	{
-		int x, y;
-	};
-
-	int g_Rows, g_Columns;
-
-private :
-
-	struct PositionType
-	{
-		XMFLOAT3 position;
-		float padding;
-		XMFLOAT4 rotation;
-	};
-
-	struct VectorType
-	{
-		float x, y, z;
-	};
-
-	D3DGlobalContext* Local_D3DGC;
-
-	ID3D11Buffer* m_posesBuffer;	// Буфер позиций вертексов
-	D3DClass* g_ActiveLight;		// Световой класс для отрисовки
-
-	bool GenersteRandTerrain( KFLandscapeParam* LandParam, float VertixesIndent);
-	bool ReadTerrainFromTexture(KFLandscapeParam* LandParam, float VertixesIndent);
-	bool CalculateNormals();
-	void CalculateTextureCoordinates();
-	bool InitializeBuffers(ID3D11Device* device, int ClustersWidth, int ClusterHeight);
-	void GenerateLandScape(KFLandscapeParam* LandParam, HeightMapType* m_heightMap);
-	int GenerateRandRadius(int MaxRadius, int MinRadius);
-	Terrain::Point GenerateRandPoint();
-	void CheckDrawLenghtParam(HWND hwnd);
-	void CheckClustersVertixes(HWND hwnd);
-	int PreviosIndex;
-
-	int ComeputeIndex(int X, int Z);
-
-	int m_vertexCount;	// ОБщее количество вертексов в терейне
-	int m_indexCount;	// ОБщее количество индексов в терейне
-	int g_ClusterHeight , g_ClusterWidth;	// Размеры кластера на которые побита земля
-	int NumXVerticesInCluster, NumZVerticesInCluster;
-	int NumOfVerticesOnCluster;
-	int g_DrawLength;	// Дальность отрисовки от камеры в кроличестве кластеров
-	int NumOfDrawingClusters;
-	Vertex_Model3D ** ClusterVertices;
-	int NumOfClusters;
-	ID3D11Device* g_Device;
-	int * ClusterNumOfinitElements;
-//	int VertixesDrawLengthX, VertixesDrawLengthZ;
-	int NumOfDrawingXVertixes, NumOfDrawingZVertixes;
-	int NumOfIndexesOnCluster;
-	HWND g_hwnd;
-	
-	void LandParamChecker(KFLandscapeParam* LandParam);
-
-public:
-	Terrain();
-	~Terrain();
-
-	HRESULT Initialize(HWND hwnd, D3DGlobalContext *D3DGC,
-		ID3D11ShaderResourceView* TerrTexture, float& Rows, float& Columns, KFLandscapeParam* LandParam
-		, float VertixesIndent, int ClustersWidth, int ClusterHeight, int DrawLength, D3DClass* ActiveLight);
-	void LightRender();
-	void Render();
-	void Frame(bool CameraReplaseData, XMVECTOR &CameraPosition);
-
-	ID3D11DeviceContext *  g_deviceContext;
-	ID3D11ShaderResourceView * g_Texture;
-	HeightMapType * m_heightMap; // двумерный массив высот [x кордината][y кордината]
-	ID3D11Buffer * m_vertexBuffer , *m_indexBuffer;
-	float g_VertixesIndent;
-
+	//*********************** для генерации по зананной текстуре ************************
+	char* filename;
+	//*********************** для генерации по зананной текстуре ************************
 
 };
 
 
+class Terrain
+{
+public:
+	Terrain ();
+   ~Terrain ();
+
+	const int TEXTURE_REPEAT = 8;
+
+	int TerrainBuffersIndex;	// Номер буфера в списке буферов
+	int TerrainTextureIndex;	// Номер текстуры накладываемой на Terrain
+	int Terrain_Object_Index;	// Номер самого себя в списке
+
+	VertexBuffer <PositionType>* InstancePositionsBuffer;	// Буфер позиций всех Instance объекта уходящий в шейдер
+
+	vector <TerrainCluster*> Clusters;	// Массив кластеров из которых состоит Terrain
+
+  float QuadVertexStep; // Расстояние между вертексами в примитиве
+	int QuadsPerCluster;// Количество примитивов в одном секторе 7 * 7 , 16 * 16 , 31 * 31 , 63 * 63 , 127 * 127 , 255 * 255
+	int ClustersAmount;	// Количество секторов в Terrain  X * Z
+	int ClustersX_ROW;	// Количество секторов по X - ROW
+	int	ClustersZ_COL;	// Количество секторов по Z - COLUMN
+	int VertexInX_Row;	// Количество вертексов в ряду
+	int VertexInZ_Col;	// Количество вертексов в столбце
+	int TotalVertex;	// ОБщее количество вертексов в терейне
+	int TotalIndex;		// ОБщее количество индексов в терейне
+	
+	Vertex_Model3D* VB_Data;// Массив всех вертексов с текстурными координатами и нормалями
+	Index_Type* IB_Data;	// Индексный буфер
+
+	HeightMapType * m_heightMap; // двумерный массив высот [x кордината][y кордината]
+	RCube_VecFloat34 First_Vertex_Data;	// Положение и высота 1-го вертекса, от которго всё пляшет
+
+};
 
 #endif

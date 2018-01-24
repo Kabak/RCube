@@ -30,7 +30,7 @@ typedef enum HIDE_TEXT {
 
 struct SentenceType
 {
-	int	VertexBufferIndex;	// Индекс вертексного буфера предложения
+	int	VertexBufferIndex;	// Индекс вертексного буферы предложения
 	XMVECTOR	Colour;		// цвет и alpha
 	XMFLOAT4	ColourTemp; // Временное хранение цвета
 	XMFLOAT4	ColourAction;// переменная для работы с цветом

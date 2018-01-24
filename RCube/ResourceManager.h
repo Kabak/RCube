@@ -18,7 +18,9 @@
 #include "FontClass.h"
 #include "3DModel.h"
 #include "FrustumClass.h"
-//#include "KFModel.h"
+#include "Terrain_def.h"
+#include "Terrain.h"
+#include "CubeMap.h"
 
 #ifdef RCube_DX11
 #include "DX11Buffers.h"
@@ -92,35 +94,52 @@ public:
 
 // 3D Models
 // Список 3D объектов на сцене
-	vector <_3DModel* >					_3DModels;			// Список 3D моделей на сцене
+	vector < _3DModel* >				_3DModels;			// Список 3D моделей на сцене
 	vector < _3D_Obj_Buffers* >			_3DModelsMeshBuffers;// Список вертексных буферов 3D моделей
 	vector <UINT>						Unused3DModelsIndex;// 
 	vector <UINT>						Unused3DModelsMeshBuffersIndex;// 
 
+// LandScape / Terrain
+	vector < Terrain* >					Terrains;			// Список карт местностей / уровней
+	vector <_3D_Obj_Buffers* >			TerrainVertexBuffers;// Массив вертексов Terrain 
+	vector <UINT>						UnusedTerrainsIndex;//
+	vector <UINT>						UnusedTerrainsBuffersIndex;// 
+
+// CubeMap
+// UnusedFlatObjBuffersIndex
+	vector < CubeMap* >					CubeMaps;			// Список CubeMaps
+	vector <UINT>						UnusedCubeMapsIndex;//
+
+
 	vector< Menu* >						Menus;				// Меню созданные в движке
+
+// + CubeMap
+	int Add_CubeMap ( WCHAR* TextureName );
+
+// - CubeMap
 
 // + 3D Models Works
 private:
 	bool LoadKFObject ( std::wstring FileName, _3DModel* New_3D_Model ); // достает из кфо файла обьет
+	int GetNew3D_Obj_Index ( _3DModel* NewModel );	// Получить свободный индекс модели в массиве 3D моделей
+	int GetNew3D_Obj_Mesh_Buffer_Index ( _3D_Obj_Buffers* NewModel );
 public:	
 	int Add_3D_Object ( wstring FileNameKFO, int InstCout );
 	_3DModel* Get3D_Object_Pointer ( int ModelIndex );	// Получить указатель на объект 3D модели из списка по индексу
-	_3D_Obj_Buffers* ResourceManager::Get_Mesh_Buffers_By_Index ( int ObjectIndex );// Получить буферы мешаж
+	_3D_Obj_Buffers* Get_Mesh_Buffers_By_Index ( int ObjectIndex );// Получить буферы мешаж
 	int Delete_3D_Object ( int ObjectIndex );
 	int Delete_3D_Object_Meshes_Buffers ( int ObjectIndex );
-	int GetNew3D_Obj_Index ( _3DModel* NewModel );	// Получить свободный индекс модели в массиве 3D моделей
-	int GetNew3D_Obj_Mesh_Buffer_Index ( _3D_Obj_Buffers* NewModel );
-	// Создание буферов для каждого меша модели
+
 	int Create_3D_Obj_Mesh_Buffers (
 //		UINT ModelType,			// Тип объекта из возможных в RCube для рисования по LayoutTypes объекта
-		bool CPUAccess,			// способ обновления буфера  
+		bool CPUAccess,			// способ обновления буферы  
 		UINT InstanceAmount,	// Сколько Instance в модели
 		UINT IndexAmount		// Есть ли индексный массив для меша модели ( 0 - нет или количество индексов в IndexBuffer - IB )
-	);	// Создание буферов для плоского объекта
+	);	// Создание буферов для каждого меша модели
 
 	void Frustum_3D_Objects ( FrustumClass* Frustum );	// Отсеиваем все невидимые нв кадре объекты моделей
 
-	// Обновление буфера положений и поворотов Instance объекта
+	// Обновление буферы положений и поворотов Instance объекта
 	// Если CountingFromInstanceIndex = -1 - обновляются Instance объекта начиная с нулевого, общим количеством в Amount; 
 	// Если CountingFromInstanceIndex 0 или больше, то обновляется количество Amount начиная с элемента с номером в CountingFromInstanceIndex
 	bool Update_3D_Object_InstancesPosBuffer ( int ObjectIndex, int CountingFromInstanceIndex, int Amount );
@@ -149,7 +168,51 @@ public:
 
 // - 3D Models Works
 
+// + Terrain
+	int AddTerrain ( int _TerrainTextureIndex, TerrainInitData* NewTerrainData );
+	
+	int Get_New_Terrain_Index ( Terrain* TerrainObj );// Получить свободный индекс Terrain в массиве Terrain
+	int Get_Terrain_VB_Index ( _3D_Obj_Buffers* NewBuffer );
 
+	int Delete_Terrain ( int ObjectIndex );
+	int Delete_Terrain_Buffers ( int ObjectIndex );
+	
+	int Create_Terrain_Mesh_Buffer ( Terrain* TerrainObj );	// Создание буфера вертексов Terrain
+	int Create_Terrain_Clusters ( Terrain* TerrainObj );// Раздел вертексного буфера на кластеры и инициализация IB для каждого кластера
+
+	Terrain* Get_Terrain_Object_Pointer ( int ObjectIndex );	// Получить указатель на объект 3D модели из списка по индексу
+	_3D_Obj_Buffers* Get_Terrain_Buffers_By_Index ( int ObjectIndex ); // Получаем VB, IB для Terrain
+	bool Update_Terrain_Position ( int ObjectIndex, PositionType* PositionRotation );
+
+	void Calculate_FirstVertexPos ( Terrain* TerrainObj );	// Расчёт 1-го вертекса в зависимости от параметров Terrain
+	void GenerateVertexes ( Terrain* TerrainObj );		// Создаёт все вертексы по 1-му
+	void GenerateIndexes ( Terrain* TerrainObj, int GridScale );// Создаёт IB всех вертексов.
+//	 int ComeputeIndex ( Terrain* TerrainObj, int X, int Z ); // рассчёт номера индекса по позиции XZ вертекса
+	void GetQuadIndex ( Terrain* TerrainObj , int UL, int DR , Point* _Result); // Расчёт индексов вертексов составляющих квадрат | UL - UpLeft , DR - DownRight индекс вертекса
+
+
+	bool GenerateRandTerrain ( Terrain* TerrainObj, TerrainParam* LandParam, float VertixesIndent );
+	bool GenerateRandTerrain ( Terrain* TerrainObj );	// НОВАЯ ВЕРСИЯ
+	
+	bool ReadTerrainFromTexture ( Terrain* TerrainObj, TerrainParam* LandParam, float VertixesIndent );
+	bool ReadTerrainFromTexture ( Terrain* TerrainObj, char* FileName );	// НОВАЯ ВЕРСИЯ
+
+	void CheckClustersVertixes ( Terrain* TerrainObj );
+	void CheckDrawLenghtParam ( Terrain* TerrainObj );
+	void CalculateNormals ( Terrain* TerrainObj );
+	
+	void GenerateLandScape ( Terrain* TerrainObj, TerrainParam* LandParam, HeightMapType* m_heightMap );
+	void GenerateLandScape ( Terrain* TerrainObj, TerrainInitData* Data);  // НОВАЯ ВЕРСИЯ
+	
+	int GenerateRandRadius ( int MaxRadius, int MinRadius );
+	Point GenerateRandPoint ( Terrain* TerrainObj );
+	void CheckDrawLenghtParam ( HWND hwnd );
+	void CheckClustersVertixes ( HWND hwnd );
+	int ComeputeIndex ( int X, int Z );
+	void TerrainFrame ( bool CameraReplaseData, XMVECTOR &CameraPosition );
+	void LandParamChecker ( TerrainParam* LandParam );
+
+// - Terrain
 
 // + Sentence Works
 // Добавляет предложение и возвращает его номер в списке или -1 если не удалось добавить предложение
@@ -201,7 +264,7 @@ public:
 	bool CreateLayouts ();	// Создаются все нужные Layout для шейдеров по умолчанию
 
 	int Create_Flat_Obj_Buffers (
-		bool CPUAccess,			// способ обновления буфера  
+		bool CPUAccess,			// способ обновления буферы  
 		UINT InstanceAmount,	// Сколько Instance в модели
 		UINT IndexAmount,		// Есть ли индексный массив для меша модели ( 0 - нет или количество индексов в IndexBuffer - IB )
 		DXTextureSRV* Texture	// Основная текстура

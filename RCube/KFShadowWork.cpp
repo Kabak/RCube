@@ -169,12 +169,12 @@ void KFShadowWork::RenderSpotLightsSadowMaps(std::vector <int> SpotLightsWithSha
 
 void KFShadowWork::DrawObjectUsingShadows(XMVECTOR DrawPosition, bool ReplaseData) {
 
-//	DrawShadowsObjects.Terrain->Frame(ReplaseData, DrawPosition);
-	DrawShadowsObjects.Terrain->Render();
-
 	DrawShadowsObjects.ModelList->Frame();
 	DrawShadowsObjects.ModelList->Render();
 
+// OLD TERRAIN
+	//	DrawShadowsObjects.Terrain->Frame(ReplaseData, DrawPosition);
+//	DrawShadowsObjects.Terrain->Render ();
 }
 
 

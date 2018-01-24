@@ -84,7 +84,7 @@ private:
 	ID3D11ShaderResourceView *HeartTexture;
 	ID3D11ShaderResourceView *ParticlesTexture;
 
-	// Размер частиц при инициализации Вертексного буфера
+	// Размер частиц при инициализации Вертексного буферы
 	float m_particleSize; 
 
 	// Номер света присвоенный системой

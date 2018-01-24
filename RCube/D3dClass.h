@@ -76,6 +76,7 @@ public:
 	void SetBackBufferRenderTarget();
 	void SetDefaultResterizeState();
 	void SetCullNoneResterizeState();
+	void RenderWireFrameResterizeState ();
 
 	void BlurScene(ID3D11ComputeShader* Horizont, ID3D11ComputeShader* Vertical, int BlurAmont);
 

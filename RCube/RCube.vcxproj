@@ -22,7 +22,7 @@
     <ProjectGuid>{311F6B45-3C14-43FF-9236-2FAD3E2207DA}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>RCube</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -255,6 +255,7 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClInclude Include="BoundingBox.h" />
     <ClInclude Include="BillBord.h" />
     <ClInclude Include="ClusterShadingFragmentFactory.h" />
+    <ClInclude Include="CubeMap.h" />
     <ClInclude Include="D3DGlobalContext.h" />
     <ClInclude Include="DX11Buffers.h" />
     <ClInclude Include="DxInputStruct.h" />
@@ -266,7 +267,6 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClInclude Include="IndexesArray.h" />
     <ClInclude Include="KF2DTextureAnimation.h" />
     <ClInclude Include="KFClusterMap.h" />
-    <ClInclude Include="CubeMappingClass.h" />
     <ClInclude Include="KFModel.h" />
     <ClInclude Include="KFModelList.h" />
     <ClInclude Include="KFPicking.h" />
@@ -277,7 +277,7 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClInclude Include="ResourceManager.h" />
     <ClInclude Include="KFShadowWork.h" />
     <ClInclude Include="SceneObject.h" />
-    <ClInclude Include="Terrain.h" />
+    <ClInclude Include="KFTerrain.h" />
     <ClInclude Include="KF_PXControler.h" />
     <ClInclude Include="LightGrid.h" />
     <ClInclude Include="Material.h" />
@@ -304,6 +304,9 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="StringsListClass.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="Terrain.h" />
+    <ClInclude Include="TerrainCluster.h" />
+    <ClInclude Include="Terrain_def.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Text_def.h" />
     <ClInclude Include="TimerClass.h" />
@@ -316,6 +319,7 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClCompile Include="3DModel.cpp" />
     <ClCompile Include="BoundingBox.cpp" />
     <ClCompile Include="ClusterShadingFragmentFactory.cpp" />
+    <ClCompile Include="CubeMap.cpp" />
     <ClCompile Include="EffectsManager.cpp" />
     <ClCompile Include="Emiters.cpp" />
     <ClCompile Include="FireParticleSystem.cpp" />
@@ -323,7 +327,6 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClCompile Include="IndexesArray.cpp" />
     <ClCompile Include="KF2DTextureAnimation.cpp" />
     <ClCompile Include="KFClusterMap.cpp" />
-    <ClCompile Include="CubeMappingClass.cpp" />
     <ClCompile Include="KFModel.cpp" />
     <ClCompile Include="KFModelList.cpp" />
     <ClCompile Include="KFPicking.cpp" />
@@ -332,7 +335,7 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClCompile Include="RenderClass.cpp" />
     <ClCompile Include="ResourceManager.cpp" />
     <ClCompile Include="KFShadowWork.cpp" />
-    <ClCompile Include="Terrain.cpp" />
+    <ClCompile Include="KFTerrain.cpp" />
     <ClCompile Include="KF_PXControler.cpp" />
     <ClCompile Include="LightGrid.cpp" />
     <ClCompile Include="Material.cpp" />
@@ -361,6 +364,8 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="StringsListClass.cpp" />
+    <ClCompile Include="Terrain.cpp" />
+    <ClCompile Include="TerrainCluster.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="TimerClass.cpp" />
     <ClCompile Include="TorchFireParticles.cpp" />

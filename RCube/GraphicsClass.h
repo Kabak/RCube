@@ -33,11 +33,10 @@
 // ++++++++++++   Измеряем быстродействие кода   +++++++++++++
 #include "RCubeProfiling.h"
 
-#include "Terrain.h"
+#include "KFTerrain.h"
 // +++++++++++++++++++++++++мои классы++++++++++++++++++
 #include "ScrollBarClass.h"
 #include "MenuControler.h"
-#include "CubeMappingClass.h"
 #include "KFModel.h"
 #include "KFModelList.h"
 //#include "KFClusterMap.h"
@@ -55,8 +54,9 @@ using namespace std;
 /////////////
 const bool FULL_SCREEN = false;
 const bool VSYNC_ENABLED = false;
-const float SCREEN_DEPTH = 1000.0f;
+const float SCREEN_DEPTH = 5000.0f;
 const float SCREEN_NEAR = 1.0f;
+const float MATRIX_SCALING = SCREEN_DEPTH * 2;
 
 
 // We'll need these four globals to start with.
@@ -82,6 +82,7 @@ public:
 
 	int ShadowFrameCounts;
 
+	int CubeMapIndex;
 	// Для отладки
 	RCube_VecFloat34 CamLook;
 
@@ -157,7 +158,7 @@ public:
 	   MenuControrerClass * Hud;
 
 // ++++++++++++   Ландшафт   +++++++++++++
-				 Terrain* KFTerrain;
+				 KFTerrain* KFTerrain1;
 
 // +++++++++++++++++++     Анимация     ++++++++++++++++++++++++++++++		
 	  KF2DTextureAnimation* AnimTexture;
@@ -165,7 +166,6 @@ public:
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++ то чо надо для меню
 		RenderTextureClass* m_RenderTexture;
 	//--------------------------------------------------- то чо надо для меню
-			CubeMapping * Mapping ;
 
 	int Exp;
 
