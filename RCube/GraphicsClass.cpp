@@ -32,10 +32,10 @@ GraphicsClass::GraphicsClass()
 // - Particel systems
 
 
-				   KFTerrain1 = nullptr;
-				   ModelList = nullptr;
+//				   KFTerrain1 = nullptr;
+//				   ModelList = nullptr;
 //				  ClusterMap = nullptr;
-				  ShadowWork = nullptr;
+//				  ShadowWork = nullptr;
 				  RCubeRender = nullptr;
 
 			Global = new  char[260];
@@ -84,11 +84,6 @@ GraphicsClass::~GraphicsClass()
 	Strings.clear();
 
 	RCUBE_DELETE ( RCubeRender );
-	RCUBE_DELETE ( ShadowWork );
-//    RCUBE_DELETE ( ClusterMap );
-
-	RCUBE_DELETE ( ModelList );
-	RCUBE_DELETE ( KFTerrain1 );
   RCUBE_SHUTDOWN ( FireParticles );
   RCUBE_SHUTDOWN ( TorchFire );
   RCUBE_SHUTDOWN ( SnowParticles );
@@ -633,7 +628,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 
 	MyManager->TextShaderIndex = MyManager->GetShaderIndexByName ( L"Font" );
 	// Инициализируем систему рисования 
-	RCubeRender = new RenderClass ( m_D3D->D3DGC, MyManager, m_D3D);
+	RCubeRender = new RenderClass ( m_D3D->D3DGC, MyManager, m_D3D, m_Frustum );
 
 	// Новая система шрифтов
 	char* Text = new char [50];
@@ -1680,7 +1675,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 		AddedLight.LightID = -2;
 		AddedLight.ShadowMapSliceNumber = -1;
 		AddedLight.Dummy = 1;
-		m_Light->AddLightSource(AddedLight);
+		m_D3D->AddLightSource(AddedLight);
 */
 
 
@@ -1823,77 +1818,18 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 		//MyManager->InitTextures(hwnd, L"Textures/RcubeTextures.kaf", m_D3D->D3DGC->DX_device, m_D3D->D3DGC->DX_deviceContext);
 
 		TerrainInitData NewTerrainData;
-		NewTerrainData._QuadVertexStep = 100.0f;
-		NewTerrainData._QuadsPerCluster = 8;
+		NewTerrainData._QuadVertexStep = 10.0f;
+		NewTerrainData._QuadsPerCluster = 640;
 		NewTerrainData._ClustersX_ROW = 1;
 		NewTerrainData._ClustersZ_COL = 1;
+		NewTerrainData._CastShadow = true;
+		NewTerrainData._ClusterRender = false;
 		NewTerrainData.HightFileName = nullptr;
 
-		int TerrainNumber = MyManager->AddTerrain ( 9, &NewTerrainData );
+		int TerrainNumber = MyManager->AddTerrain ( 21, &NewTerrainData );
 //		MyManager->Delete_Terrain ( TerrainNumber );
 
-
-		KFTerrain::KFLandscapeParam Land;
-
-		Land.LowlandsCout = 50;// количество ям
-		Land.HeightesCout = 50;// количество гор
-		Land.MaxHeight = 50;// максимальная высота гор
-		Land.MinHeight = 10;// минимальная низота низин
-		Land.MaxRadius = 80;// максимальный радиус низин/гор
-		Land.MinRadius = 1;// минимальный радиус низин/гор
-		Land.filename = "Textures/hm2.bmp";
-
-		float Rows = 1000.0f , Columns = 1000.0f;
-
-		//\//\/\/\/!!!!!ОБЯЗАТЕЛЬНО ЧИТАЙ НЮАНСЫ ПОСЛЕ ИНИЦИАЛИЗАЦИИ!!!!!!/\/\/\/\/\/\
-
-		KFTerrain1 = new KFTerrain;
-		KFTerrain1->Initialize(hwnd, m_D3D->D3DGC,
-		MyManager->TexturesArr[21]->SRV,
-		Rows , 
-		Columns , 
-		&Land, 
-		1.0f/* расстояние между точками */, 
-		100 /* количество кластеров на которые разбит тераин по X оси */,
-		100/* количество кластеров на которые разбит тераин по Z оси  */, 
-		49 /* дальность прорисовки в кластерах */, 
-		m_D3D);
-
-		/*
-		НЮАНСЫ
-
-		ширина земли в вертексах должна нацело делиться на количество кластеров на которые разбит тераин по X оси
-		длинна земли в вертексах должна нацело делиться наколичество кластеров на которые разбит тераин по Z оси
-
-		количество кластеров на которые разбит тераин по любой оси должно быть больше чем дальность прорисовки в два раза + 1
-
-		расстояние между точками должно быть больше либо равно 1
-
-		Физикс и разброс кубиков автоматически подхватывают новыеразмеры терайна
-
-		если ты изменил размер терайна и ничего не изменилось то сделай килин и запусти зано (почемуто вижуал не всегда подхватывает файлы)
-
-		чтобы грамотно замерять фпс подожди пока кубики упадут фпс должен подняться на 10 пунктов
-
-		*/
-
-		ModelList = new KFModelList;
-
-		ModelList->Init(m_D3D->D3DGC, m_D3D, m_Frustum);
-//		ModelList->IsClusteringUse = false;
-
-//		ClusterMap = new KFClusterMap(100, 100, 100, 50, 50, 50);
-
-		ShadowWork = new KFShadowWork;
-
-		KFShadowWork::ObjectUsingShadows  SWobjects;
-
-		SWobjects.ModelList = ModelList;
-		SWobjects.Terrain = KFTerrain1;
-
-		ShadowWork->Init(hwnd, m_D3D->D3DGC, m_D3D, m_Frustum, SWobjects);
-		ShadowWork->ShaderFordraw = MyManager->GetShaderIndexByName ( L"LightRenderSM" );
-
+		m_D3D->ShadowMapShaderIndex = MyManager->GetShaderIndexByName ( L"LightRenderSM" );
 		return true;
 }
 
@@ -1977,8 +1913,9 @@ bool GraphicsClass::Frame( FPSTimers &Counters, DXINPUTSTRUCT& InputStruct1)
 // ++++++++++++    Как часто рисуем Тень     +++++++++++++++++++
 	if ( m_D3D->D3DGC->ShadowsOn && ShadowFrameCounts > 0 )//Counters.FpsRate / 25
 	{
-		MyManager->SetActiveShadersInProgramm ( ShadowWork->ShaderFordraw );
-		ShadowWork->RenderSpotLightsSadowMaps( m_D3D->SpotLightsWithShadowsIndexes );
+		MyManager->SetActiveShadersInProgramm ( m_D3D->ShadowMapShaderIndex );
+		RCubeRender->RenderSpotLightsSadowMaps ( &m_D3D->SpotLightsWithShadowsIndexes );
+
 		ShadowFrameCounts = 0;
 	}
 	// Измеряем быстродействие
@@ -2109,36 +2046,22 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 	m_D3D->D3DGC->DX_deviceContext->OMSetDepthStencilState(m_D3D->D3DGC->m_depthStencilState, 0);
 	m_D3D->SetDefaultResterizeState ();
 	m_D3D->D3DGC->DX_deviceContext->OMSetRenderTargets(1, &m_D3D->D3DGC->BackBuffer_RTV, m_D3D->D3DGC->m_depthStencilView);
+
 	// Измеряем быстродействие
 	// Федя 540 ns    Мой  517 ns   
-//			char Str[25];// = new char [25];
-//		Profile->StartTimer();
-	// Измеряем быстродействие
-// OLD TERRAIN OFF
-//	KFTerrain1->Frame(true, m_Camera->position);
-	// Измеряем быстродействие
-//		Profile->StopTimer(Str);
-//		MyManager->UpdateSentence(5, Str, 100, 160);
-	// Измеряем быстродействие
-// OLD TERRAIN OFF
-//	KFTerrain1->LightRender();
-
-//	char Str[25];// = new char [25];
+	//	char Str[25];// = new char [25];
 	Profile->StartTimer();
 
-	ModelList->Frame();
+	MyManager->Frustum_3D_Objects ( m_Frustum );
 
-	Profile->StopTimer(Str);
+	Profile->StopTimer ( Str );
 
+	RCubeRender->RenderScene ();
+	
 	strcpy_s(Str1, STRMAXLENGTH, "Frustum объектам : ");
 	strcat_s(Str1, STRMAXLENGTH, Str);
 	MyManager->UpdateSentence(10, Str1, MyManager->GetPosX( 10 ), MyManager->GetPosY( 10 ) );
 	
-	ModelList->LightRender();
-
-	MyManager->Frustum_3D_Objects ( m_Frustum );
-	RCubeRender->RenderScene ();
-
 	m_D3D->TurnOffAlphaBlending();
 
 //	m_D3D->SetDefaultResterizeState();

@@ -3,11 +3,12 @@
 
 #include "RenderClass.h"
 
-RenderClass::RenderClass ( D3DGlobalContext* GlobalContext, ResourceManager * _ResManager, D3DClass* m_D3D)
+RenderClass::RenderClass ( D3DGlobalContext* GlobalContext, ResourceManager * _ResManager, D3DClass* m_D3D, FrustumClass* _Frustum )
 {
 	ResManager  = _ResManager;
 	Local_D3DGC =  GlobalContext;
 	Local_D3D   =  m_D3D;
+	Local_Frustum = _Frustum;
 
 	DWriteFactory		= Local_D3DGC->DWriteFactory;
 	D2DFactory			= Local_D3DGC->D2DFactory;
@@ -19,6 +20,28 @@ RenderClass::RenderClass ( D3DGlobalContext* GlobalContext, ResourceManager * _R
 	Width				= Local_D3DGC->sharedTex11_Width;
 	Height				= Local_D3DGC->sharedTex11_Height;
 	d2dTexture			= Local_D3DGC->sharedTex11_SRV;
+
+	ZeroMemory ( &DSD2, sizeof ( DSD2 ) );
+	DSD2.Flags = 0;
+	DSD2.Format = DXGI_FORMAT_D32_FLOAT;
+	if ( Local_D3DGC->MSAAQualityCount > 1 )
+	{
+		DSD2.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMSARRAY;
+		DSD2.Texture2DMSArray.ArraySize = 1;
+		DSD2.Texture2DMSArray.FirstArraySlice = 0;
+	}
+	else
+	{
+		DSD2.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+		DSD2.Texture2DArray.MipSlice = 0;
+		DSD2.Texture2DArray.ArraySize = 1;
+		DSD2.Texture2DArray.FirstArraySlice = 0;
+	}
+
+	Up = XMVectorSet ( 0.0f, 1.0f, 0.0f, 0.0f );
+	LightPosition.Vec = { 0.0f, 0.0f, 0.0f, 1.0f };
+	LightTarget.Vec = { 0.0f, 0.0f, 0.0f, 1.0f };
+
 }
 
 
@@ -114,7 +137,11 @@ void RenderClass::RenderScene ()
 		Render3D_Object_With_Light ( i );
 	}
 
-	RenderTerrain_With_Light ( 0 );
+	Objects_Amount = ( int ) ResManager->Terrains.size ();
+	for ( int i = 0; i < Objects_Amount; ++i )
+	{
+		RenderTerrain_With_Light ( i );
+	}
 }
 
 
@@ -1670,6 +1697,44 @@ void RenderClass::RenderTerrain_With_Light ( int ObjectIndex )
 }
 
 
+void RenderClass::RenderTerrain ( int ObjectIndex )
+{
+	UINT strides[2];
+	UINT offsets[2];
+	ID3D11Buffer* bufferPointers[2];
+
+	// Set vertex buffer stride and offset.
+	strides[0] = sizeof ( Vertex_Model3D );
+	strides[1] = sizeof ( PositionType );
+
+	// Set the buffer offsets.
+	offsets[0] = 0;
+	offsets[1] = 0;
+
+	Terrain* _Terrain = ResManager->Get_Terrain_Object_Pointer ( ObjectIndex );
+
+	_3D_Obj_Buffers* Buffers = ResManager->Get_Terrain_Buffers_By_Index ( _Terrain->TerrainBuffersIndex );
+
+	bufferPointers[0] = Buffers->Vertexes->Buffer;// m_vertexBuffer;
+	bufferPointers[1] = _Terrain->InstancePositionsBuffer->Buffer;//m_posesBuffer;
+
+	// Set the vertex buffer to active in the input assembler so it can be rendered.
+	Local_D3DGC->DX_deviceContext->IASetVertexBuffers ( 0, 2, bufferPointers, strides, offsets );
+
+	// Set the index buffer to active in the input assembler so it can be rendered.
+	Local_D3DGC->DX_deviceContext->IASetIndexBuffer ( Buffers->Indexes->Buffer/*m_indexBuffer*/, DXGI_FORMAT_R32_UINT, 0 );
+
+	// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
+	Local_D3DGC->DX_deviceContext->IASetPrimitiveTopology ( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+
+	// Set shader texture resource in the pixel shader.
+	Local_D3DGC->DX_deviceContext->PSSetShaderResources ( 0, 1, &ResManager->TexturesArr[_Terrain->TerrainTextureIndex]->SRV );
+
+	// Render the triangle.
+	Local_D3DGC->DX_deviceContext->DrawIndexed ( _Terrain->TotalIndex, 0, 0 );
+}
+
+
 void RenderClass::RenderCubeMap ( int ObjectIndex )
 {
 
@@ -1691,3 +1756,136 @@ void RenderClass::RenderCubeMap ( int ObjectIndex )
 
 }
 
+
+void RenderClass::Init_ShadowMap_RasterizerState ( int DepthBias, float SlopeScaledDepthBias )
+{
+	RCUBE_RELEASE ( Local_D3DGC->LightRender_RS );
+	CD3D11_RASTERIZER_DESC desc ( D3D11_DEFAULT );
+	desc.CullMode = D3D11_CULL_FRONT; //D3D11_CULL_BACK; //D3D11_CULL_FRONT; //D3D11_CULL_NONE;//
+	desc.FillMode = D3D11_FILL_SOLID;//D3D11_FILL_WIREFRAME;//D3D11_FILL_SOLID;//
+	desc.FrontCounterClockwise = false;
+	desc.ScissorEnable = false;
+	desc.DepthClipEnable = true;//true;
+	desc.MultisampleEnable = true;//false;
+	desc.AntialiasedLineEnable = true;
+	desc.DepthBias = DepthBias;//1.e5;//0.0f;//1.e5;
+	desc.SlopeScaledDepthBias = SlopeScaledDepthBias;// 1.0f;//8.0;//0.0f;//8.0;
+	desc.DepthBiasClamp = 1.0f;
+	Local_D3DGC->DX_device->CreateRasterizerState ( &desc, &Local_D3DGC->LightRender_RS );
+}
+
+
+void RenderClass::DrawObjectUsingShadows ( XMVECTOR DrawPosition )
+{
+	// 3D Modek render if want to cast shadows
+	ResManager->Frustum_3D_Objects ( Local_Frustum );
+	int Objects_Amount = ( int ) ResManager->_3DModels.size ();
+	for ( int i = 0; i < Objects_Amount; ++i )
+	{
+		Render3D_Object ( i );
+	}
+	// Terrain render if want to cast shadows
+	Objects_Amount = ( int ) ResManager->Terrains.size ();
+	for ( int i = 0; i < Objects_Amount; ++i )
+	{
+		RenderTerrain ( i );
+	}
+}
+
+
+void RenderClass::RenderSpotLightsSadowMaps ( std::vector <int>* SpotLightsWithShadowsIndexes )
+{
+
+	HRESULT res;
+
+	CB_ShadowMap cbPerObj;
+
+
+	ID3D11ShaderResourceView * tab[1];
+	tab[0] = NULL;
+	Local_D3DGC->DX_deviceContext->PSSetShaderResources ( 1, 1, tab );
+	Local_D3DGC->DX_deviceContext->PSSetShader ( 0, 0, 0 );
+
+	//	Local_D3DGC->DX_deviceContext->VSSetShader(myManeger->VertShaderArr[ShaderFordraw], 0, 0);
+	Local_D3DGC->DX_deviceContext->RSSetState ( Local_D3DGC->LightRender_RS );
+	Local_D3DGC->DX_deviceContext->GSSetShader ( 0, 0, 0 );
+	Local_D3DGC->DX_deviceContext->OMSetDepthStencilState ( Local_D3DGC->LightRender_DS, 0 );
+	// Устанавливаем ViewPort для ShadowMap
+	Local_D3DGC->DX_deviceContext->RSSetViewports ( 1, &Local_D3D->LightViewPort );
+	//	g_D3DGC->DX_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	int Amount = ( int ) SpotLightsWithShadowsIndexes->size ();
+	for ( int i = 0; i < Amount; i++ )
+	{
+
+		// Для скорости убрал всё что не меняется в глобальную инициализацию
+		if ( Local_D3DGC->MSAAQualityCount > 1 )
+		{
+			DSD2.Texture2DMSArray.FirstArraySlice = i;
+		}
+		else
+		{
+			DSD2.Texture2DArray.FirstArraySlice = i;
+		}
+
+		res = Local_D3DGC->DX_device->CreateDepthStencilView ( Local_D3D->ShadowMap3D, &DSD2, &Local_D3DGC->DSV_ShadowMap3D );
+		//if (FAILED(res))
+		//{
+		//	return false;
+		//}
+#if defined( DEBUG ) || defined( _DEBUG )
+		const char c_szName [] = "DSV_ShadowMap3D";
+		Local_D3DGC->DSV_ShadowMap3D->SetPrivateData ( WKPDID_D3DDebugObjectName, sizeof ( c_szName ) - 1, c_szName );
+#endif
+		// Для скорости создаём указатель
+		int* Point = &SpotLightsWithShadowsIndexes[0][i];
+		PointLight* Point1 = Local_D3D->mPointLightParameters[*Point];
+
+		LightPosition.Fl3 = Point1->position;
+		//			LightPosition.Fl4.w = 0.0f;
+		LightTarget.Fl3 = Point1->direction;
+		//			LightTarget.Fl4.w = 0.0f;
+		//			LightTarget.Vec = LightTarget.Vec / 100.0f;
+		//			XMVECTOR LightTarget = XMLoadFloat3(&g_Light->mPointLightParameters[*Point]->direction);
+		// http://www.3dgep.com/understanding-the-view-matrix/
+		// http://www.codinglabs.net/article_world_view_projection_matrix.aspx
+		XMMATRIX LightView = XMMatrixLookToLH ( LightPosition.Vec, LightTarget.Vec, Up ); //XMVector3Normalize  / XMVector3NormalizeEst
+
+		XMMATRIX LightProjection = XMMatrixPerspectiveFovLH ( XM_PIDIV4, Local_D3DGC->ScreenRatio,
+															  Local_D3DGC->NearPlane, Point1->attenuationEnd ); //m_Light->D3DGC_Light->FarPlane * 10
+																												//		LightProjection = XMMatrixOrthographicLH( g_D3DGC->ScreenWidth, g_D3DGC->ScreenHeight, g_D3DGC->NearPlane, Point1->attenuationEnd );
+
+		XMMATRIX LightViewProj = LightView * LightProjection;
+		// Это пока не нужно.  У нас пока нет отсеивание объектов по светам. Это нужно не здесь.
+		Local_Frustum->ConstructFrustumNew ( LightViewProj );
+
+		cbPerObj.LightViewProjection = XMMatrixTranspose ( LightViewProj );
+
+//		Local_D3DGC->DX_deviceContext->UpdateSubresource ( cbShadowBuffer, 0, NULL, &cbPerObj, 0, 0 );
+		Local_D3DGC->ShadowMapLightView->Update ( &cbPerObj );
+		Local_D3DGC->DX_deviceContext->VSSetConstantBuffers ( 1, 1, &Local_D3DGC->ShadowMapLightView->Buffer );
+		// Создаём матрицу поворота
+		RCubeMatrix Mat;
+		Mat.XMM = cbPerObj.LightViewProjection;
+		Point1->qtwvp = Mat.XMF;
+		//		XMStoreFloat4x4(&Point1->qtwvp, cbPerObj.ViewProjection );
+		// ----------------------------------------------------------------------------------
+		// Создаём кватернион поворота
+		//		LightTarget.Vec = XMQuaternionRotationMatrix( cbPerObj.ViewProjection );
+		//		Point1->RotQuat = LightTarget.Fl4;
+
+		//		cbPerObj.ViewProjection = XMMatrixRotationQuaternion(LightTarget.Vec);
+		// ----------------------------------------------------------------------------------
+		Local_D3DGC->DX_deviceContext->OMSetRenderTargets ( 0, 0, Local_D3DGC->DSV_ShadowMap3D );
+		Local_D3DGC->DX_deviceContext->ClearDepthStencilView ( Local_D3DGC->DSV_ShadowMap3D, D3D11_CLEAR_DEPTH, 1.0f, 0 );
+		DrawObjectUsingShadows ( LightPosition.Vec );
+
+		// Сохраняем в световом массиве индекс куска Shadow Map
+		Point1->ShadowMapSliceNumber = i;
+		Point1->LightID = i;
+//		Local_D3DGC->DSV_ShadowMap3D->Release ();
+		RCUBE_RELEASE ( Local_D3DGC->DSV_ShadowMap3D );
+	}
+	// Устанавливаем ViewPort для RCube
+	Local_D3DGC->DX_deviceContext->RSSetViewports ( 1, &Local_D3D->viewport );
+}

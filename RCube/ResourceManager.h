@@ -100,6 +100,7 @@ public:
 	vector <UINT>						Unused3DModelsMeshBuffersIndex;// 
 
 // LandScape / Terrain
+// Список Terrains на сцене
 	vector < Terrain* >					Terrains;			// Список карт местностей / уровней
 	vector <_3D_Obj_Buffers* >			TerrainVertexBuffers;// Массив вертексов Terrain 
 	vector <UINT>						UnusedTerrainsIndex;//
@@ -182,7 +183,7 @@ public:
 
 	Terrain* Get_Terrain_Object_Pointer ( int ObjectIndex );	// Получить указатель на объект 3D модели из списка по индексу
 	_3D_Obj_Buffers* Get_Terrain_Buffers_By_Index ( int ObjectIndex ); // Получаем VB, IB для Terrain
-	bool Update_Terrain_Position ( int ObjectIndex, PositionType* PositionRotation );
+	bool Update_Terrain_Position ( int ObjectIndex, PositionType* PositionRotation ); // Caution !  Should be changed in PhysX ( TDO )
 
 	void Calculate_FirstVertexPos ( Terrain* TerrainObj );	// Расчёт 1-го вертекса в зависимости от параметров Terrain
 	void GenerateVertexes ( Terrain* TerrainObj );		// Создаёт все вертексы по 1-му
@@ -190,25 +191,17 @@ public:
 //	 int ComeputeIndex ( Terrain* TerrainObj, int X, int Z ); // рассчёт номера индекса по позиции XZ вертекса
 	void GetQuadIndex ( Terrain* TerrainObj , int UL, int DR , Point* _Result); // Расчёт индексов вертексов составляющих квадрат | UL - UpLeft , DR - DownRight индекс вертекса
 
-
-	bool GenerateRandTerrain ( Terrain* TerrainObj, TerrainParam* LandParam, float VertixesIndent );
-	bool GenerateRandTerrain ( Terrain* TerrainObj );	// НОВАЯ ВЕРСИЯ
+	bool GenerateRandTerrain ( Terrain* TerrainObj );
 	
-	bool ReadTerrainFromTexture ( Terrain* TerrainObj, TerrainParam* LandParam, float VertixesIndent );
-	bool ReadTerrainFromTexture ( Terrain* TerrainObj, char* FileName );	// НОВАЯ ВЕРСИЯ
+	bool ReadTerrainFromTexture ( Terrain* TerrainObj, char* FileName );
 
-	void CheckClustersVertixes ( Terrain* TerrainObj );
-	void CheckDrawLenghtParam ( Terrain* TerrainObj );
 	void CalculateNormals ( Terrain* TerrainObj );
 	
-	void GenerateLandScape ( Terrain* TerrainObj, TerrainParam* LandParam, HeightMapType* m_heightMap );
 	void GenerateLandScape ( Terrain* TerrainObj, TerrainInitData* Data);  // НОВАЯ ВЕРСИЯ
 	
 	int GenerateRandRadius ( int MaxRadius, int MinRadius );
 	Point GenerateRandPoint ( Terrain* TerrainObj );
-	void CheckDrawLenghtParam ( HWND hwnd );
-	void CheckClustersVertixes ( HWND hwnd );
-	int ComeputeIndex ( int X, int Z );
+
 	void TerrainFrame ( bool CameraReplaseData, XMVECTOR &CameraPosition );
 	void LandParamChecker ( TerrainParam* LandParam );
 

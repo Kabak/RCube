@@ -97,6 +97,8 @@ public:
 	int FXAAShaderIndex;	// Индекс шейдера в массиве которым выполняется FXAA сглаживание
 	int BlureHorizComputeShaderIndex;
 	int BlureVertComputeShaderIndex;
+	int ShadowMapShaderIndex;	// Индекс шейдера для отрисовки ShadowMap 
+	int LightShaderForDraw;		// Индекс шейдера для отрисовки света
 
 // Video Card data
 	int m_videoCardMemory;
@@ -131,8 +133,6 @@ public:
 	int SMHeight;// Высота Shadow Map
 	D3D11_VIEWPORT LightViewPort;	// ShadowMap ViewPort
 	//  ------------------   Для Shadows   -------------------------
-
-	int LightShaderForDraw = -1;
 
 	int PointLightSize;	// Размер структуры PointLight
 						// ДЛЯ ТЕСТОВ
@@ -331,12 +331,15 @@ private:
 	int ClustersAmount;
 
 // - LIGHTS
-/*
+
 // + Shadow Works
+/*
 public:
 
+// - Shadow Works	
+
 	ID3D11VertexShader* ShadowMapShader;
-	int ShadowMapShaderFordraw = -1;
+
 //	int LightRender_RS_Number = -1;
 
 //	void Init ( HWND hwnd, D3DGlobalContext * D3DGC, ResourceManager * Maneger, D3DClass * Light, FrustumClass* Frustum
@@ -349,9 +352,6 @@ public:
 private:
 
 	ID3D11DepthStencilView* DSV_ShadowMap3D; // 
-	ID3D11Buffer * cbShadowBuffer;
-	D3DGlobalContext * Local_D3DGC;
-	ResourceManager * myManeger;
 	ID3D11RasterizerState* LightRender_RS;
 	ID3D11DepthStencilState* LightRender_DS;
 //	D3DClass * g_Light;
@@ -370,7 +370,6 @@ private:
 
 	RCube_VecFloat34 LightPosition, LightTarget;
 */
-// - Shadow Works
 
 	HRESULT hr, result;
 	bool m_vsync_enabled;

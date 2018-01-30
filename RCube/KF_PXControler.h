@@ -12,9 +12,7 @@
 //#include "pxtask/PxGpuTask.h"
 #include <vector>
 #include "D3DGlobalContext.h"
-#include "KFTerrain.h"
-//#include "KFModel.h"
-//#include "KFModelList.h"
+#include "Buffers_def.h"
 #include <string.h>
 #include "ResourceManager.h"
 
@@ -180,13 +178,14 @@ public:
 	PxPvdTransport *transport = nullptr;
 //#endif
 
-	void CreateHeildHield(int HFRows, int HFCollums, float VertixesInderect , HeightMapType* terrainData , std::wstring filename);
+	void CreateHeildHield( Terrain* TerrainObject, std::wstring filename);
 	int CreateObject(std::wstring filename, bool IsDynamic ,ObjectData * Data); // функция для добавления того или иного обьекта возвращает индекс элемента в соответст моссиве
 	void CreateInstancingObjects(std::wstring filename, bool IsDynamic, int ObjInex);
 	int CreateCharacter(std::wstring filename , ObjectData * Data); // функция для добавления персонажа (PxController) в физику возвращает идекс в (g_ControllerManager)
 	void Frame();
 
-	int JoinAllCubes();
+	int JoinAllCubes(); // Соединяем кубы в связку
+	bool CheckActorsStopMovement ();
 
 	std::vector<PxRigidStatic*> StaticRigitArray;
 	std::vector<PxRigidDynamic*> DymanicRigitArray;

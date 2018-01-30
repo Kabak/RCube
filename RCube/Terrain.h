@@ -59,9 +59,10 @@ public:
 	Vertex_Model3D* VB_Data;// Массив всех вертексов с текстурными координатами и нормалями
 	Index_Type* IB_Data;	// Индексный буфер
 
-	HeightMapType * m_heightMap; // двумерный массив высот [x кордината][y кордината]
 	RCube_VecFloat34 First_Vertex_Data;	// Положение и высота 1-го вертекса, от которго всё пляшет
 
+	bool CastShadow;	// Рисовать ли тень от этого объекта ?
+	bool ClusterRender; // Рисовать кластерами ? ( кластеры проходят Frustum )
 };
 
 #endif

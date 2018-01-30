@@ -111,6 +111,8 @@ private:
 
 
 	bool Start;
+	bool StartJoints;
+	float TimePased;
 
 	bool done ;
 

@@ -102,9 +102,6 @@
     <ClInclude Include="RCubeProfiling.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="KFClusterMap.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ClusterShadingFragmentFactory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -112,9 +109,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="RCubeNetwork.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="KFShadowWork.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="KF_PXControler.h">
@@ -225,9 +219,6 @@
     <ClInclude Include="KFModelList.h">
       <Filter>Render\3DModel</Filter>
     </ClInclude>
-    <ClInclude Include="KFTerrain.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Terrain.h">
       <Filter>Render\Terrain</Filter>
     </ClInclude>
@@ -281,9 +272,6 @@
     <ClCompile Include="RCubeProfiling.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="KFClusterMap.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ClusterShadingFragmentFactory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -291,9 +279,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RCubeNetwork.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="KFShadowWork.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="KF_PXControler.cpp">
@@ -379,9 +364,6 @@
     </ClCompile>
     <ClCompile Include="KFModelList.cpp">
       <Filter>Render\3DModel</Filter>
-    </ClCompile>
-    <ClCompile Include="KFTerrain.cpp">
-      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Terrain.cpp">
       <Filter>Render\Terrain</Filter>

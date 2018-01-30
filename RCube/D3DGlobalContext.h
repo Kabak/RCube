@@ -79,6 +79,10 @@ ID3D11ShaderResourceView* sharedTex11_SRV;	// SRV Текстуры на которой рисуются ш
 	   ID3D11BlendState* m_alphaEnableBlendingState ;
 	   ID3D11BlendState* m_alphaDisableBlendingState;
  ID3D11DepthStencilView* m_depthStencilView;
+// Shadows
+ ID3D11DepthStencilView* DSV_ShadowMap3D;
+// Shadows
+
 // Для Clustering
 		ID3D11Texture2D* m_depthStencilBuffer;
   ID3D11RasterizerState* DefaultRasterizerState;
@@ -112,7 +116,11 @@ ID3D11DepthStencilState* CubeMap_DepthStencilState;
 
  ConstantBuffer<CB_FXAA>*				g_pcbFXAA;			// FXAA константы
  ConstantBuffer<ConstantBufferData>*	Global_VS_ConstantsBuffer;	// Константы для вертексных шейдеров
-
+// Shadows
+ ConstantBuffer<CB_ShadowMap>*			ShadowMapLightView;	// Матрица вида с позиции света
+ ID3D11RasterizerState*					LightRender_RS;
+ ID3D11DepthStencilState*				LightRender_DS;
+ // Shadows
 	     ID3D11Texture2D* BackBuffer_ProxyTexture;			// Временная текстура для рисования всего что нужно
 ID3D11ShaderResourceView* BackBuffer_ProxyTextureSRV;		// Например , StringsList сюда рисуется и скролится
   ID3D11RenderTargetView* BackBuffer_ProxyTextureRTV;

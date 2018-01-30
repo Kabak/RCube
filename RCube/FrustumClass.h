@@ -61,7 +61,8 @@ private:
 	XMMATRIX Input_projectionMatrix;
 	XMMATRIX matrix;
 	XMVECTOR TempVector;
-	XMFLOAT4X4A Temp;
+//	XMFLOAT4X4A Temp;
+//	RCubeMatrix Temp;
 };
 
 #endif

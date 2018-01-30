@@ -7,10 +7,12 @@
 
 FrustumClass::FrustumClass()
 {
+	RCubeMatrix Temp;
 	Input_projectionMatrix = XMMatrixIdentity();
 	matrix = XMMatrixIdentity();
 	TempVector = XMVectorZero();
-	XMStoreFloat4x4A(&Temp,matrix);
+//	XMStoreFloat4x4A(&Temp,matrix);
+	Temp.XMM = matrix;
 }
 
 
@@ -22,104 +24,106 @@ FrustumClass::~FrustumClass()
 void FrustumClass::ConstructFrustum(float screenDepth, XMMATRIX &projectionMatrix, XMMATRIX &viewMatrix)
 {
 	float zMinimum, r;
+	RCubeMatrix Temp;
+//	XMStoreFloat4x4A(&Temp,projectionMatrix);
+	Temp.XMM = projectionMatrix;
 
-	XMStoreFloat4x4A(&Temp,projectionMatrix);
-	
 	// Calculate the minimum Z distance in the frustum.
-	zMinimum = -Temp._43 / Temp._33;
+	zMinimum = -Temp.XMF._43 / Temp.XMF._33;
 	r = screenDepth / (screenDepth - zMinimum);
-	Temp._33 = r;
-	Temp._43 = -r * zMinimum;
+	Temp.XMF._33 = r;
+	Temp.XMF._43 = -r * zMinimum;
 
-	Input_projectionMatrix = XMLoadFloat4x4A(&Temp);
+	Input_projectionMatrix = Temp.XMM;// XMLoadFloat4x4A ( &Temp );
 	matrix = viewMatrix * Input_projectionMatrix;
 
-	XMStoreFloat4x4A(&Temp,matrix);
+//	XMStoreFloat4x4A(&Temp,matrix);
+	Temp.XMM = matrix;
 	// Calculate left plane of frustum.
-	u_plane.m_planes[0].x = Temp._14 + Temp._11;
-	u_plane.m_planes[0].y = Temp._24 + Temp._21;
-	u_plane.m_planes[0].z = Temp._34 + Temp._31;
-	u_plane.m_planes[0].w = Temp._44 + Temp._41;
+	u_plane.m_planes[0].x = Temp.XMF._14 + Temp.XMF._11;
+	u_plane.m_planes[0].y = Temp.XMF._24 + Temp.XMF._21;
+	u_plane.m_planes[0].z = Temp.XMF._34 + Temp.XMF._31;
+	u_plane.m_planes[0].w = Temp.XMF._44 + Temp.XMF._41;
 
 	// Calculate right plane of frustum.
-	u_plane.m_planes[1].x = Temp._14 - Temp._11;
-	u_plane.m_planes[1].y = Temp._24 - Temp._21;
-	u_plane.m_planes[1].z = Temp._34 - Temp._31;
-	u_plane.m_planes[1].w = Temp._44 - Temp._41;
+	u_plane.m_planes[1].x = Temp.XMF._14 - Temp.XMF._11;
+	u_plane.m_planes[1].y = Temp.XMF._24 - Temp.XMF._21;
+	u_plane.m_planes[1].z = Temp.XMF._34 - Temp.XMF._31;
+	u_plane.m_planes[1].w = Temp.XMF._44 - Temp.XMF._41;
 
 	// Calculate top plane of frustum.
-	u_plane.m_planes[2].x = Temp._14 - Temp._12;
-	u_plane.m_planes[2].y = Temp._24 - Temp._22;
-	u_plane.m_planes[2].z = Temp._34 - Temp._32;
-	u_plane.m_planes[2].w = Temp._44 - Temp._42;
+	u_plane.m_planes[2].x = Temp.XMF._14 - Temp.XMF._12;
+	u_plane.m_planes[2].y = Temp.XMF._24 - Temp.XMF._22;
+	u_plane.m_planes[2].z = Temp.XMF._34 - Temp.XMF._32;
+	u_plane.m_planes[2].w = Temp.XMF._44 - Temp.XMF._42;
 
 	// Calculate bottom plane of frustum.
-	u_plane.m_planes[3].x = Temp._14 + Temp._12;
-	u_plane.m_planes[3].y = Temp._24 + Temp._22;
-	u_plane.m_planes[3].z = Temp._34 + Temp._32;
-	u_plane.m_planes[3].w = Temp._44 + Temp._42;
+	u_plane.m_planes[3].x = Temp.XMF._14 + Temp.XMF._12;
+	u_plane.m_planes[3].y = Temp.XMF._24 + Temp.XMF._22;
+	u_plane.m_planes[3].z = Temp.XMF._34 + Temp.XMF._32;
+	u_plane.m_planes[3].w = Temp.XMF._44 + Temp.XMF._42;
 
 	// Calculate near plane of frustum.
-	u_plane.m_planes[4].x = Temp._14 + Temp._13;
-	u_plane.m_planes[4].y = Temp._24 + Temp._23;
-	u_plane.m_planes[4].z = Temp._34 + Temp._33;
-	u_plane.m_planes[4].w = Temp._44 + Temp._43;
+	u_plane.m_planes[4].x = Temp.XMF._14 + Temp.XMF._13;
+	u_plane.m_planes[4].y = Temp.XMF._24 + Temp.XMF._23;
+	u_plane.m_planes[4].z = Temp.XMF._34 + Temp.XMF._33;
+	u_plane.m_planes[4].w = Temp.XMF._44 + Temp.XMF._43;
 
 	// Calculate far plane of frustum.
-	u_plane.m_planes[5].x = Temp._14 - Temp._13;
-	u_plane.m_planes[5].y = Temp._24 - Temp._23;
-	u_plane.m_planes[5].z = Temp._34 - Temp._33;
-	u_plane.m_planes[5].w = Temp._44 - Temp._43;
+	u_plane.m_planes[5].x = Temp.XMF._14 - Temp.XMF._13;
+	u_plane.m_planes[5].y = Temp.XMF._24 - Temp.XMF._23;
+	u_plane.m_planes[5].z = Temp.XMF._34 - Temp.XMF._33;
+	u_plane.m_planes[5].w = Temp.XMF._44 - Temp.XMF._43;
 	return;
 }
 
 
 void FrustumClass::ConstructFrustumNew( XMMATRIX &ViewProj )
 {
-
-	XMStoreFloat4x4A(&Temp, ViewProj);
-
+	RCubeMatrix Temp;
+//	XMStoreFloat4x4A(&Temp, ViewProj);
+	Temp.XMM = ViewProj;
 	// Calculate left plane of frustum.
 //	_Res *Left;// = &u_plane.m_planes[0];
-	Res.fres.x = Temp._14 + Temp._11;
-	Res.fres.y = Temp._24 + Temp._21;
-	Res.fres.z = Temp._34 + Temp._31;
-	Res.fres.w = Temp._44 + Temp._41;
+	Res.fres.x = Temp.XMF._14 + Temp.XMF._11;
+	Res.fres.y = Temp.XMF._24 + Temp.XMF._21;
+	Res.fres.z = Temp.XMF._34 + Temp.XMF._31;
+	Res.fres.w = Temp.XMF._44 + Temp.XMF._41;
 	u_plane.planes[0] = XMPlaneNormalize( Res.res );
 	// Calculate right plane of frustum.
 //	_Res *Right;// = &u_plane.m_planes[1];
-	Res.fres.x = Temp._14 - Temp._11;
-	Res.fres.y = Temp._24 - Temp._21;
-	Res.fres.z = Temp._34 - Temp._31;
-	Res.fres.w = Temp._44 - Temp._41;
+	Res.fres.x = Temp.XMF._14 - Temp.XMF._11;
+	Res.fres.y = Temp.XMF._24 - Temp.XMF._21;
+	Res.fres.z = Temp.XMF._34 - Temp.XMF._31;
+	Res.fres.w = Temp.XMF._44 - Temp.XMF._41;
 	u_plane.planes[1] = XMPlaneNormalize( Res.res );
 	// Calculate top plane of frustum.
 //	_Res *Top;// = &u_plane.m_planes[2];
-	Res.fres.x = Temp._14 - Temp._12;
-	Res.fres.y = Temp._24 - Temp._22;
-	Res.fres.z = Temp._34 - Temp._32;
-	Res.fres.w = Temp._44 - Temp._42;
+	Res.fres.x = Temp.XMF._14 - Temp.XMF._12;
+	Res.fres.y = Temp.XMF._24 - Temp.XMF._22;
+	Res.fres.z = Temp.XMF._34 - Temp.XMF._32;
+	Res.fres.w = Temp.XMF._44 - Temp.XMF._42;
 	u_plane.planes[2] = XMPlaneNormalize( Res.res );
 	// Calculate bottom plane of frustum.
 //	_Res *Bottom;// = &u_plane.m_planes[3];
-	Res.fres.x = Temp._14 + Temp._12;
-	Res.fres.y = Temp._24 + Temp._22;
-	Res.fres.z = Temp._34 + Temp._32;
-	Res.fres.w = Temp._44 + Temp._42;
+	Res.fres.x = Temp.XMF._14 + Temp.XMF._12;
+	Res.fres.y = Temp.XMF._24 + Temp.XMF._22;
+	Res.fres.z = Temp.XMF._34 + Temp.XMF._32;
+	Res.fres.w = Temp.XMF._44 + Temp.XMF._42;
 	u_plane.planes[3] = XMPlaneNormalize( Res.res );
 	// Calculate near plane of frustum.
 //	_Res *Near;// = &u_plane.m_planes[4];
-	Res.fres.x = Temp._13;
-	Res.fres.y = Temp._23;
-	Res.fres.z = Temp._33;
-	Res.fres.w = Temp._43;
+	Res.fres.x = Temp.XMF._13;
+	Res.fres.y = Temp.XMF._23;
+	Res.fres.z = Temp.XMF._33;
+	Res.fres.w = Temp.XMF._43;
 	u_plane.planes[4] = XMPlaneNormalize( Res.res );
 	// Calculate far plane of frustum.
 //	_Res *Far;// = &u_plane.m_planes[5];
-	Res.fres.x = Temp._14 - Temp._13;
-	Res.fres.y = Temp._24 - Temp._23;
-	Res.fres.z = Temp._34 - Temp._33;
-	Res.fres.w = Temp._44 - Temp._43;
+	Res.fres.x = Temp.XMF._14 - Temp.XMF._13;
+	Res.fres.y = Temp.XMF._24 - Temp.XMF._23;
+	Res.fres.z = Temp.XMF._34 - Temp.XMF._33;
+	Res.fres.w = Temp.XMF._44 - Temp.XMF._43;
 	u_plane.planes[5] = XMPlaneNormalize( Res.res );
 	return;
 }

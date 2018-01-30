@@ -267,6 +267,11 @@ void KF_PXControler::Init(HWND * g_hwnd , D3DGlobalContext *D3DGC, ResourceManag
 		desc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
 		desc.flags |= PxSceneFlag::eENABLE_PCM;
 		desc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
+		// Для мониторинга есть ли движущиеся объекты
+		desc.flags |= PxSceneFlag::eENABLE_ACTIVE_ACTORS; // Для мониторинга есть ли движущиеся объекты
+		desc.flags |= PxSceneFlag::eENABLE_ACTIVETRANSFORMS; //
+//		desc.flags |= PxSceneFlag::eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS; // Выключаем киниматических актёров
+
 		desc.broadPhaseType = PxBroadPhaseType::eGPU;//eSAP;//eMBP;//
 		desc.gpuMaxNumPartitions = 8;
 /*		desc.gpuDynamicsConfig.constraintBufferCapacity = (32 * 1024 * 1024);
@@ -302,8 +307,7 @@ void KF_PXControler::Init(HWND * g_hwnd , D3DGlobalContext *D3DGC, ResourceManag
 
 }
 
-void KF_PXControler::CreateHeildHield(int HFRows, int HFCollums , float VertixesInderect , HeightMapType* terrainData ,
-	std::wstring filename ) {
+void KF_PXControler::CreateHeildHield( Terrain* TerrainObject, std::wstring filename ) {
 
 	FIZFileData FizData;
 	ReadFIZFile(&FizData, filename);
@@ -320,9 +324,9 @@ void KF_PXControler::CreateHeildHield(int HFRows, int HFCollums , float Vertixes
 	PxReal heightScale = PxMax(deltaHeight / quantization, PX_MIN_HEIGHTFIELD_Y_SCALE);
 
 
-	PxU32 numRows = HFRows, numCols = HFCollums;
+	PxU32 numRows = TerrainObject->VertexInX_Row, numCols = TerrainObject->VertexInZ_Col;
 
-	PxU32* hfSamples = new PxU32[HFRows * HFCollums];
+	PxU32* hfSamples = new PxU32[numRows * numCols];
 
 	PxU32 index = 0;
 	PxShape* shape; // PxSphereGeometry(3.0f)
@@ -342,23 +346,23 @@ void KF_PXControler::CreateHeildHield(int HFRows, int HFCollums , float Vertixes
 	(пример терайн 4х4)
 
 	*/
-
-	for (PxU32 col = 0; col < numCols; col++)
 	{
-		for (PxU32 row = 0; row < numRows; row++)
+		PxI16 height;
+		int Index;
+		for ( PxU32 col = 0; col < numCols; col++ )
 		{
+			for ( PxU32 row = 0; row < numRows; row++ )
+			{
 
-			PxI16 height;
-			height = PxI16(terrainData[(col*numRows) + row].y);
+				Index = ( col*numRows ) + row;
+				height = PxI16 ( TerrainObject->VB_Data[Index].Position.y );
 
-			PxHeightFieldSample& smp = (PxHeightFieldSample&)(hfSamples[(row*numCols) + col]);
-			smp.height = (PxI16)height; //height;
-			smp.materialIndex0 = 0;
-			smp.materialIndex1 = 0;
-
-			//			if (userFlipEdge)
-			//				smp.setTessFlag();
-
+				PxHeightFieldSample& smp = ( PxHeightFieldSample& ) ( hfSamples[Index] );
+				smp.height = ( PxI16 ) height; //height;
+				smp.materialIndex0 = 0;
+				smp.materialIndex1 = 0;
+				smp.setTessFlag ();
+			}
 		}
 	}
 
@@ -380,14 +384,15 @@ void KF_PXControler::CreateHeildHield(int HFRows, int HFCollums , float Vertixes
 	// Положение высот на земле можно удалить после приготовления
 	delete[] hfSamples;
 	// Создаём объект согласно форме нашей земли в PhysX
-	PxHeightFieldGeometry hfGeom(aHeightField, PxMeshGeometryFlags(), 1.0f, VertixesInderect, VertixesInderect);
+	PxHeightFieldGeometry hfGeom(aHeightField, PxMeshGeometryFlags(), 1.0f, TerrainObject->QuadVertexStep, TerrainObject->QuadVertexStep );
 	shape = gPhysics->createShape(hfGeom, *gMaterial);
 	// Прикрепляем форму к статическому объекту Земля
 	PxTerrain->attachShape(*shape);
 
 	// Изменяем позицию нашей земли в Физическом мире
 	PxTransform localPose;
-	localPose.p = PxVec3(-(((PxReal)HFRows / 2) * VertixesInderect) + 1, 0.0f, -((HFCollums / 2) * VertixesInderect) + 1); // make it so that the center of th eheightfield is at world (0,minHeight,0)
+
+	localPose.p = PxVec3((PxReal) TerrainObject->First_Vertex_Data.Fl3.x, 0.0f, ( PxReal ) TerrainObject->First_Vertex_Data.Fl3.z ); // make it so that the center of th eheightfield is at world (0,minHeight,0)
 	localPose.q = PxQuat(PxIdentity);
 	PxTerrain->setGlobalPose(localPose);
 	// file:///C:/PhysX/Documentation/PhysXGuide/Manual/API.html?highlight=getconcretetype
@@ -708,25 +713,6 @@ void KF_PXControler::Frame() {
 
 		MyManager->Update_3D_Object_InstancesPosBuffer ( 0, -1, MyManager->_3DModels[0]->InstanceCount );
 
-/*
-		c = 0;
-
-		PxExtendedVec3 position;
-
-		while (c < NumOfIndefinedCharacters) {
-
-			PositionType  * Temp4 = &Temp2[CharactersDataArr[c].ModelIndex][CharactersDataArr[c].InstanceIndex];
-
-			position = ControllersArray[c]->getPosition ();
-			Temp4->position.Fl3.x = (float)position.x;
-			Temp4->position.Fl3.y = (float)position.y;
-			Temp4->position.Fl3.z = (float)position.z;
-
-			++c;
-		}
-		MyManager->Update_3D_Object_InstancesPosBuffer ( CharactersDataArr[c].ModelIndex, -1, MyManager->_3DModels[0]->InstanceCount );
-*/
-
 	}
 }
 
@@ -923,6 +909,21 @@ void EventHelper::onShapeHit(const PxControllerShapeHit& hit) {
 
 }
 
+bool KF_PXControler::CheckActorsStopMovement ()
+{
+//	if (gScene->fetchResults (false))
+	{
+		PxU32 nbActors = gScene->getNbActors ( physx::PxActorTypeFlag::eRIGID_DYNAMIC );
+		PxActor** activeActors;
+		activeActors = gScene->getActiveActors ( nbActors );
+
+		if ( activeActors == 0 )
+			return true;
+	}
+	
+	return false;
+}
+
 
 int KF_PXControler::JoinAllCubes( )
 {
@@ -965,8 +966,8 @@ int KF_PXControler::JoinAllCubes( )
 		++c;
 	}
 
-		actors[112]->setActorFlag( PxActorFlag::eDISABLE_GRAVITY, false );
-		actors[112]->is<PxRigidDynamic>()->setMass( 0.5f );
+		actors[110]->setActorFlag( PxActorFlag::eDISABLE_GRAVITY, false );
+		actors[110]->is<PxRigidDynamic>()->setMass( 0.5f );
 /*
 			actors[0]->is<PxRigidDynamic>()->setAngularDamping(0.1f);
 			actors[0]->is<PxRigidDynamic>()->setLinearVelocity(PxVec3(0.0f, 0.0f, 0.0f));

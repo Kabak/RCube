@@ -3,6 +3,13 @@
 ========================================================================
 // Типы данных справка
 https://msdn.microsoft.com/en-us/library/s3f49ktz.aspx?f=255&MSPPError=-2147217396
+
+// Tessalation
+https://msdn.microsoft.com/en-us/library/windows/desktop/ff476340(v=vs.85).aspx
+http://www.rastertek.com/dx11tut38.html
+http://richardssoftware.net/Home/Post/28
+https://www.gamedev.net/articles/programming/graphics/d3d11-tessellation-in-depth-r3059/
+
 // Dynamic Resolution Rendering Article
 https://software.intel.com/en-us/articles/dynamic-resolution-rendering-article
 // Смешивание текстур на ландшафте

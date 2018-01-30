@@ -64,7 +64,9 @@ EngineKernel::EngineKernel()
 	EngineFrameTime = 0.000001f;
 
 	Start = true;
-	
+	StartJoints = true;
+	TimePased = 0.0f;
+
 	IsEscapeDown = false;
 	IsMenuOn = false;
 //	IsOptionsOn = false;
@@ -192,27 +194,17 @@ bool EngineKernel::Initialize()
 	int BunchShaderIndex = m_Graphics->MyManager->GetShaderIndexByName ( L"ClusteredSM" );
 
 
-// + NEW RENDER !!!!!!!!!!!!
 	int index = m_Graphics->MyManager->Add_3D_Object ( L"Models/Cube.kfo", MAX_OBJ );
-	m_Graphics->MyManager->InitRandInstansingPoses ( index, ( m_Graphics->KFTerrain1->g_Rows / 2 ) * m_Graphics->KFTerrain1->g_VertixesIndent
-										 , -( ( m_Graphics->KFTerrain1->g_Rows / 2 ) * m_Graphics->KFTerrain1->g_VertixesIndent ), 20.0f, 19.0f
-										 , ( m_Graphics->KFTerrain1->g_Columns / 2 ) * m_Graphics->KFTerrain1->g_VertixesIndent, -( ( m_Graphics->KFTerrain1->g_Columns / 2 ) * m_Graphics->KFTerrain1->g_VertixesIndent ) );
+	m_Graphics->MyManager->InitRandInstansingPoses ( index, ( float ) ( m_Graphics->MyManager->Terrains[0]->VertexInX_Row / 2 )
+										 , -( ( float ) ( m_Graphics->MyManager->Terrains[0]->VertexInX_Row / 2 ) ), 300.0f, 20.0f
+										 , ( float ) ( m_Graphics->MyManager->Terrains[0]->VertexInZ_Col / 2 ) , -( ( float ) ( m_Graphics->MyManager->Terrains[0]->VertexInZ_Col / 2 ) ) );
 	m_Graphics->MyManager->InitRandInstansingRots ( index );
 
 	index = m_Graphics->MyManager->Add_3D_Object ( L"Models/Ship.kfo", 1 );
-	m_Graphics->MyManager->Set_3D_Object_Positon ( index, 0, 150.0f, 0.0f, 0.0f );
+	m_Graphics->MyManager->Set_3D_Object_Positon ( index, 0, 0.0f, 5.0f, 0.0f );
 
 	index = m_Graphics->MyManager->Add_3D_Object ( L"Models/Dragon.kfo", 1 );//2
-	m_Graphics->MyManager->Set_3D_Object_Positon ( index, 0, XMFLOAT3 ( 100.0f, 4.0f, -20.0f ) );
-// - NEW RENDER !!!!!!!!!!!!
-
-	m_Graphics->ModelList->AddObject( L"Models/Cube.kfo", BunchShaderIndex, MAX_OBJ);//0
-
-	m_Graphics->ModelList->InitRandInstansingPoses( 0, (m_Graphics->KFTerrain1->g_Rows / 2) * m_Graphics->KFTerrain1->g_VertixesIndent
-		, -((m_Graphics->KFTerrain1->g_Rows / 2) * m_Graphics->KFTerrain1->g_VertixesIndent), 20.0f, 19.0f
-		, (m_Graphics->KFTerrain1->g_Columns / 2) * m_Graphics->KFTerrain1->g_VertixesIndent, -((m_Graphics->KFTerrain1->g_Columns / 2) * m_Graphics->KFTerrain1->g_VertixesIndent) );
-
-	m_Graphics->ModelList->InitRandInstansingRots( 0 );
+	m_Graphics->MyManager->Set_3D_Object_Positon ( index, 0, XMFLOAT3 ( 100.0f, 4.0f, 20.0f ) );
 
 	///****************Добавление инстнсинг обьектов***************************************
 
@@ -224,18 +216,12 @@ bool EngineKernel::Initialize()
 	);
 
 	// Joints
-	PxControl->JoinAllCubes();
+//	PxControl->JoinAllCubes();
 //	PxActor* Actor->setActorFlag( PxActorFlag::eDISABLE_GRAVITY, true );
 
 	///****************Добавление инстнсинг обьектов***************************************
 
-	m_Graphics->ModelList->AddObject( L"Models/Ship.kfo", BunchShaderIndex, 1);//1
-	m_Graphics->ModelList->SetPositon( 1, 0, 0.0f, 5.0f, 0.0f );
 
-
-	m_Graphics->ModelList->AddObject(L"Models/Dragon.kfo", BunchShaderIndex, 1);//2
-	m_Graphics->ModelList->SetPositon(2 , 0 , XMFLOAT3(-100.0f , 4.0f , 20.0f ));
-	//m_Graphics->ModelList->SetRotation(2, 0, XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f));
 	// ********************** ДОБАВЛЕНИЕ ОДНОГО ОБЬЕКТА ОБЬЕКТА  ********************************************
 	//========================
 	data.InstanceIndex = 0;//индекс инстэнса
@@ -400,11 +386,16 @@ bool EngineKernel::Initialize()
 
 	/// *************** добавление карты высот (террэйна******************************
 	// одна функция
-	PxControl->CreateHeildHield( m_Graphics->KFTerrain1->g_Rows			/*количество точек по оси X*/, 
-								 m_Graphics->KFTerrain1->g_Columns		/*количество точек по оси Y*/,
-								 m_Graphics->KFTerrain1->g_VertixesIndent/*отступ между точками*/, 
-								 m_Graphics->KFTerrain1->m_heightMap		/*сам вот этот буфер вершин*/, 
-								 L"Models/Terrain.fiz.txt"				/*а это файл физики котрый описывает свойства*/ );
+
+//	PxControl->CreateHeildHield( m_Graphics->KFTerrain1->g_Rows			/*количество точек по оси X*/, 
+//								 m_Graphics->KFTerrain1->g_Columns		/*количество точек по оси Y*/,
+//								 m_Graphics->KFTerrain1->g_VertixesIndent/*отступ между точками*/, 
+//								 m_Graphics->KFTerrain1->m_heightMap		/*сам вот этот буфер вершин*/, 
+//								 L"Models/Terrain.fiz.txt"				/*а это файл физики котрый описывает свойства*/ );
+
+	PxControl->CreateHeildHield ( m_Graphics->MyManager->Terrains[0], 
+								  L"Models/Terrain.fiz.txt"				/*а это файл физики котрый описывает свойства*/ 
+								);
 
 	// если юзается все время террэйн моего типа по прсто можно имя заменить Terrain на произвольно созданный Terrain или же если наробка или нейкии другой обьект использующии карту вершин можно просто грамотно воспользоватья оргументами для создания
 	/// *************** добавление карты высот (террэйна******************************
@@ -534,6 +525,17 @@ bool EngineKernel::Frame()
 		}
 
 	}
+
+	if ( StartJoints )
+	{
+		TimePased += EngineFrameTime;
+		if ( TimePased > 0.2f )
+		{
+			PxControl->JoinAllCubes ();
+			StartJoints = false;
+		}
+	}
+
 	// Измеряем быстродействие
 //	m_Timer->StopTimer ( Str );
 //	m_Graphics->m_Text->UpdateSentence ( 5, Str, 100, 160 );
@@ -565,8 +567,7 @@ bool EngineKernel::Frame()
 	}
 
 	if ( Need )
-		m_Graphics->ShadowWork->InitRasterizerState((int) DepthBias, SlopeScaledDepthBias );
-
+	m_Graphics->RCubeRender->Init_ShadowMap_RasterizerState ( ( int ) DepthBias, SlopeScaledDepthBias );
 
 // ++++++++++++++++++     Обрабатываем изменения SсrollBars     ++++++++++++++++++++
 

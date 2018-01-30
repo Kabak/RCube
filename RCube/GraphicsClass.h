@@ -33,15 +33,10 @@
 // ++++++++++++   Измеряем быстродействие кода   +++++++++++++
 #include "RCubeProfiling.h"
 
-#include "KFTerrain.h"
 // +++++++++++++++++++++++++мои классы++++++++++++++++++
 #include "ScrollBarClass.h"
 #include "MenuControler.h"
-#include "KFModel.h"
-#include "KFModelList.h"
-//#include "KFClusterMap.h"
 #include "KF2DTextureAnimation.h"
-#include "KFShadowWork.h"
 
 #include "RenderClass.h"
 // -------------------------мои классы-------------------
@@ -116,8 +111,8 @@ public:
 
 //    KFButtons_OutPut ButtonsOut[5] ;
 	ResourceManager * MyManager;
-	KFModelList * ModelList;
-	KFShadowWork * ShadowWork;
+//	KFModelList * ModelList;
+//	KFShadowWork * ShadowWork;
 
 	RenderClass * RCubeRender;
 
@@ -158,7 +153,7 @@ public:
 	   MenuControrerClass * Hud;
 
 // ++++++++++++   Ландшафт   +++++++++++++
-				 KFTerrain* KFTerrain1;
+//				 KFTerrain* KFTerrain1;
 
 // +++++++++++++++++++     Анимация     ++++++++++++++++++++++++++++++		
 	  KF2DTextureAnimation* AnimTexture;
@@ -178,9 +173,9 @@ public:
 	int g_WindowPosY ;
 
 	bool IsSettingsMenuOn ;
-	KFModel * Cube;
-	KFModel * Sphere;
-	KFModel * Scene;
+//	KFModel * Cube;
+//	KFModel * Sphere;
+//	KFModel * Scene;
 
 
 //	KFClusterMap * ClusterMap;

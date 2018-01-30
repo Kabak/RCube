@@ -95,7 +95,7 @@ HRESULT ScrollBarClass::Init(
 		
 		}
 		delete InputTextureDesc;
-		InputTexture->Release();
+		RCUBE_RELEASE ( InputTexture );
 	}
 	else
 	{
@@ -290,8 +290,8 @@ void ScrollBarClass::GetTextureParam( ID3D11ShaderResourceView * Texture, XMFLOA
 			Dimention.w = (float)InputTextureDesc->Width;
 	}
 	delete InputTextureDesc;
-	InputTexture->Release();
-	MyRes->Release();
+	RCUBE_RELEASE ( InputTexture );
+	RCUBE_RELEASE ( MyRes );
 }
 
 

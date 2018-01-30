@@ -209,6 +209,12 @@ struct CB_FXAA
 };
 
 
+struct CB_ShadowMap
+{
+	XMMATRIX LightViewProjection;
+};
+
+
 /*
 // Используется для передачи массива данных при рисовании текстом на текстуре
 // смотри D3DGlobalContext.h

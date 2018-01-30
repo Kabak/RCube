@@ -266,7 +266,6 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClInclude Include="FPSTimers.h" />
     <ClInclude Include="IndexesArray.h" />
     <ClInclude Include="KF2DTextureAnimation.h" />
-    <ClInclude Include="KFClusterMap.h" />
     <ClInclude Include="KFModel.h" />
     <ClInclude Include="KFModelList.h" />
     <ClInclude Include="KFPicking.h" />
@@ -275,9 +274,7 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClInclude Include="Mesh_Data.h" />
     <ClInclude Include="RenderClass.h" />
     <ClInclude Include="ResourceManager.h" />
-    <ClInclude Include="KFShadowWork.h" />
     <ClInclude Include="SceneObject.h" />
-    <ClInclude Include="KFTerrain.h" />
     <ClInclude Include="KF_PXControler.h" />
     <ClInclude Include="LightGrid.h" />
     <ClInclude Include="Material.h" />
@@ -326,7 +323,6 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClCompile Include="FontClass.cpp" />
     <ClCompile Include="IndexesArray.cpp" />
     <ClCompile Include="KF2DTextureAnimation.cpp" />
-    <ClCompile Include="KFClusterMap.cpp" />
     <ClCompile Include="KFModel.cpp" />
     <ClCompile Include="KFModelList.cpp" />
     <ClCompile Include="KFPicking.cpp" />
@@ -334,8 +330,6 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClCompile Include="Mesh_Data.cpp" />
     <ClCompile Include="RenderClass.cpp" />
     <ClCompile Include="ResourceManager.cpp" />
-    <ClCompile Include="KFShadowWork.cpp" />
-    <ClCompile Include="KFTerrain.cpp" />
     <ClCompile Include="KF_PXControler.cpp" />
     <ClCompile Include="LightGrid.cpp" />
     <ClCompile Include="Material.cpp" />
