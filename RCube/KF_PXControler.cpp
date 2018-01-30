@@ -967,7 +967,10 @@ int KF_PXControler::JoinAllCubes( )
 	}
 
 		actors[110]->setActorFlag( PxActorFlag::eDISABLE_GRAVITY, false );
-		actors[110]->is<PxRigidDynamic>()->setMass( 0.5f );
+		PxVec3 Mass = PxVec3 ( 10.0f, 10.0f, 10.0f );
+		actors[110]->is<PxRigidDynamic> ()->setMassSpaceInertiaTensor( Mass );// setMass ( 0.5f );
+		actors[110]->is<PxRigidDynamic> ()->setMass ( 0.5f );
+		actors[110]->is<PxRigidDynamic> ()->addForce ( PxVec3 ( 50.0f, 500.0f, 0.4f ) );
 /*
 			actors[0]->is<PxRigidDynamic>()->setAngularDamping(0.1f);
 			actors[0]->is<PxRigidDynamic>()->setLinearVelocity(PxVec3(0.0f, 0.0f, 0.0f));

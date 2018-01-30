@@ -196,7 +196,7 @@ bool EngineKernel::Initialize()
 
 	int index = m_Graphics->MyManager->Add_3D_Object ( L"Models/Cube.kfo", MAX_OBJ );
 	m_Graphics->MyManager->InitRandInstansingPoses ( index, ( float ) ( m_Graphics->MyManager->Terrains[0]->VertexInX_Row / 2 )
-										 , -( ( float ) ( m_Graphics->MyManager->Terrains[0]->VertexInX_Row / 2 ) ), 300.0f, 20.0f
+										 , -( ( float ) ( m_Graphics->MyManager->Terrains[0]->VertexInX_Row / 2 ) ), 300.0f, 250.0f
 										 , ( float ) ( m_Graphics->MyManager->Terrains[0]->VertexInZ_Col / 2 ) , -( ( float ) ( m_Graphics->MyManager->Terrains[0]->VertexInZ_Col / 2 ) ) );
 	m_Graphics->MyManager->InitRandInstansingRots ( index );
 
@@ -528,8 +528,9 @@ bool EngineKernel::Frame()
 
 	if ( StartJoints )
 	{
-		TimePased += EngineFrameTime;
-		if ( TimePased > 0.2f )
+		if ( Counters.FrameTime < 1.0f )
+		TimePased += Counters.FrameTime * 60;
+		if ( TimePased > 2.0f )
 		{
 			PxControl->JoinAllCubes ();
 			StartJoints = false;

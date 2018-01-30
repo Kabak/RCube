@@ -323,8 +323,6 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClCompile Include="FontClass.cpp" />
     <ClCompile Include="IndexesArray.cpp" />
     <ClCompile Include="KF2DTextureAnimation.cpp" />
-    <ClCompile Include="KFModel.cpp" />
-    <ClCompile Include="KFModelList.cpp" />
     <ClCompile Include="KFPicking.cpp" />
     <ClCompile Include="Menu.cpp" />
     <ClCompile Include="Mesh_Data.cpp" />

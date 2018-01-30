@@ -152,9 +152,6 @@ public:
 	void Set_3D_Object_Positon ( int IndexOfObject, int InstanceIndex, XMFLOAT3 &Pos );
 	void Set_3D_Object_Rotation ( int IndexOfObject, int InstanceIndex, XMFLOAT4 &Rotation );
 	
-//	vector <RCudeObjDesc*>ObjDescs;	// Список 3D объектов на сцене
-//	KFModel ** RCubeModelList; // в этом массиве все обьекты
-
 	Material* GetMaterialData ( int ObjIndex );
 	PositionType ** ObjPoses;// это массив который хранит данные об указателях на позиции и поворота для наиболее скоростного доступа без посредников
 // !!!!!!!!!!!!!!
@@ -203,7 +200,6 @@ public:
 	Point GenerateRandPoint ( Terrain* TerrainObj );
 
 	void TerrainFrame ( bool CameraReplaseData, XMVECTOR &CameraPosition );
-	void LandParamChecker ( TerrainParam* LandParam );
 
 // - Terrain
 

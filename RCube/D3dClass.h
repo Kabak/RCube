@@ -24,9 +24,6 @@
 #include "LightGrid.h"
 #include "FrustumClass.h"
  
-//#include "KFModelList.h"
-//#include "Terrain.h"
-
 using namespace std;
 using namespace DirectX;
 
@@ -50,16 +47,7 @@ public:
         _mm_free(p);
     }
 // ------------------------------------
-/*
-// + Shadow Works
-	struct ObjectUsingShadows {
 
-		KFModelList * ModelList;
-		Terrain * Terrain;
-
-	} DrawShadowsObjects;
-// - Shadow Works
-*/
 	bool Initialize(HWND, int, int, bool, bool, float, float, FrustumClass* frustum );
 	void Shutdown();
 	

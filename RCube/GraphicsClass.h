@@ -109,14 +109,10 @@ public:
 	// Нужно для инициализации CUDA в PhysX в EngineKernal
 	D3DGlobalContext *GraphicsClass::GetD3DGC();
 
-//    KFButtons_OutPut ButtonsOut[5] ;
 	ResourceManager * MyManager;
-//	KFModelList * ModelList;
-//	KFShadowWork * ShadowWork;
 
 	RenderClass * RCubeRender;
 
-//	FlatObjectClass *Picture;
 private:
 	HRESULT hr;
 
@@ -173,11 +169,6 @@ public:
 	int g_WindowPosY ;
 
 	bool IsSettingsMenuOn ;
-//	KFModel * Cube;
-//	KFModel * Sphere;
-//	KFModel * Scene;
 
-
-//	KFClusterMap * ClusterMap;
 };
 #endif

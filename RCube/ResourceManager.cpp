@@ -2171,57 +2171,6 @@ void ResourceManager::Frustum_3D_Objects ( FrustumClass* Frustum )
 }
 
 
-void ResourceManager::LandParamChecker (TerrainParam* LandParam )
-{
-
-	if ( LandParam->MinRadius < 1 )
-	{
-
-		MessageBox ( 0, L"Мининальный радиус высот/низин меньше 1, привожу к 1.Terrain", L"Error", MB_OK );
-		LandParam->MinRadius = 1;
-
-	}
-
-	if ( LandParam->MaxRadius <= LandParam->MinRadius )
-	{
-
-		MessageBox ( 0, L"максимальный радиус гор должен дыть больше чем минимальный.Привожу к коректным значениям.Terrain", L"Error", MB_OK );
-		LandParam->MaxRadius = LandParam->MinRadius + 1;
-
-	}
-
-	if ( LandParam->HeightesCout < 0 )
-	{
-
-		MessageBox ( 0, L"количество высот не может быть меньше 0. привожу к 0.Terrain", L"Error", MB_OK );
-		LandParam->HeightesCout = 0;
-
-	}
-
-	if ( LandParam->LowlandsCout < 0 )
-	{
-
-		MessageBox ( 0, L"количество низин не может быть меньше 0. привожу к 0.Terrain", L"Error", MB_OK );
-		LandParam->LowlandsCout = 0;
-
-	}
-
-	if ( LandParam->MaxHeight < 0 )
-	{
-
-		MessageBox ( 0, L"максимальное значение высоты гор не может быть меньше 0. привожу к 0.Terrain", L"Error", MB_OK );
-		LandParam->MaxHeight = 0;
-
-	}
-
-	if ( LandParam->MinHeight < 0 )
-	{
-
-		MessageBox ( 0, L"минимальное значение размера низин не может быть меньше 0. привожу к 0.Terrain", L"Error", MB_OK );
-		LandParam->MinHeight = 0;
-
-	}
-}
 
 
 Point ResourceManager::GenerateRandPoint ( Terrain* TerrainObj )

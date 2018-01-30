@@ -359,12 +359,6 @@
     <ClCompile Include="Mesh_Data.cpp">
       <Filter>Render\3DModel</Filter>
     </ClCompile>
-    <ClCompile Include="KFModel.cpp">
-      <Filter>Render\3DModel</Filter>
-    </ClCompile>
-    <ClCompile Include="KFModelList.cpp">
-      <Filter>Render\3DModel</Filter>
-    </ClCompile>
     <ClCompile Include="Terrain.cpp">
       <Filter>Render\Terrain</Filter>
     </ClCompile>
