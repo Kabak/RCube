@@ -75,12 +75,6 @@ struct Vertex_Model3D
 
 
 // + Terrain
-struct HeightMapType
-{
-	float x, y, z;
-	float tu, tv;
-	float nx, ny, nz;
-};
 
 struct Point
 {

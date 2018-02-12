@@ -20,3 +20,13 @@ struct TerrainInitData
    bool _ClusterRender;		// Рисовать кусками ?
    char* HightFileName;		// Имя файла высот для создания Terrain
 };
+
+
+// BVH for Terrain cluster
+struct Cluster_AABB
+{
+	RCube_VecFloat34 RUF;	// Right Up Forward coner
+	RCube_VecFloat34 LDB;	// Left Down Backward coner
+	RCube_VecFloat34 Pos;	// 3D position of this Cluster
+	float Radius;// Radius of Cluster
+};

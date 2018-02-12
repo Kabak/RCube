@@ -10,9 +10,13 @@ TerrainCluster::TerrainCluster ()
 		  ClusterBufferIndexM = -1;
 		  ClusterBufferIndexL = -1;
 		  ClusterBufferIndexN = -1;
+		  AABB.LDB.Vec	= { 0.0f, 0.0f, 0.0f, 0.0f};
+		  AABB.RUF.Vec	= { 0.0f, 0.0f, 0.0f, 0.0f };
+		  AABB.Pos.Vec	= { 0.0f, 0.0f, 0.0f, 0.0f };
+		  AABB.Radius	= 0.0f;
 }
 
 TerrainCluster::~TerrainCluster ()
 {
-
+		InFrustum = false;
 }

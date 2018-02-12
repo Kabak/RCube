@@ -27,7 +27,7 @@ TorchFireParticles::TorchFireParticles()
 	FlameInstancesAmount = 8;
 	FlameInstanceActive = 0;
 	//  оличество Instance дыма
-	SmokeInstancesAmount = 50;
+	SmokeInstancesAmount = 80;
 	SmokeInstanceActive = 0;
 	//  оличество гор€щих частиц
 	FireFlyInstancesAmount = 20;
@@ -39,7 +39,7 @@ TorchFireParticles::TorchFireParticles()
 //	PlayFPSSmoke = 0.0001f;	//  оличество смен кадров анимаций пламени SMOKE в секунду
 
 	BetweenNextTimeFlame = 0.5f;	// —колько времени в секундах должно пройти перед выпуском новой частицы FLAME
-	BetweenNextTimeSmoke = 0.3f;	// —колько времени в секундах должно пройти перед выпуском новой частицы SMOKE
+	BetweenNextTimeSmoke = 0.2f;	// —колько времени в секундах должно пройти перед выпуском новой частицы SMOKE
 	BetweenNextTimeFireFly = 0.3f;	// —колько времени в секундах должно пройти перед выпуском новой частицы FIREFLY
 
 	VelocityVariation = 0.9;	// –азброс скорости частиц при создании
@@ -580,7 +580,7 @@ void TorchFireParticles::EmitSmokeParticles( FPSTimers& Timers )
 
 	if ( Timers.FrameTime < 1.0f )
 	{
-		TimeToEmitSmoke += Timers.FrameTime * 100;
+		TimeToEmitSmoke += Timers.FrameTime;
 	}
 
 	// ѕрошло ли врем€ паузы между генерацией SMOKE
@@ -650,7 +650,7 @@ void TorchFireParticles::EmitFireFlyParticles( FPSTimers& Timers )
 
 	if ( Timers.FrameTime < 1.0f )
 	{
-		TimeToEmitFireFly += Timers.FrameTime * 100;
+		TimeToEmitFireFly += Timers.FrameTime ;
 	}
 
 	if ( TimeToEmitFireFly > BetweenNextTimeFireFly )
@@ -838,7 +838,7 @@ void TorchFireParticles::EmitFlameParticles( FPSTimers& Timers )
 
 	if ( Timers.FrameTime < 1.0f )
 	{
-		TimeToEmitFlames += Timers.FrameTime * 100;
+		TimeToEmitFlames += Timers.FrameTime;
 	}
 
 	// ѕрошло ли врем€ паузы между генерацией FLAMES

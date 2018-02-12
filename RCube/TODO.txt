@@ -1,0 +1,5 @@
+ResourceManager
+1) Ќормали дл€ кластера : последн€€ строка и столбец не сохран€ютс€
+	void ResourceManager::CalculateNormals ( Terrain* TerrainObj ){}
+
+2) AABB  ластеров формируютс€ неправильно

@@ -213,12 +213,6 @@
     <ClInclude Include="Mesh_Data.h">
       <Filter>Render\3DModel</Filter>
     </ClInclude>
-    <ClInclude Include="KFModel.h">
-      <Filter>Render\3DModel</Filter>
-    </ClInclude>
-    <ClInclude Include="KFModelList.h">
-      <Filter>Render\3DModel</Filter>
-    </ClInclude>
     <ClInclude Include="Terrain.h">
       <Filter>Render\Terrain</Filter>
     </ClInclude>
@@ -452,5 +446,6 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
+    <Text Include="TODO.txt" />
   </ItemGroup>
 </Project>

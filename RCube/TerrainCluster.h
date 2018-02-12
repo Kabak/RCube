@@ -22,5 +22,7 @@ public:
 
    bool InFrustum;			// Рисуется ли кластер
 
+   Cluster_AABB	AABB;	// Положение кластера в 3D мире для быстрой проверки Frustum
+
 };
 #endif

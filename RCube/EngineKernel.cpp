@@ -529,7 +529,7 @@ bool EngineKernel::Frame()
 	if ( StartJoints )
 	{
 		if ( Counters.FrameTime < 1.0f )
-		TimePased += Counters.FrameTime * 60;
+			TimePased += EngineFrameTime;// Counters.FrameTime * 60;
 		if ( TimePased > 2.0f )
 		{
 			PxControl->JoinAllCubes ();
@@ -609,10 +609,8 @@ bool EngineKernel::Frame()
 
 	m_Cpu->GetCpuPercentage(Counters.CpuVal);
 	m_Timer->GetFps(Counters.FpsRate);
-	Counters.FrameTime = EngineFrameTime;// * 100;
+	Counters.FrameTime = EngineFrameTime;
 	Counters.Seed += Counters.FpsRate;
-//	m_Timer->GetFrameTime(Counters.FrameTime);
-//	m_Timer->GetSpeed(Counters.ComputerSpeed);
 	Counters.ComputerSpeed = (int)(( 1 / EngineFrameTime ) / (KeySpeed / 10));
 
 	// если меню выключено

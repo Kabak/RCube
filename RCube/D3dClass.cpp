@@ -1361,6 +1361,7 @@ void D3DClass::AdaptersRelease()
 	Adapters.clear();
 }
 
+
 char* D3DClass::GetVideoCardString()
 {
 	return &m_videoCardDescription[0];

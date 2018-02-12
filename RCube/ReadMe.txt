@@ -1,6 +1,19 @@
 ========================================================================
     WIN32 APPLICATION : RCube Project Overview
 ========================================================================
+// Нормали к поверхности
+https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
+http://netlib.narod.ru/library/book0032/ch05_03.htm
+
+// <time.h> vs <chrono>
+http://www.cplusplus.com/forum/beginner/217912/
+
+// FRUSTUM
+http://www.txutxi.com/?p=584
+
+// Тени от кунтуров с прозрачностью
+https://turanszkij.wordpress.com/2018/01/18/easy-transparent-shadow-maps/amp/
+
 // Типы данных справка
 https://msdn.microsoft.com/en-us/library/s3f49ktz.aspx?f=255&MSPPError=-2147217396
 
@@ -93,15 +106,22 @@ https://msdn.microsoft.com/en-us/library/ff471376%28v=VS.85%29.aspx
 HLSL 5_0
 https://msdn.microsoft.com/en-us/library/ff471358%28v=vs.85%29.aspx
 
+AABB
+http://www.gamedev.ru/terms/AABB
+
 // Updatesubresources vs Map
 // https://msdn.microsoft.com/en-us/library/windows/desktop/bb205132(v=vs.85).aspx?ranMID=24542&ranEAID=TnL5HPStwNw&ranSiteID=TnL5HPStwNw-XB.gglp_gdtjhkUUWs5azg&tduid=(7912aabb7cab1eed0b147fdd3e7d6c86)(256380)(2459594)(TnL5HPStwNw-XB.gglp_gdtjhkUUWs5azg)()
 // http://xboxforums.create.msdn.com/forums/t/47875.aspx
 
 // Octree
 // http://www.uraldev.ru/articles/6/page/1
+
 // BVH
 // https://habrahabr.ru/post/257339/
+
 // http://ray-tracing.ru/articles184.html
+// http://isg.cs.tcd.ie/spheretree/
+
 // BVH готовый код MIT
 // https://github.com/brandonpelfrey/Fast-BVH
 

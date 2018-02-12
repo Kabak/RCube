@@ -134,13 +134,16 @@ void RenderClass::RenderScene ()
 	int Objects_Amount = (int)ResManager->_3DModels.size ();
 	for(int i = 0; i < Objects_Amount; ++i )
 	{
-		Render3D_Object_With_Light ( i );
+		Render3D_Object ( i, false );
 	}
 
 	Objects_Amount = ( int ) ResManager->Terrains.size ();
 	for ( int i = 0; i < Objects_Amount; ++i )
 	{
-		RenderTerrain_With_Light ( i );
+		if ( ResManager->Terrains[i]->ClusterRender )
+			ResManager->FrustumTerrain ( Local_Frustum, ResManager->Terrains[i] );
+
+		RenderTerrain ( i, false );
 	}
 }
 
@@ -1455,7 +1458,7 @@ void RenderClass::ShowGlowing ( int i )
 	else
 	{
 		if (fpstimers.ComputerSpeed > 0)
-			Source->TempValShow -= fpstimers.FrameTime * 100;
+			Source->TempValShow -= fpstimers.FrameTime;
 		if (Source->TempValShow < 0) {
 			Source->ShowGoOn = false;
 			TextV34.Fl4 = Source->ColourTemp;
@@ -1467,19 +1470,19 @@ void RenderClass::ShowGlowing ( int i )
 			TextV34.Vec = Source->Colour;
 			Source->ColourAction = TextV34.Fl4;
 			if (Source->ColourAction.x > 0.0f)
-				Source->ColourAction.x -= fpstimers.FrameTime * 100;
+				Source->ColourAction.x -= fpstimers.FrameTime;
 			else
 				Source->ColourAction.x = 0.0f;
 			if (Source->ColourAction.y > 0.0f)
-				Source->ColourAction.y -= fpstimers.FrameTime * 100;
+				Source->ColourAction.y -= fpstimers.FrameTime;
 			else
 				Source->ColourAction.y = 0.0f;
 			if (Source->ColourAction.z > 0.0f)
-				Source->ColourAction.z -= fpstimers.FrameTime * 100;
+				Source->ColourAction.z -= fpstimers.FrameTime;
 			else
 				Source->ColourAction.z = 0.0f;
 			if (Source->ColourAction.w > 0.0f)
-				Source->ColourAction.w -= fpstimers.FrameTime * 100;
+				Source->ColourAction.w -= fpstimers.FrameTime;
 			else
 				Source->ColourAction.w = 0.0f;
 
@@ -1512,7 +1515,7 @@ void RenderClass::ShowScrolling ( int i )
 	}
 	else
 	{
-		Source->TempValScroll += fpstimers.FrameTime * 100;
+		Source->TempValScroll += fpstimers.FrameTime;
 
 		if (Source->TempValScroll > (1.0f / Source->ScrollSpeed))
 		{
@@ -1563,51 +1566,8 @@ void RenderClass::RenderText ( int Level )
 }
 
 
-void RenderClass::Render3D_Object_With_Light ( int ObjectIndex )
-{
-	UINT c = 0;
-
-	UINT strides[2];
-	UINT offsets[2];
-	
-	ID3D11Buffer* bufferPointers[2];
-
-	_3DModel* Model = ResManager->Get3D_Object_Pointer ( ObjectIndex );
-
-	if ( Model->InstanceFrustumPassedAmount > 0 )
-	{
-
-		// Set vertex buffer stride and offset.
-		strides[0] = sizeof ( Vertex_Model3D );
-		strides[1] = sizeof ( PositionType );
-
-		// Set the buffer offsets.
-		offsets[0] = 0;
-		offsets[1] = 0;
-
-		// Получаем буфер позиций всех Instance модели
-		bufferPointers[1] = Model->InstancePositionsBuffer->GetBuffer ();
-
-		size_t MeshCounter = Model->Meshes.size ();
-
-		while ( c < MeshCounter )
-		{
-			// Получаем буфер меша модели
-			_3D_Obj_Buffers* Buffers = ResManager->Get_Mesh_Buffers_By_Index ( Model->Meshes[c]->BufferIndex );
-			// Устанавливаем его для отрисовки
-			bufferPointers[0] = Buffers->Vertexes->Buffer;
-			Local_D3DGC->DX_deviceContext->IASetVertexBuffers ( 0, 2, bufferPointers, strides, offsets );
-			// Рисуем модель
-			Local_D3D->RenderClustered ( ResManager->TexturesArr[Model->Meshes[c]->TextureIndex]->SRV, Model->Meshes[c]->VertexBufferSize, /*Model->InstanceCount*/Model->InstanceFrustumPassedAmount );
-
-			++c;
-		}
-
-	}
-}
-
-
-void RenderClass::Render3D_Object ( int ObjectIndex )
+// Если Shadows = 1 , то ObjectIndex рендерится в ShadowMap
+void RenderClass::Render3D_Object ( int ObjectIndex, bool Shadows )
 {
 
 	UINT c = 0;
@@ -1645,23 +1605,25 @@ void RenderClass::Render3D_Object ( int ObjectIndex )
 			// Set the vertex buffer to active in the input assembler so it can be rendered.
 			Local_D3DGC->DX_deviceContext->IASetVertexBuffers ( 0, 2, bufferPointers, strides, offsets );
 
-
-			if ( Model->InstanceFrustumPassedAmount > 1 )
-				Local_D3DGC->DX_deviceContext->DrawInstanced ( Model->Meshes[c]->VertexBufferSize, Model->InstanceFrustumPassedAmount, 0, 0 );
+			if ( Shadows )
+			{
+				if ( Model->InstanceFrustumPassedAmount > 1 )
+					Local_D3DGC->DX_deviceContext->DrawInstanced ( Model->Meshes[c]->VertexBufferSize, Model->InstanceFrustumPassedAmount, 0, 0 );
+				else
+					Local_D3DGC->DX_deviceContext->Draw ( Model->Meshes[c]->VertexBufferSize, 0 );
+			}
 			else
-				Local_D3DGC->DX_deviceContext->Draw ( Model->Meshes[c]->VertexBufferSize, 0 );
-
+			{
+				Local_D3D->RenderClustered ( ResManager->TexturesArr[Model->Meshes[c]->TextureIndex]->SRV, Model->Meshes[c]->VertexBufferSize, Model->InstanceFrustumPassedAmount );
+			}
 			++c;
 		}
-
 	}
-
-
-
 }
 
 
-void RenderClass::RenderTerrain_With_Light ( int ObjectIndex )
+// Если Shadows = 1 , то ObjectIndex рендерится в ShadowMap
+void RenderClass::RenderTerrain ( int ObjectIndex, bool Shadows )
 {
 	UINT strides[2];
 	UINT offsets[2];
@@ -1679,50 +1641,11 @@ void RenderClass::RenderTerrain_With_Light ( int ObjectIndex )
 
 	_3D_Obj_Buffers* Buffers = ResManager->Get_Terrain_Buffers_By_Index ( _Terrain->TerrainBuffersIndex );
 
-	// Set the array of pointers to the vertex and instance buffers.
-	bufferPointers[0] = Buffers->Vertexes->Buffer;// m_vertexBuffer;
-	bufferPointers[1] = _Terrain->InstancePositionsBuffer->Buffer;//m_posesBuffer;
+	bufferPointers[0] = Buffers->Vertexes->Buffer;
+	bufferPointers[1] = _Terrain->InstancePositionsBuffer->Buffer;
 
 	// Set the vertex buffer to active in the input assembler so it can be rendered.
 	Local_D3DGC->DX_deviceContext->IASetVertexBuffers ( 0, 2, bufferPointers, strides, offsets );
-
-	// Set the index buffer to active in the input assembler so it can be rendered.
-	Local_D3DGC->DX_deviceContext->IASetIndexBuffer ( Buffers->Indexes->Buffer/*m_indexBuffer*/, DXGI_FORMAT_R32_UINT, 0 );
-
-	// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
-	Local_D3DGC->DX_deviceContext->IASetPrimitiveTopology ( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
-
-	// Render the triangle.
-	Local_D3D->RenderIndextedClustered ( ResManager->TexturesArr[_Terrain->TerrainTextureIndex]->SRV, _Terrain->TotalIndex, 1 );
-}
-
-
-void RenderClass::RenderTerrain ( int ObjectIndex )
-{
-	UINT strides[2];
-	UINT offsets[2];
-	ID3D11Buffer* bufferPointers[2];
-
-	// Set vertex buffer stride and offset.
-	strides[0] = sizeof ( Vertex_Model3D );
-	strides[1] = sizeof ( PositionType );
-
-	// Set the buffer offsets.
-	offsets[0] = 0;
-	offsets[1] = 0;
-
-	Terrain* _Terrain = ResManager->Get_Terrain_Object_Pointer ( ObjectIndex );
-
-	_3D_Obj_Buffers* Buffers = ResManager->Get_Terrain_Buffers_By_Index ( _Terrain->TerrainBuffersIndex );
-
-	bufferPointers[0] = Buffers->Vertexes->Buffer;// m_vertexBuffer;
-	bufferPointers[1] = _Terrain->InstancePositionsBuffer->Buffer;//m_posesBuffer;
-
-	// Set the vertex buffer to active in the input assembler so it can be rendered.
-	Local_D3DGC->DX_deviceContext->IASetVertexBuffers ( 0, 2, bufferPointers, strides, offsets );
-
-	// Set the index buffer to active in the input assembler so it can be rendered.
-	Local_D3DGC->DX_deviceContext->IASetIndexBuffer ( Buffers->Indexes->Buffer/*m_indexBuffer*/, DXGI_FORMAT_R32_UINT, 0 );
 
 	// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
 	Local_D3DGC->DX_deviceContext->IASetPrimitiveTopology ( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
@@ -1730,8 +1653,39 @@ void RenderClass::RenderTerrain ( int ObjectIndex )
 	// Set shader texture resource in the pixel shader.
 	Local_D3DGC->DX_deviceContext->PSSetShaderResources ( 0, 1, &ResManager->TexturesArr[_Terrain->TerrainTextureIndex]->SRV );
 
-	// Render the triangle.
-	Local_D3DGC->DX_deviceContext->DrawIndexed ( _Terrain->TotalIndex, 0, 0 );
+	if ( _Terrain->ClusterRender )
+	{
+		_3D_Obj_Buffers* ClusterBuffers;
+		size_t Amount = _Terrain->PassedFrustumClasters.size ();
+		for ( size_t i = 0; i < Amount; ++i )
+		{
+			ClusterBuffers = ResManager->Get_Terrain_Buffers_By_Index ( _Terrain->PassedFrustumClasters[i]->ClusterBufferIndex );
+			Local_D3DGC->DX_deviceContext->IASetIndexBuffer ( ClusterBuffers->Indexes->Buffer, DXGI_FORMAT_R32_UINT, 0 );
+
+			if ( Shadows )
+			{
+				Local_D3DGC->DX_deviceContext->DrawIndexed ( _Terrain->Total_Indexs_In_Terrain, 0, 0 );
+			}
+			else
+			{
+				Local_D3D->RenderIndextedClustered ( ResManager->TexturesArr[_Terrain->TerrainTextureIndex]->SRV, _Terrain->Total_Indexs_In_Terrain, 1 );
+			}
+		}
+	}
+	else
+	{
+		// Set the index buffer to active in the input assembler so it can be rendered.
+		Local_D3DGC->DX_deviceContext->IASetIndexBuffer ( Buffers->Indexes->Buffer, DXGI_FORMAT_R32_UINT, 0 );
+		if ( Shadows )
+		{
+			Local_D3DGC->DX_deviceContext->DrawIndexed ( _Terrain->Total_Indexs_In_Terrain, 0, 0 );
+		}
+		else
+		{
+			Local_D3D->RenderIndextedClustered ( ResManager->TexturesArr[_Terrain->TerrainTextureIndex]->SRV, _Terrain->Total_Indexs_In_Terrain, 1 );
+		}
+	}
+
 }
 
 
@@ -1782,13 +1736,20 @@ void RenderClass::DrawObjectUsingShadows ( XMVECTOR DrawPosition )
 	int Objects_Amount = ( int ) ResManager->_3DModels.size ();
 	for ( int i = 0; i < Objects_Amount; ++i )
 	{
-		Render3D_Object ( i );
+		Render3D_Object ( i, true );
 	}
+
 	// Terrain render if want to cast shadows
 	Objects_Amount = ( int ) ResManager->Terrains.size ();
 	for ( int i = 0; i < Objects_Amount; ++i )
 	{
-		RenderTerrain ( i );
+		if ( ResManager->Terrains[i]->CastShadow )
+		{
+			if ( ResManager->Terrains[i]->ClusterRender )
+				ResManager->FrustumTerrain ( Local_Frustum, ResManager->Terrains[i] );
+
+			RenderTerrain ( i, true );
+		}
 	}
 }
 

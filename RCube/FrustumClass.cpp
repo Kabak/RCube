@@ -159,61 +159,59 @@ bool FrustumClass::CheckCube(XMFLOAT3& Position, float& radius)
 	XMVECTOR VecMPP;
 	XMVECTOR VecPPP;
 
-		VecMMM = XMVectorSet(Position.x - radius, Position.y - radius, Position.z - radius,1.0f);
-		VecPMM = XMVectorSet(Position.x + radius, Position.y - radius, Position.z - radius,1.0f);
-		VecMPM = XMVectorSet(Position.x - radius, Position.y + radius, Position.z - radius,1.0f);
-		VecPPM = XMVectorSet(Position.x + radius, Position.y + radius, Position.z - radius,1.0f);
-		VecMMP = XMVectorSet(Position.x - radius, Position.y - radius, Position.z + radius,1.0f);
-		VecPMP = XMVectorSet(Position.x + radius, Position.y - radius, Position.z + radius,1.0f);
-		VecMPP = XMVectorSet(Position.x - radius, Position.y + radius, Position.z + radius,1.0f);
-		VecPPP = XMVectorSet(Position.x + radius, Position.y + radius, Position.z + radius,1.0f);
-		  
 // Check if any one point of the cube is in the view frustum.
 	for(int i=0; i<6; ++i) 
 	{
-
+		VecMMM = XMVectorSet ( Position.x - radius, Position.y - radius, Position.z - radius, 1.0f );
 		Res.res = XMPlaneDotCoord(u_plane.planes[i], VecMMM);
 		if(Res.fres.x >= 0.0f)
 		{
 			continue;
 		}
 
+		VecPMM = XMVectorSet ( Position.x + radius, Position.y - radius, Position.z - radius, 1.0f );
 		Res.res = XMPlaneDotCoord(u_plane.planes[i], VecPMM);
 		if(Res.fres.x >= 0.0f)
 		{
 			continue;
 		}
 
+		VecMPM = XMVectorSet ( Position.x - radius, Position.y + radius, Position.z - radius, 1.0f );
 		Res.res = XMPlaneDotCoord(u_plane.planes[i], VecMPM);
 		if(Res.fres.x >= 0.0f)
 		{
 			continue;
 		}
 
+		VecPPM = XMVectorSet ( Position.x + radius, Position.y + radius, Position.z - radius, 1.0f );
 		Res.res = XMPlaneDotCoord(u_plane.planes[i], VecPPM);
 		if(Res.fres.x >= 0.0f)
 		{
 			continue;
 		}
 
+		VecMMP = XMVectorSet ( Position.x - radius, Position.y - radius, Position.z + radius, 1.0f );
 		Res.res = XMPlaneDotCoord(u_plane.planes[i], VecMMP);
 		if(Res.fres.x >= 0.0f)
 		{
 			continue;
 		}
 
+		VecPMP = XMVectorSet ( Position.x + radius, Position.y - radius, Position.z + radius, 1.0f );
 		Res.res = XMPlaneDotCoord(u_plane.planes[i], VecPMP);
 		if(Res.fres.x >= 0.0f)
 		{
 			continue;
 		}
 
+		VecMPP = XMVectorSet ( Position.x - radius, Position.y + radius, Position.z + radius, 1.0f );
 		Res.res = XMPlaneDotCoord(u_plane.planes[i], VecMPP);
 		if(Res.fres.x >= 0.0f)
 		{
 			continue;
 		}
 
+		VecPPP = XMVectorSet ( Position.x + radius, Position.y + radius, Position.z + radius, 1.0f );
 		Res.res = XMPlaneDotCoord(u_plane.planes[i], VecPPP);
 		if(Res.fres.x >= 0.0f)
 		{
@@ -258,70 +256,61 @@ bool FrustumClass::CheckRectangle(XMFLOAT3& Position, float& xSize, float& ySize
 	XMVECTOR VecMPP;
 	XMVECTOR VecPPP;
 
-		VecMMM = XMVectorSet(Position.x - xSize, Position.y - ySize, Position.z - zSize,1.0f);
-		VecPMM = XMVectorSet(Position.x + xSize, Position.y - ySize, Position.z - zSize,1.0f);
-		VecMPM = XMVectorSet(Position.x - xSize, Position.y + ySize, Position.z - zSize,1.0f);
-		VecPPM = XMVectorSet(Position.x + xSize, Position.y + ySize, Position.z - zSize,1.0f);
-		VecMMP = XMVectorSet(Position.x - xSize, Position.y - ySize, Position.z + zSize,1.0f);
-		VecPMP = XMVectorSet(Position.x + xSize, Position.y - ySize, Position.z + zSize,1.0f);
-		VecMPP = XMVectorSet(Position.x - xSize, Position.y + ySize, Position.z + zSize,1.0f);
-		VecPPP = XMVectorSet(Position.x + xSize, Position.y + ySize, Position.z + zSize,1.0f);
-
 	// Check if any of the 6 planes of the rectangle are inside the view frustum.
 	for(int i=0; i<6; ++i)
 	{
 
+		VecMMM = XMVectorSet ( Position.x - xSize, Position.y - ySize, Position.z - zSize, 1.0f );
 		Res.res = XMPlaneDotCoord(u_plane.planes[i], VecMMM);
-
 		if(Res.fres.x >= 0.0f)
 		{
 			continue;
 		}
 
+		VecPMM = XMVectorSet ( Position.x + xSize, Position.y - ySize, Position.z - zSize, 1.0f );
 		Res.res = XMPlaneDotCoord(u_plane.planes[i], VecPMM);
-
 		if(Res.fres.x >= 0.0f)
 		{
 			continue;
 		}
 
+		VecMPM = XMVectorSet ( Position.x - xSize, Position.y + ySize, Position.z - zSize, 1.0f );
 		Res.res = XMPlaneDotCoord(u_plane.planes[i], VecMPM);
-
 		if(Res.fres.x >= 0.0f)
 		{
 			continue;
 		}
 
+		VecPPM = XMVectorSet ( Position.x + xSize, Position.y + ySize, Position.z - zSize, 1.0f );
 		Res.res = XMPlaneDotCoord(u_plane.planes[i], VecPPM);
-
 		if(Res.fres.x >= 0.0f)
 		{
 			continue;
 		}
 
+		VecMMP = XMVectorSet ( Position.x - xSize, Position.y - ySize, Position.z + zSize, 1.0f );
 		Res.res = XMPlaneDotCoord(u_plane.planes[i], VecMMP);
-
 		if(Res.fres.x >= 0.0f)
 		{
 			continue;
 		}
 
+		VecPMP = XMVectorSet ( Position.x + xSize, Position.y - ySize, Position.z + zSize, 1.0f );
 		Res.res = XMPlaneDotCoord(u_plane.planes[i], VecPMP);
-
 		if(Res.fres.x >= 0.0f)
 		{
 			continue;
 		}
 
+		VecMPP = XMVectorSet ( Position.x - xSize, Position.y + ySize, Position.z + zSize, 1.0f );
 		Res.res = XMPlaneDotCoord(u_plane.planes[i], VecMPP);
-
 		if(Res.fres.x >= 0.0f)
 		{
 			continue;
 		}
 
+		VecPPP = XMVectorSet ( Position.x + xSize, Position.y + ySize, Position.z + zSize, 1.0f );
 		Res.res = XMPlaneDotCoord(u_plane.planes[i], VecPPP);
-
 		if(Res.fres.x >= 0.0f)
 		{
 			continue;

@@ -33,13 +33,12 @@ public:
 	// –исует все предложени€ которые есть в списке и у них включен Render
 	void RenderText ( int Level );
 
-	void Render3D_Object ( int ObjectIndex );
-	void Render3D_Object_With_Light ( int ObjectIndex );
+	void Render3D_Object ( int ObjectIndex, bool Shadows );
+//	void Render3D_Object_With_Light ( int ObjectIndex );
 
 	void RenderCubeMap ( int ObjectIndex );
 
-	void RenderTerrain ( int ObjectIndex );
-	void RenderTerrain_With_Light ( int ObjectIndex );
+	void RenderTerrain ( int ObjectIndex, bool Shadows );	// ≈сли Shadows = 1 , то ObjectIndex рендеритс€ в ShadowMap
 
 	void Init_ShadowMap_RasterizerState ( int DepthBias, float SlopeScaledDepthBias );	// Ёто нужно дл€ отладки отрисовки тени
 

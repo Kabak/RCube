@@ -1,26 +1,12 @@
 #pragma once
 #include "stdafx.h"
-// The TimerClass is a high precision timer that measures the exact time between frames of execution. Its primary use is for synchronizing objects that require a standard time frame for movement. 
-// In this tutorial we won't have a use for it but we will implement it in the code so you can see how to apply it to your projects. The most common usage of the TimerClass is to use the frame 
-// time to figure out what percentage of a second has passed in the current frame and then move the objects by that percentage.
 
-////////////////////////////////////////////////////////////////////////////////
-// Filename: timerclass.h
-////////////////////////////////////////////////////////////////////////////////
 #ifndef _TIMERCLASS_H_
 #define _TIMERCLASS_H_
 
-
-//////////////
-// INCLUDES //
-//////////////
-//#include <windows.h>
 #include <time.h>
 #include <stdio.h>
 
-////////////////////////////////////////////////////////////////////////////////
-// Class name: TimerClass
-////////////////////////////////////////////////////////////////////////////////
 class TimerClass
 {
 public:
@@ -33,12 +19,8 @@ public:
 
 // Получить сколько времени прошло в секундас между моментами времени
 	void ComputeTimePassed(float& result, LARGE_INTEGER startTime, LARGE_INTEGER stopTime );
-// Получить текучее значение тактов
-	void GetTicks(LARGE_INTEGER& Ticks);
 
-	void GetFrameTime(float&);
 	void GetFps(int&);
-	void GetSpeed(int&);
 
 // Функции для тайминга функций и определения быстродействия участков кода
 	void StartTimer();
@@ -70,18 +52,19 @@ private:
 	__int64 m_ticksPerSec;
 
 // Количесто процессорных тактов в одном кадре
-	  __int64 frameTime;
+	__int64 frameTime;
 
 // техническое значение кадров в секунду
 	   UINT frameCount;
 
 // Количество кадров в секунду
 	   UINT m_fps;
-	   UINT m_computer_speed;
 
 // Времени за один такт CPU в наносекундах
-	float TickTime;
-	float TickTimeSec;
+	float TickTime_Sec; // Времени за один такт в секундах
+	float TickTime_ns;	// Времени за один такт в наносекундах
+	float TickTime_mks;	// Времени за один такт в микросекундах
+
 // Переменные для таймера скорости выполнения
 	LARGE_INTEGER StartCounter;
 	LARGE_INTEGER StopCounter;

@@ -1,7 +1,5 @@
 #include "stdafx.h"
-///////////////////////////////////////////////////////////////////////////////
-// Filename: timerclass.cpp
-///////////////////////////////////////////////////////////////////////////////
+
 #include "timerclass.h"
 
 
@@ -11,8 +9,9 @@ TimerClass::TimerClass()
  currentTime.QuadPart = 0;
    startTime.QuadPart = 0;
 		m_ticksPerSec = 0;
-			 TickTime = 0.0f;
-		   TickTimeSec = 0.0f;
+		 TickTime_Sec = 0.0f;
+		  TickTime_ns = 0.0f;
+		 TickTime_mks = 0.0f;
 		    frameTime = 0;
 		   frameCount = 0;
 				m_fps = 0;
@@ -42,12 +41,13 @@ bool TimerClass::Initialize()
 	QueryPerformanceFrequency(&m_frequency);
 
 	// Find out how many times the frequency counter ticks every millisecond.
-//	m_ticksPerMs = m_frequency.QuadPart / 1000;
+	//	m_ticksPerMs = m_frequency.QuadPart / 1000;
 	// Find out how many times the frequency counter ticks every second.
 	m_ticksPerSec = (m_frequency.QuadPart);
 
-	TickTimeSec = (float) 1 / m_ticksPerSec * 1000000;// * 1000000; // Времени за один такт в микросекундах
-	TickTime = (float) 1 / m_ticksPerSec * 1000000000; // Времени за один такт в наносекундах
+	TickTime_Sec = ( float ) 1 / m_ticksPerSec;				// Времени за один такт в секундах
+	TickTime_ns = (float) 1 / m_ticksPerSec * 1000000000;	// Времени за один такт в наносекундах
+	TickTime_mks = ( float ) 1 / m_ticksPerSec * 1000000;	// Времени за один такт в микросекундах
 
 	QueryPerformanceCounter(&startTime);
 
@@ -62,18 +62,15 @@ void TimerClass::Frame()
 
 	QueryPerformanceCounter(&currentTime);
 
-//	frameTimeOld = currentTime.QuadPart;
 //	https://msdn.microsoft.com/en-us/library/dn553408%28v=vs.85%29.aspx
 
-	frameTime = (currentTime.QuadPart - startTime.QuadPart) * 1000000000 / m_ticksPerSec;
+	frameTime = (currentTime.QuadPart - startTime.QuadPart) * 1000000000 / m_ticksPerSec;	// Время кадра в наносекундах
 
 	++frameCount;
 
 	if ( frameTime > 1000000000LL )
 	{
 		m_fps = frameCount;
-// Вычисляем скорость отрисовки для качественной прорисовки движущихся объектов
-		m_computer_speed = frameCount / 5;
 		frameCount = 0;
 		startTime = currentTime;
 	}	
@@ -81,39 +78,17 @@ void TimerClass::Frame()
 	return;
 }
 
-// GetTime returns the most recent frame time that was calculated.
-
 
 void TimerClass::ComputeTimePassed(float & result, LARGE_INTEGER startTime, LARGE_INTEGER stopTime)
 {
 	QueryPerformanceCounter(&stopTime);
-	result = (float)((stopTime.QuadPart - startTime.QuadPart) * TickTimeSec / (1000000 * 60)); 
+	result = ( float ) ( ( stopTime.QuadPart - startTime.QuadPart ) * TickTime_Sec );
 }
 
-void TimerClass::GetTicks(LARGE_INTEGER & Ticks)
-{
-	QueryPerformanceCounter(&Ticks);
-}
-
-void TimerClass::GetFrameTime(float &FrameTime)
-{
-	// Одну секунду делим на количество фреймов в секунду
-	// получаем сколько времени нужно на один фрейм
-	FrameTime = 1.0f / m_fps;
-
-	return;
-}
 
 void TimerClass::GetFps(int& FpsRate)
 {
 	FpsRate = (int)m_fps;
-
-	return; 
-}
-
-void TimerClass::GetSpeed(int& CompSpeed)
-{
-	CompSpeed = (int)m_computer_speed;
 
 	return; 
 }
@@ -157,11 +132,9 @@ void TimerClass::StopTimer(char* Result)
 {
 	QueryPerformanceCounter(&StopCounter);
 	// https://msdn.microsoft.com/en-us/library/dn553408%28v=vs.85%29.aspx
-	ResultCounter.QuadPart = StopCounter.QuadPart - StartCounter.QuadPart; //    / m_ticksPerMs      (m_ticksPerSec / 1000 )
+	ResultCounter.QuadPart = StopCounter.QuadPart - StartCounter.QuadPart;
 
-//	OutCounter = ResultCounter;
-	TimeAmount = (float)ResultCounter.QuadPart * TickTime;
-//	ResultCounter.QuadPart = 0;
+	TimeAmount = (float)ResultCounter.QuadPart * TickTime_ns;
 	GenString(Result, TimeAmount );
 }
 
@@ -172,7 +145,7 @@ void TimerClass::StopTimer(char* Result, LARGE_INTEGER& startcounter, LARGE_INTE
 	// https://msdn.microsoft.com/en-us/library/dn553408%28v=vs.85%29.aspx
 	ResultCounter.QuadPart = stopcounter.QuadPart - startcounter.QuadPart;
 
-	TimeAmount = (float)ResultCounter.QuadPart * TickTime;
+	TimeAmount = (float)ResultCounter.QuadPart * TickTime_ns;
 	GenString(Result, TimeAmount);
 }
 

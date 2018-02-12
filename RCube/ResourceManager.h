@@ -174,9 +174,12 @@ public:
 
 	int Delete_Terrain ( int ObjectIndex );
 	int Delete_Terrain_Buffers ( int ObjectIndex );
-	
+	int Delete_Terrain_Clusters ( Terrain* TerrainObj );	// Удаление кластеров Terrain
+
 	int Create_Terrain_Mesh_Buffer ( Terrain* TerrainObj );	// Создание буфера вертексов Terrain
 	int Create_Terrain_Clusters ( Terrain* TerrainObj );// Раздел вертексного буфера на кластеры и инициализация IB для каждого кластера
+	int Create_Terrain_Cluster_Index_Buffer ( TerrainCluster* ClasterObject );	// Создать IB для кластера
+	void Calc_Next_Cluster_Start_Pos (int& Start_X_ROW, int& Start_Z_COL, Terrain* TerrainObj );	// Определить стартовую позицию следуещего кластера
 
 	Terrain* Get_Terrain_Object_Pointer ( int ObjectIndex );	// Получить указатель на объект 3D модели из списка по индексу
 	_3D_Obj_Buffers* Get_Terrain_Buffers_By_Index ( int ObjectIndex ); // Получаем VB, IB для Terrain
@@ -199,8 +202,8 @@ public:
 	int GenerateRandRadius ( int MaxRadius, int MinRadius );
 	Point GenerateRandPoint ( Terrain* TerrainObj );
 
-	void TerrainFrame ( bool CameraReplaseData, XMVECTOR &CameraPosition );
-
+	void FrustumTerrain ( FrustumClass* Frustum, Terrain* TerrainObj );
+	void CalkTerrainClusterAABB ( TerrainCluster* ClasterObject );	// Расчёт AABB кластера
 // - Terrain
 
 // + Sentence Works

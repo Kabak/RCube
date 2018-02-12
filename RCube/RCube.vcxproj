@@ -247,6 +247,7 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
+    <Text Include="TODO.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\DirectXTex-master\DDSTextureLoader\DDSTextureLoader.h" />
@@ -266,8 +267,6 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClInclude Include="FPSTimers.h" />
     <ClInclude Include="IndexesArray.h" />
     <ClInclude Include="KF2DTextureAnimation.h" />
-    <ClInclude Include="KFModel.h" />
-    <ClInclude Include="KFModelList.h" />
     <ClInclude Include="KFPicking.h" />
     <ClInclude Include="Light_def.h" />
     <ClInclude Include="Menu.h" />

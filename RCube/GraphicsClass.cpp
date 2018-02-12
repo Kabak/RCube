@@ -1818,11 +1818,11 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 		//MyManager->InitTextures(hwnd, L"Textures/RcubeTextures.kaf", m_D3D->D3DGC->DX_device, m_D3D->D3DGC->DX_deviceContext);
 
 		TerrainInitData NewTerrainData;
-		NewTerrainData._QuadVertexStep = 10.0f;
-		NewTerrainData._QuadsPerCluster = 640;
-		NewTerrainData._ClustersX_ROW = 1;
-		NewTerrainData._ClustersZ_COL = 1;
-		NewTerrainData._CastShadow = true;
+		NewTerrainData._QuadVertexStep = 1.0f;
+		NewTerrainData._QuadsPerCluster = 511;
+		NewTerrainData._ClustersX_ROW = 4;
+		NewTerrainData._ClustersZ_COL = 4;
+		NewTerrainData._CastShadow = false;
 		NewTerrainData._ClusterRender = false;
 		NewTerrainData.HightFileName = nullptr;
 
@@ -1932,22 +1932,30 @@ bool GraphicsClass::Frame( FPSTimers &Counters, DXINPUTSTRUCT& InputStruct1)
 	// Подсмотрели у Брайнзара
 	m_Frustum->ConstructFrustumNew( m_D3D->D3DGC->ViewProjection );
 
+	// Федя 540 ns    Мой  517 ns   
+	char Str[32];// = new char [25];
+	Profile->StartTimer ();
+	// Измеряем быстродействие
+/*	int Objects_Amount = ( int ) MyManager->Terrains.size ();
+	for ( int i = 0; i < Objects_Amount; ++i )
+	{
+	if ( MyManager->Terrains[i]->ClusterRender )
+		MyManager->FrustumTerrain ( m_Frustum, MyManager->Terrains[i] );
+	}
+*/	// Измеряем быстродействие
+	Profile->StopTimer ( Str );
 // ----------------------  FRUSTUM    --------------------------------------------------
 
 // ++++++++++++    Как часто рисем Тень     +++++++++++++++++++
-// Федя 540 ns    Мой  517 ns   
-		char Str[25];// = new char [25];
-		Profile->StartTimer();
-// Измеряем быстродействие
+
 
 // Обновляем свет сцены
 // Обязательно после отрисовки теней !!!
 		m_D3D->Frame();
 // ------------------------------------------------------------
 
-// Измеряем быстродействие
-	Profile->StopTimer(Str);
-	strcpy_s(Str1, STRMAXLENGTH, "LightsFrame() : ");
+
+	strcpy_s(Str1, STRMAXLENGTH, "Terrain Frame : ");
 	strcat_s(Str1, STRMAXLENGTH, Str);
 	MyManager->UpdateSentence(13, Str1, MyManager->GetPosX( 13 ), MyManager->GetPosY( 13 ) );
 // Измеряем быстродействие
@@ -2055,7 +2063,8 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 	MyManager->Frustum_3D_Objects ( m_Frustum );
 
 	Profile->StopTimer ( Str );
-
+//	m_D3D->TurnOnAlphaBlending ();
+//	m_D3D->TurnOnParticleBlending ();
 	RCubeRender->RenderScene ();
 	
 	strcpy_s(Str1, STRMAXLENGTH, "Frustum объектам : ");

@@ -102,8 +102,6 @@ public:
 
 	int CreateCustomDepthStencilState ();			// Создание произвольного DepthStencilState
 
-	bool Rander3DObject ();
-
 	D3D11_VIEWPORT viewport;	// Engine render ViewPort
 
 // + LIGHTS
@@ -319,45 +317,6 @@ private:
 	int ClustersAmount;
 
 // - LIGHTS
-
-// + Shadow Works
-/*
-public:
-
-// - Shadow Works	
-
-	ID3D11VertexShader* ShadowMapShader;
-
-//	int LightRender_RS_Number = -1;
-
-//	void Init ( HWND hwnd, D3DGlobalContext * D3DGC, ResourceManager * Maneger, D3DClass * Light, FrustumClass* Frustum
-//		, ObjectUsingShadows Objects );
-	void RenderSpotLightsSadowMaps ( std::vector <int> SpotLightsWithShadowsIndexes );
-
-	void InitRasterizerState ( int DepthBias, float SlopeScaledDepthBias );
-
-
-private:
-
-	ID3D11DepthStencilView* DSV_ShadowMap3D; // 
-	ID3D11RasterizerState* LightRender_RS;
-	ID3D11DepthStencilState* LightRender_DS;
-//	D3DClass * g_Light;
-	D3D11_DEPTH_STENCIL_VIEW_DESC DSD2;
-	XMVECTOR Up;
-	FrustumClass* g_Frustum;
-
-	void DrawObjectUsingShadows ( XMVECTOR DrawPosition, bool ReplaseData );
-
-	struct cbShadowObject
-	{
-
-		XMMATRIX ViewProjection;
-
-	};
-
-	RCube_VecFloat34 LightPosition, LightTarget;
-*/
 
 	HRESULT hr, result;
 	bool m_vsync_enabled;

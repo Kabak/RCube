@@ -392,7 +392,7 @@ void SnowFallParticles::EmitParticles( FPSTimers& Timers )
 
 	// Increment the frame time.
 	if ( Timers.FrameTime < 1.0f )
-		m_accumulatedTime += Timers.FrameTime * 60;
+		m_accumulatedTime += Timers.FrameTime ;
 
 	// Set emit particle to false for now.
 	emitParticle = false;
@@ -479,7 +479,7 @@ void SnowFallParticles::UpdateParticles( FPSTimers& Timers )
 			j = 0;
 		FireType1 *Part = &m_particleList[i];
 		ParticleShaderInstance_FIRE *Part2 = &instances[i];
-		Part2->position.y = Part2->position.y - Part->Velocity * ( Timers.FrameTime * 60 );
+		Part2->position.y = Part2->position.y - Part->Velocity * ( Timers.FrameTime );
 		Part2->position.x = float( Part2->position.x + cos( j ) * 0.006 );
 		//		m_particleList[i].positionZ = m_particleList[i].positionZ + sin(j) * m_particleList[i].velocity * 0.05;
 		j += 0.0174533f;
