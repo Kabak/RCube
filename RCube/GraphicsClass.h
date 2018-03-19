@@ -93,7 +93,7 @@ public:
     }
 // ------------------------------------
 
-	bool Initialize(HWND , int&, int&, int& , int&, InputClass* _Input );
+	bool Initialize(HWND , int&, int&, int& , int&, InputClass* _Input, TimerClass* _Timer);
 //	void Shutdown();
 	bool Frame(FPSTimers& , DXINPUTSTRUCT&);
 	bool Render(int& mouseX, int& mouseY);

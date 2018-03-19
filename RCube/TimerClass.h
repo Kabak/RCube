@@ -33,9 +33,8 @@ public:
 // Индивидуальный таймер
 
 // Random generator
-	void GenRandUInt (int&, int);
-
-	int GenerateRandNym(int MinValue , int MaxValue);
+   float GenerateRandFloatRegion (float& Max, float& Min);
+	 int GenerateRandIntRegion (int& Max, int& Min);
 
 	char *String;
 
@@ -54,6 +53,20 @@ private:
 // Количесто процессорных тактов в одном кадре
 	__int64 frameTime;
 
+// Random generator Values
+	__int64 BigBangTime;	// Engine start time - constant
+	__int64 Time1;			// Start Time
+	__int64 Time2;			// FrameTime
+	__int64 Time3;			// Temp value
+		int RandomInt;		// Random Value
+		int LastInt;
+	  float RandomFloat;	// Random Value
+	  float LastFloat;
+	   bool Odd;			//
+	   bool Divede3;
+	   bool Divede5;
+	    int Algo;
+
 // техническое значение кадров в секунду
 	   UINT frameCount;
 
@@ -69,7 +82,7 @@ private:
 	LARGE_INTEGER StartCounter;
 	LARGE_INTEGER StopCounter;
 	LARGE_INTEGER ResultCounter;
-	LARGE_INTEGER OutCounter;
+	LARGE_INTEGER TempCounter;
 			float TimeAmount;
 
 };

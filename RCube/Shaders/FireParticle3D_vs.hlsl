@@ -3,9 +3,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-/////////////
-// GLOBALS //
-/////////////
 cbuffer MatrixBuffer : register( b0 )
 {
 	matrix worldMatrix;
@@ -20,15 +17,11 @@ cbuffer MatrixBuffer : register( b0 )
 };
 
 
-//////////////
-// TYPEDEFS //
-//////////////
 struct VertexInputType
 {
 	float3 position : POSITION0;
 	float2 tex : TEXCOORD0;
 	float4 instancePosition : POSITION1;
-//	float dummy : POSITION2;
 	float4 color : COLOR;
 	float4 NewTexCord : InsTEXCOORD;
 };
@@ -62,7 +55,6 @@ float4 mulQuat( float4 a, float4 b )
 }
 
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // Vertex Shader
 ////////////////////////////////////////////////////////////////////////////////
@@ -70,13 +62,7 @@ PixelInputType ParticleVertexShader( VertexInputType input, uint VertexNumber : 
 {
 	PixelInputType output;
 
-	// Change the position vector to be 4 units for proper matrix calculations.
-	//    input.position.w = 1.0f;
-	//    input.instancePosition.w = 1.0f;
-
 	// Update the position of the vertices based on the data for this particular instance.
-
-
 	// https://habrahabr.ru/post/255005/
 	// https://habrahabr.ru/post/183908/
 	// https://habrahabr.ru/post/183116/
@@ -93,30 +79,8 @@ PixelInputType ParticleVertexShader( VertexInputType input, uint VertexNumber : 
 
 		output.position = float4(qtransform(ViewTransQuat, input.position.xyz), 1.0f);
 
-
-		/*
-
-		//	matrix translation = Matrix.CreateTranslation( p.position );
-		//	matrix rotation = Matrix.Identity;
-		float3 viewUp = { 0.0f, 1.0f, 0.0f };
-		float3 RotForvard = normalize( cameraPosition.xyz - input.position.xyz );
-		float3 RotRight = cross( viewUp, RotForvard );
-		float3 RotUp = cross( RotForvard, RotRight );
-		// All those vectors have a length of approx. 1
-		//	float fl = length( RotForvard );
-		//	float rl = length( RotRight );
-		//	float ul = length( RotUp );
-		// AddQuad creates the quad and rotates each point by the given matrix
-		// Without the rotation, the quads don't show the mentioned squeezing
-		//	creator.AddQuad( rotation * translation );
-		output.position = float4 ( input.position.xyz, 1.0f );
-		//	float3x3 = {}
-		//	float4 TempPos = mul ( output.position , )
-		*/
 		output.position.xyz += input.instancePosition.xyz;
 		output.position = mul(output.position, viewprojection);
-
-		//	output.position = output.position * up * right;
 
 		switch (VertexNumber)
 		{
@@ -141,7 +105,6 @@ PixelInputType ParticleVertexShader( VertexInputType input, uint VertexNumber : 
 			break;
 
 		default:
-//			output.tex = 0.0f;
 			break;
 		}
 
@@ -149,6 +112,6 @@ PixelInputType ParticleVertexShader( VertexInputType input, uint VertexNumber : 
 
 	// Store the particle color for the pixel shader. 
 	output.color = input.color;
-	output.Draw = input.instancePosition.w; // Рисовать ли частицу 0.0f - НЕТ   1.0f - ДА
+	output.Draw = input.instancePosition.w; // Draw particle 0.0f - Yes   1.0f - No
 	return output;
 }

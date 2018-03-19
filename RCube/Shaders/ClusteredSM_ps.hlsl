@@ -220,7 +220,8 @@ SurfaceData ComputeSurfaceDataFromGeometry(GeometryVSOut input)
 
 // Переключатель нормалей 
 // Optionally use face normal instead of shading normal
-	surface.normal = normalize(ComputeFaceNormal(input.positionView.xyz));
+//	surface.normal = normalize(ComputeFaceNormal(input.positionView.xyz));
+	surface.normal = input.normal;
 //	float3 faceNormal = ComputeFaceNormal(input.positionView);
 //	surface.normal = normalize(mUI.faceNormals ? faceNormal : input.normal);
 // -----------------------------------------------------------

@@ -713,7 +713,7 @@ int ResourceManager::InitOneShader( WCHAR * CSOFileName) {
 		return hr;
 	}
 
-	int IndexShader;
+	int IndexShader = 0;
 
 	Readfile.seekg(0, std::ios::end);
 	int readNowFileSize = (int)Readfile.tellg();
@@ -1077,10 +1077,11 @@ HRESULT ResourceManager::InitSounds( WCHAR * kafFilename, SoundClass * ActiveSou
 	return S_OK;
 }
 
-void  ResourceManager::Init(D3DGlobalContext * g_D3DGC) 
+void  ResourceManager::Init(D3DGlobalContext * g_D3DGC, TimerClass* _Timer)
 {
 
 	Local_D3DGC	= g_D3DGC;
+	Local_Timer = _Timer;
 //	active_hwnd = Local_D3DGC->hwnd;
 }
 
@@ -1127,19 +1128,11 @@ ID3D11VertexShader*  ResourceManager::GetVertexShader ( int ShaderIndex )
 // Создание буферов для объектов на сцене
 int ResourceManager::Create_Flat_Obj_Buffers (bool CPUAccess, UINT InstanceAmount, UINT IndexAmount = 0, DXTextureSRV* Texture = 0 )
 {
-//	VertexBuffer <Vertex_Model3D>* Model3DVB = nullptr;
-
 	VertexBuffer <Vertex_FlatObject>* FlatObjectVB = nullptr;
-
-//	VertexBuffer <PositionType>* InstanceVB = nullptr;
-
-//	VertexBuffer <Colour_Particles_Instance>* Instances_Colour_Particles = nullptr;
 
 	IndexBuffer < Index_Type >* TempIB = nullptr;
 
 	Flat_Obj_Buffers *FlatObjBuffers = nullptr;
-
-//	void * Pointer;
 
 	// https://habrahabr.ru/company/xakep/blog/257891/
 	// http://www.quizful.net/post/Inheritance-in-C++
@@ -1161,13 +1154,13 @@ int ResourceManager::Create_Flat_Obj_Buffers (bool CPUAccess, UINT InstanceAmoun
 		FlatObjectBuffers.push_back ( FlatObjBuffers );
 	}
 
-		FlatObjectVB = new VertexBuffer <Vertex_FlatObject> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, CPUAccess, InstanceAmount );			// Создаём буфер вертексов FlatObject
+		FlatObjectVB = new VertexBuffer <Vertex_FlatObject> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, (int)CPUAccess, InstanceAmount, nullptr );			// Создаём буфер вертексов FlatObject
 		FlatObjBuffers->FlatObjectVB = FlatObjectVB;
 
 
 	if (IndexAmount > 0)
 	{
-		TempIB = new IndexBuffer < Index_Type > ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, CPUAccess, IndexAmount );
+		TempIB = new IndexBuffer < Index_Type > ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, CPUAccess, IndexAmount, nullptr);
 		FlatObjBuffers->IndexBs = TempIB;
 	}
 
@@ -1742,11 +1735,11 @@ int ResourceManager::Create_3D_Obj_Mesh_Buffers( bool CPUAccess, UINT InstanceAm
 	
 	int ReturnIndex = GetNew3D_Obj_Mesh_Buffer_Index( _3DObjBuffers );
 
-	_3DObjBuffers->Vertexes = new VertexBuffer <Vertex_Model3D> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, CPUAccess, InstanceAmount );			// Создаём буфер вертексов FlatObject
+	_3DObjBuffers->Vertexes = new VertexBuffer <Vertex_Model3D> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, (int)CPUAccess, InstanceAmount, nullptr);			// Создаём буфер вертексов FlatObject
 
 	if (IndexAmount > 0)
 	{
-		_3DObjBuffers->Indexes = new IndexBuffer < Index_Type > ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, CPUAccess, IndexAmount );
+		_3DObjBuffers->Indexes = new IndexBuffer < Index_Type > ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, CPUAccess, IndexAmount, nullptr);
 	}
 
 	return ReturnIndex;
@@ -1776,9 +1769,6 @@ bool ResourceManager::LoadKFObject ( std::wstring FileName, _3DModel* New_3D_Mod
 		MessageBox ( NULL, L"Количество мешей в модели больше MAX_MODEL_MESH или равно нулю.", Error, MB_OK );
 		return false;
 	}
-
-//	_3DModel* New_3D_Model = new _3DModel;	// Создаём объект 3D модели и сохраняем его в списке 3D объектов
-//	_3DModels.push_back ( New_3D_Model );
 
 	int TextureSize = NULL; // размер тектуры которую я буду читать
 	UCHAR* TextuteFile = nullptr; // это файл текстуры который я читаю из общей кучи
@@ -1847,7 +1837,7 @@ bool ResourceManager::LoadKFObject ( std::wstring FileName, _3DModel* New_3D_Mod
 			}
 
 
-			RCUBE_DELETE ( TextuteFile );
+			RCUBE_ARR_DELETE ( TextuteFile );
 		}
 
 		// чтние баундинг бокса (для конкретного мэша)
@@ -1945,7 +1935,7 @@ int ResourceManager::Add_3D_Object ( std::wstring FileNameKFO, int InstCount = 1
 	memset ( Model3DPointer->PositionsDraw, 0, Size );
 	
 	// Создаём буфер позиций и поворотов для Instance 3D модели
-	Model3DPointer->InstancePositionsBuffer = new VertexBuffer <PositionType> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, true, InstCount );
+	Model3DPointer->InstancePositionsBuffer = new VertexBuffer <PositionType> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, CPU_ACCESS_BUFFER, InstCount, nullptr);
 	
 	Result = GetNew3D_Obj_Index ( Model3DPointer );
 
@@ -2174,27 +2164,313 @@ void ResourceManager::Frustum_3D_Objects ( FrustumClass* Frustum )
 }
 
 
-
-
-Point ResourceManager::GenerateRandPoint ( Terrain* TerrainObj )
+void  ResourceManager::LandParamChecker (Terrain_GenInit* LandParam)
 {
-	Point Result;
 
+	if ( LandParam->MinRadius < 1 )
+	{
+
+		MessageBox (NULL, L"Мининальный радиус высот/низин меньше 1.", Error, MB_OK);
+		LandParam->MinRadius = 1;
+
+	}
+
+	if ( LandParam->MaxRadius <= LandParam->MinRadius )
+	{
+
+		MessageBox (NULL, L"максимальный радиус гор должен дыть больше чем минимальный.", Error, MB_OK);
+		LandParam->MaxRadius = LandParam->MinRadius + 1;
+
+	}
+
+	if ( LandParam->HeightNum < 0 )
+	{
+
+		MessageBox (NULL, L"количество высот не может быть меньше 0.", Error, MB_OK);
+		LandParam->HeightNum = 0;
+
+	}
+
+	if ( LandParam->LowlandNum < 0 )
+	{
+
+		MessageBox (NULL, L"количество низин не может быть меньше 0.", Error, MB_OK);
+		LandParam->LowlandNum = 0;
+
+	}
+
+	if ( LandParam->Max_Height < 0 )
+	{
+
+		MessageBox (NULL, L"максимальное значение высоты гор не может быть меньше 0.", Error, MB_OK);
+		LandParam->Max_Height = 0;
+
+	}
+/*
+	if ( LandParam->Min_Height < 0 )
+	{
+
+		MessageBox (NULL, L"минимальное значение размера низин не может быть меньше 0.", Error, MB_OK);
+		LandParam->Min_Height = 0;
+
+	}
+*/
+}
+
+
+void ResourceManager::GenerateRandPoint ( Terrain* TerrainObj, PointCoord& Result )
+{
 	Result.x = rand () % TerrainObj->VertexInX_Row;
-	Result.y = rand () % TerrainObj->VertexInZ_Col;
+	Result.z = rand () % TerrainObj->VertexInZ_Col;
+}
+
+
+int ResourceManager::GenerateRandIntRegion ( int& Max, int& Min )
+{
+	int Result = Min - 1;
+
+	while ( Result < Min )
+		Result = rand () % Max;
 
 	return Result;
 }
 
 
-int ResourceManager::GenerateRandRadius ( int MaxRadius, int MinRadius )
+float ResourceManager::GenerateRandFloatRegion (float& Min, float& Max)
 {
-	int Result = MinRadius - 1;
+	float Result = Min - 1;
 
-	while ( Result < MinRadius )
-		Result = rand () % MaxRadius;
+	while ( Result < Min )
+		Result = Min + static_cast <float> ( rand () ) / ( static_cast <float> ( RAND_MAX / ( Max - Min ) ) );
 
 	return Result;
+}
+
+
+void  ResourceManager::GetCoordsByIndex (Terrain* TerrainObj, int Index, PointCoord& Result)
+{
+	// Its for PhysX compatibility
+	//  X
+	//  |
+	//  ---> Z
+
+	// Checking region error
+	if ( Index > TerrainObj->Total_Vertexs_In_Terrain )
+	{
+		Result.z = -1;
+		Result.x = -1;
+	}
+	else
+	{
+		Result.x = Index / TerrainObj->VertexInX_Row;
+
+		Result.x > 0 ? Result.z = Index - Result.x * TerrainObj->VertexInX_Row : Result.z = Index;
+	}
+
+}
+
+
+int  ResourceManager::GetIndexByCoord (Terrain* TerrainObj, PointCoord& Coord)
+{
+	// Checking region error
+	//	if ( Coord.z < 0 || Coord.x < 0 || Coord.z > TerrainObj->VertexInZ_Col || Coord.x > TerrainObj->VertexInX_Row )
+	//		return -1;
+	// Its for PhysX compatibility
+	//  X
+	//  |
+	//  ---> Z
+	int Index = TerrainObj->VertexInZ_Col * Coord.x + Coord.z;
+
+	return Index;
+}
+
+
+void ResourceManager::CalkAmountPointsInDir (Terrain* TerrainObj, DirectionsAmount& PointData)
+{
+	PointCoord Result;	// XZ position of the center vertex
+	PointCoord TempCoord;
+	int TempVal = 0;
+
+	Result.x = 0;
+	Result.z = 0;
+
+	GetCoordsByIndex (TerrainObj, PointData.Index, Result);	// Get central vertex coordinates
+
+//	PointData.CenterPos_Z = Result.z;
+//	PointData.CenterPos_X = Result.x;
+//	PointData.Center.Fl3 = TerrainObj->VB_Data[PointData.Index].Position;
+
+	int PointsAmount = int(PointData.Radius / TerrainObj->QuadVertexStep); // How many points within a radius vector
+
+	PointData.PointsAmount = PointsAmount;
+
+	// Left points amount from center vertex
+	Result.z >= PointsAmount ? PointData.Left = PointsAmount : PointData.Left = Result.z;
+
+	// Right points amount from center vertex
+	TempVal = Result.z + PointsAmount;
+
+	TempVal > TerrainObj->VertexInZ_Col ? PointData.Right = TerrainObj->VertexInZ_Col - Result.z
+		: PointData.Right = PointsAmount;
+
+	// Down points amount from center vertex
+	Result.x >= PointsAmount ? PointData.Down = PointsAmount : PointData.Down = Result.x;
+
+	// Up points amount from center vertex
+	TempVal = Result.x + PointsAmount;
+
+	TempVal > TerrainObj->VertexInX_Row ? PointData.Up = TerrainObj->VertexInX_Row - Result.x
+		: PointData.Up = PointsAmount;
+
+	// Lowest index
+	TempCoord.x = Result.x - PointData.Down;
+	TempCoord.z = Result.z - PointData.Left;
+	PointData.LowestIndex = GetIndexByCoord (TerrainObj, TempCoord);
+	PointData.Start = TempCoord;
+
+	// Largest index
+	TempCoord.x = Result.x + PointData.Up;
+	TempCoord.z = Result.z + PointData.Right;
+	PointData.LowestIndex = GetIndexByCoord (TerrainObj, TempCoord);
+	PointData.End = TempCoord;
+}
+
+float ResourceManager::Formula (float& Value)
+{
+	float temp = - static_cast <float>(1.990803164890060e01 * Value);
+	return static_cast <float>( 9.857573783154564e-01 / ( 1 + 1.441927059107521e05 * pow (2.718281828459045, temp) ) );
+}
+
+
+void ResourceManager::MoveTerrain (Terrain* TerrainObj, DirectionsAmount& PointData, float Height)
+{
+	PointCoord Result;
+
+	RCube_VecFloat34 VeetexPosition;
+	RCube_VecFloat34 CenterPosition;
+
+	VeetexPosition.Vec = { 0.0f, 0.0f, 0.0f, 0.0f };
+	CenterPosition.Vec = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+	RCube_VecFloat34 Temp1, Temp2;
+
+	float VertexTempHeight = 0.0f;
+	float CenterTempHeight = 0.0f;
+
+	int Index = 0;
+	
+	CenterPosition.Fl3 = TerrainObj->VB_Data[PointData.Index].Position;	// Geting Center vertex Position and Height
+	CenterTempHeight = CenterPosition.Fl3.y;
+	CenterPosition.Fl3.y = 0.0f;	// Exluding Height
+
+	for ( int i = PointData.Start.x; i < PointData.End.x; ++i )
+	{
+		for ( int j = PointData.Start.z; j < PointData.End.z; ++j )
+		{
+			// Geting vertex Index
+			Result.x = i;
+			Result.z = j;
+			Index = GetIndexByCoord (TerrainObj, Result);
+
+			VeetexPosition.Fl3 = TerrainObj->VB_Data[Index].Position;	// Geting vertex Position and Height
+			VertexTempHeight = VeetexPosition.Fl3.y;							// Store vertex Height
+			
+			// Checking distance from Center without Height to vertex without Height
+			VeetexPosition.Fl3.y = 0.0f;	// Exluding Height
+
+			Temp1.Vec = CenterPosition.Vec - VeetexPosition.Vec;
+			Temp2.Vec = XMVector3Length (Temp1.Vec);
+
+			float Val = abs (Temp2.Fl4.x);	// Point distance from center point
+
+			// If point within the radius, change it height
+			if ( Val < PointData.Radius )
+			{
+					float Temp = (PointData.Radius - Val) / 100;
+					TerrainObj->VB_Data[Index].Position.y += Height * Formula (Temp);
+			}
+		}
+	}
+
+}
+
+
+bool ResourceManager::CreateLandScapeBending (Terrain* TerrainObj, XMFLOAT2 X_Z, XMFLOAT4 HRMinMax)
+{
+	DirectionsAmount *PointData = new DirectionsAmount;
+
+	PointCoord CenterPoint;
+	float HeighValue;
+
+	CenterPoint.x = ( int ) X_Z.x;
+	CenterPoint.z = ( int ) X_Z.y;
+
+	PointData->Radius = GenerateRandFloatRegion (HRMinMax.z, HRMinMax.w);
+	PointData->Index = GetIndexByCoord (TerrainObj, CenterPoint);
+	CalkAmountPointsInDir (TerrainObj, *PointData);
+	HeighValue = GenerateRandFloatRegion (HRMinMax.x, HRMinMax.y);
+	MoveTerrain (TerrainObj, *PointData, HeighValue);
+
+	_3D_Obj_Buffers *Terrain_Buffers = Get_Terrain_Buffers_By_Index (TerrainObj->TerrainBuffersIndex);
+
+	CalculateNormals (TerrainObj);
+
+	Terrain_Buffers->Vertexes->Update (TerrainObj->VB_Data);
+
+	Update_Terrain_Clusters_AABB (TerrainObj);	// Update for clusters frustum culling
+
+	delete PointData;
+
+	return true;
+}
+
+
+void ResourceManager::GenerateLandScape (Terrain* TerrainObj, Terrain_GenInit* InintData)
+{
+	DirectionsAmount *PointData = new DirectionsAmount;		// Amount of available vertex in direction from center vertex
+
+	PointCoord CenterPoint;
+	float HeighValue;
+
+	LandParamChecker (InintData);
+
+	// генерим низины
+	for ( int count = 0; count < InintData->LowlandNum; ++count )
+	{
+//		float a = Local_Timer->GenerateRandFloatRegion (InintData->MaxRadius, InintData->MinRadius);
+		PointData->Radius = GenerateRandFloatRegion (InintData->MinRadius, InintData->MaxRadius);
+		GenerateRandPoint (TerrainObj, CenterPoint);
+		PointData->Index = GetIndexByCoord (TerrainObj, CenterPoint);
+		CalkAmountPointsInDir (TerrainObj, *PointData);
+		HeighValue = GenerateRandFloatRegion (InintData->Min_Height, InintData->Max_Height);
+
+		MoveTerrain (TerrainObj,*PointData, HeighValue);
+
+	}
+
+	// генерим высоты
+	for ( int count = 0; count < InintData->HeightNum; ++count )
+	{
+//		float a = Local_Timer->GenerateRandFloatRegion (InintData->MaxRadius, InintData->MinRadius);
+		PointData->Radius = GenerateRandFloatRegion (InintData->MaxRadius, InintData->MinRadius);
+		GenerateRandPoint (TerrainObj, CenterPoint);
+		PointData->Index = GetIndexByCoord (TerrainObj, CenterPoint);
+		CalkAmountPointsInDir (TerrainObj, *PointData);
+		HeighValue = GenerateRandFloatRegion (InintData->Max_Low, InintData->Min_Low);
+
+		MoveTerrain (TerrainObj, *PointData, HeighValue);
+
+	}
+
+	_3D_Obj_Buffers *Terrain_Buffers = Get_Terrain_Buffers_By_Index (TerrainObj->TerrainBuffersIndex);
+	
+	CalculateNormals (TerrainObj);
+
+	Terrain_Buffers->Vertexes->Update (TerrainObj->VB_Data);
+
+	Update_Terrain_Clusters_AABB ( TerrainObj );	// Update for clusters frustum culling
+
+	delete PointData;
 }
 
 
@@ -2223,13 +2499,15 @@ void ResourceManager::CalculateNormals ( Terrain* TerrainObj )
 
 	// Go through all the faces in the mesh and calculate their normals.
 
-	for (int j = 0; j<( TerrainObj->VertexInX_Row - 1 ); j++ )
+	for (int j = 0; j < ( TerrainObj->VertexInX_Row - 1 ); j++ )
 	{
-		for (int i = 0; i<( TerrainObj->VertexInZ_Col - 1 ); i++ )
+		for (int i = 0; i < ( TerrainObj->VertexInZ_Col - 1 ); i++ )
 		{
 			// Vertex Indexes in square
-			// 3  1
-			// 0  2
+			// Its for PhysX compatibility
+			//			   X	
+			// 3  1		   |
+			// 0  2        ---> Z
 			Index0 = i + j * TerrainObj->VertexInZ_Col;
 			Index3 = Index0 + TerrainObj->VertexInZ_Col;
 			Index1 = Index3 + 1;
@@ -2287,7 +2565,7 @@ void ResourceManager::CalculateNormals ( Terrain* TerrainObj )
 			Index1 = Index3 + 1;
 			Index2 = Index0 + 1;
 
-			Vertex0.Vec= Normals[Index0].Vec;
+			Vertex0.Vec = Normals[Index0].Vec;
 			Vertex3.Vec = Normals[Index3].Vec;
 			Vertex1.Vec = Normals[Index1].Vec;
 //			Vertex2.Vec = Normals[Index2].Vec;
@@ -2296,9 +2574,11 @@ void ResourceManager::CalculateNormals ( Terrain* TerrainObj )
 
 			Summ.Vec /= 3.0f;
 
-			Normals[Normal_Index].Vec = XMVector3Normalize ( Summ.Vec );
+			Normals[Normal_Index].Vec = -XMVector3Normalize ( Summ.Vec );	//   !!!!!!!!!!!!!!!!!!  - 
 
 			TerrainObj->VB_Data[Normal_Index].Normal = Normals[Normal_Index].Fl3;
+
+//  			TerrainObj->VB_Data[Normal_Index].Normal = Vertex0.Fl3;
 
 			++Normal_Index;
 		}
@@ -2392,7 +2672,8 @@ void ResourceManager::FrustumTerrain ( FrustumClass* Frustum, Terrain* TerrainOb
 	for ( size_t i = 0 ; i < Amount; ++i )
 	{
 		TerrainCluster* TempCluster = TerrainObj->Clusters[i];
-		if ( Frustum->CheckSphere ( TempCluster->AABB.Pos.Fl3, TempCluster->AABB.Radius ) )
+//		if ( Frustum->CheckSphere ( TempCluster->AABB.Pos.Fl3, TempCluster->AABB.Radius ) )
+		if ( Frustum->CheckRectangle (TempCluster->AABB.Pos.Fl3, TempCluster->AABB.XSize, TempCluster->AABB.YSize, TempCluster->AABB.ZSize) )
 			TerrainObj->PassedFrustumClasters.emplace_back ( TempCluster );
 	}
 
@@ -2500,34 +2781,22 @@ int ResourceManager::Create_Terrain_Mesh_Buffer ( Terrain* TerrainObj )
 
 	int ReturnIndex = Get_Terrain_VB_Index ( Terrain_Buffers );
 	// Создаём буфер вертексов Terrain
-	Terrain_Buffers->Vertexes = new VertexBuffer <Vertex_Model3D> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, false , TerrainObj->Total_Vertexs_In_Terrain );
-	// Создаём Индексный буфер
-	Terrain_Buffers->Indexes = new IndexBuffer <Index_Type> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, false, TerrainObj->Total_Indexs_In_Terrain );
+	Terrain_Buffers->Vertexes = new VertexBuffer <Vertex_Model3D> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, NO_CPU_ACCESS_BUFFER, TerrainObj->Total_Vertexs_In_Terrain, nullptr/*TerrainObj->VB_Data*/ );
+	// Сохраняем вертексы в Вертексный буфер
+	Terrain_Buffers->Vertexes->Update ( TerrainObj->VB_Data );
 
-	// Обновляем Вертексный буфер
-	TerrainVertexBuffers[TerrainObj->TerrainBuffersIndex]->Vertexes->Update ( TerrainObj->VB_Data );
-	// Обновляем Индексный буфер
-	TerrainVertexBuffers[TerrainObj->TerrainBuffersIndex]->Indexes->Update ( TerrainObj->IB_Data );
+	// Если Terrain НЕ рисуется кластерами
+	if ( !TerrainObj->ClusterRender )
+	{
+		// Создаём Индексный буфер для всего Terrain
+		Terrain_Buffers->Indexes = new IndexBuffer <Index_Type> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, NO_CPU_ACCESS_BUFFER, TerrainObj->Total_Indexs_In_Terrain, nullptr/*TerrainObj->IB_Data */);
+		// Сохраняем индексы в Индексный буфер
+		Terrain_Buffers->Indexes->Update ( TerrainObj->IB_Data );
+	}
 
 	TerrainObj->TerrainBuffersIndex = ReturnIndex;
 
 	return  ReturnIndex;
-}
-
-
-void ResourceManager::GetQuadIndex ( Terrain* TerrainObj, int UL, int DR, Point* _Result )
-{
-	// Проверка, чтобы индексы верхнего левого и нижнего правого вертекса квадрата были правильные
-	if ( UL < 0 || DR <= UL )
-	{
-		_Result->x = -1;
-		_Result->y = -1;
-		return;
-	}
-
-
-
-
 }
 
 
@@ -2607,6 +2876,8 @@ void ResourceManager::Calc_Next_Cluster_Start_Pos ( int& Start_X_ROW, int& Start
 	}
 	return;
 }
+
+
 void ResourceManager::GenerateIndexes ( Terrain* TerrainObj, int GridScale )
 {
 	int CurrentIndex = 0;
@@ -2638,6 +2909,119 @@ void ResourceManager::GenerateIndexes ( Terrain* TerrainObj, int GridScale )
 }
 
 
+void ResourceManager::Update_Terrain_Clusters_AABB (Terrain* TerrainObj)
+{
+	int Index0, Index1, Index2, Index3;
+
+	float Min_Y = 0.0f;
+	float Max_Y = 0.0f;
+
+	float Min_X = 0.0f;
+	float Max_X = 0.0f;
+
+	float Min_Z = 0.0f;
+	float Max_Z = 0.0f;
+
+	// Количество столбцов в кластере
+	int Total_Columns_In_Cluster = TerrainObj->QuadsPerCluster + 1;
+
+	// Для наглядности разделяю переменные Col и Row
+	int TotalRows_In_Claster = Total_Columns_In_Cluster;
+
+	// Индекс последней строки в кластере
+	int Last_Row_Index_In_Cluster = 0;
+
+	// Индекс строки начального вертекса в кластере
+	int StartCluster_X_ROW_Index = 0;
+	// Индекс столбца начального вертекса в кластере
+	int StartCluster_Z_COL_Index = 0;
+
+	int CurrentClusterIndex = 0;	// Указатель на текущий индекс в массиве индексов для кластера
+
+	int Column_End = 0;		// Индекс окончания строки
+
+	// Сколько кластеров по X
+	for ( int Terrin_Row = 0; Terrin_Row < TerrainObj->ClustersX_ROW; ++Terrin_Row )
+	{
+		// Сколько кластеров по Z
+		for ( int Terrain_Col = 0; Terrain_Col < TerrainObj->ClustersZ_COL; ++Terrain_Col )
+		{
+			TerrainCluster* ClasterObject = TerrainObj->Clusters[CurrentClusterIndex];
+
+			// -1 потому, что обрабатываем по 4 вертекса - для квадрата.
+			Last_Row_Index_In_Cluster = StartCluster_X_ROW_Index + TotalRows_In_Claster - 1;
+
+			Min_Y = 0.0f;
+			Max_Y = 0.0f;
+
+			// Vertex Indexes in square
+			// 3  1
+			// 0  2
+			// Заполнение конкретными индексами индексного буфера для кластера
+			for ( int Row_Index = StartCluster_X_ROW_Index; Row_Index < Last_Row_Index_In_Cluster; ++Row_Index )
+			{
+				// -1 потому, что обрабатываем по 4 вертекса - для квадрата.
+				Column_End = StartCluster_Z_COL_Index + Total_Columns_In_Cluster - 1;
+
+				for ( int Column_Index = StartCluster_Z_COL_Index; Column_Index < Column_End; ++Column_Index )
+				{
+					// определяем текущие индексы вертексов для квадрата
+					Index0 = Column_Index + Row_Index * TerrainObj->VertexInZ_Col;// Columns_In_Row;
+					Index3 = Index0 + TerrainObj->VertexInZ_Col;// Columns_In_Row;
+					Index1 = Index3 + 1;
+					Index2 = Index0 + 1;
+
+					// Сохраняем BV для кластера
+					// LDB - Left Down Backward
+					if ( ( Row_Index == StartCluster_X_ROW_Index ) && ( Column_Index == StartCluster_Z_COL_Index ) )
+					{
+						ClasterObject->AABB.LDB.Fl3 = TerrainObj->VB_Data[Index0].Position;
+						Min_X = TerrainObj->VB_Data[Index0].Position.x;
+						Min_Z = TerrainObj->VB_Data[Index0].Position.z;
+					}
+
+
+					// RUF - Right Up Forward
+					if ( ( Row_Index == Last_Row_Index_In_Cluster - 1 ) && ( Column_Index == Column_End - 1 ) )
+					{
+						ClasterObject->AABB.RUF.Fl3 = TerrainObj->VB_Data[Index1].Position;
+						Max_X = TerrainObj->VB_Data[Index1].Position.x;
+						Max_Z = TerrainObj->VB_Data[Index1].Position.z;
+					}
+
+					// Заполняем высоту и минимум для кластера
+					TerrainObj->VB_Data[Index0].Position.y > Max_Y ? Max_Y = TerrainObj->VB_Data[Index0].Position.y : Max_Y;
+					TerrainObj->VB_Data[Index3].Position.y > Max_Y ? Max_Y = TerrainObj->VB_Data[Index3].Position.y : Max_Y;
+					TerrainObj->VB_Data[Index1].Position.y > Max_Y ? Max_Y = TerrainObj->VB_Data[Index1].Position.y : Max_Y;
+					TerrainObj->VB_Data[Index2].Position.y > Max_Y ? Max_Y = TerrainObj->VB_Data[Index2].Position.y : Max_Y;
+
+					TerrainObj->VB_Data[Index0].Position.y < Min_Y ? Min_Y = TerrainObj->VB_Data[Index0].Position.y : Min_Y;
+					TerrainObj->VB_Data[Index3].Position.y < Min_Y ? Min_Y = TerrainObj->VB_Data[Index3].Position.y : Min_Y;
+					TerrainObj->VB_Data[Index1].Position.y < Min_Y ? Min_Y = TerrainObj->VB_Data[Index1].Position.y : Min_Y;
+					TerrainObj->VB_Data[Index2].Position.y < Min_Y ? Min_Y = TerrainObj->VB_Data[Index2].Position.y : Min_Y;
+				}
+			}
+			// Сохраняем в AABB кластера Min и Max высоты кластера
+			ClasterObject->AABB.RUF.Fl3.y = Max_Y;
+			ClasterObject->AABB.LDB.Fl3.y = Min_Y;
+
+
+			ClasterObject->AABB.XSize = Max_X - Min_X;
+			ClasterObject->AABB.YSize = Max_Y - Min_Y;
+			ClasterObject->AABB.ZSize = Max_Z - Min_Z;
+
+			// Расчёт AABB
+			CalkTerrainClusterAABB (ClasterObject);
+
+			Calc_Next_Cluster_Start_Pos (StartCluster_X_ROW_Index, StartCluster_Z_COL_Index, TerrainObj);
+
+			++CurrentClusterIndex;
+		}
+
+	}
+}
+
+
 int ResourceManager::Create_Terrain_Clusters ( Terrain* TerrainObj )
 {
 	int ReturnIndex = -1;
@@ -2646,6 +3030,12 @@ int ResourceManager::Create_Terrain_Clusters ( Terrain* TerrainObj )
 
 	float Min_Y = 0.0f;
 	float Max_Y = 0.0f;
+
+	float Min_X = 0.0f;
+	float Max_X = 0.0f;
+
+	float Min_Z = 0.0f;
+	float Max_Z = 0.0f;
 
 	// Количество столбцов в кластере
 	int Total_Columns_In_Cluster = TerrainObj->QuadsPerCluster + 1;
@@ -2656,17 +3046,12 @@ int ResourceManager::Create_Terrain_Clusters ( Terrain* TerrainObj )
 	// Индекс последней строки в кластере
 	int Last_Row_Index_In_Cluster = 0;
 
-	// Количество вертексов в одной строке - Row для всего Terrain
-//	int Columns_In_Row = TerrainObj->ClustersX_ROW * Total_Columns_In_Cluster - 1;
-
 	// Индекс строки начального вертекса в кластере
 	int StartCluster_X_ROW_Index= 0;
 	// Индекс столбца начального вертекса в кластере
 	int StartCluster_Z_COL_Index = 0;
 
 	int CurrentIndex = 0;	// Указатель на текущий индекс в массиве индексов для кластера
-
-//	int ClasterIndexInRow = 0;	// Порядковый еомер создаваемого сейчас кластера в строке ( порядковый номер в строке кластеров )
 
 	int Column_End = 0;		// Индекс окончания строки
 
@@ -2685,9 +3070,6 @@ int ResourceManager::Create_Terrain_Clusters ( Terrain* TerrainObj )
 			// Сохраняем присвоенный номер IB в самом кластере
 			ClasterObject->ClusterBufferIndex = ReturnIndex;
 			
-			// Создаём индексный буфер для кластера
-			Cluster_IB->Indexes = new IndexBuffer <Index_Type> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, false, TerrainObj->Total_Indexs_In_Cluster );
-
 			Index_Type* IB_Data = new Index_Type[TerrainObj->Total_Indexs_In_Cluster];
 
 			// -1 потому, что обрабатываем по 4 вертекса - для квадрата.
@@ -2725,6 +3107,8 @@ int ResourceManager::Create_Terrain_Clusters ( Terrain* TerrainObj )
 					if ( ( Row_Index == StartCluster_X_ROW_Index ) && ( Column_Index == StartCluster_Z_COL_Index ) )
 					{
 						ClasterObject->AABB.LDB.Fl3 = TerrainObj->VB_Data[Index0].Position;
+						Min_X = TerrainObj->VB_Data[Index0].Position.x;
+						Min_Z = TerrainObj->VB_Data[Index0].Position.z;
 					}
 
 
@@ -2732,6 +3116,8 @@ int ResourceManager::Create_Terrain_Clusters ( Terrain* TerrainObj )
 					if ( ( Row_Index == Last_Row_Index_In_Cluster - 1 ) && ( Column_Index == Column_End - 1 ) )
 					{
 						ClasterObject->AABB.RUF.Fl3 = TerrainObj->VB_Data[Index1].Position;
+						Max_X = TerrainObj->VB_Data[Index1].Position.x;
+						Max_Z = TerrainObj->VB_Data[Index1].Position.z;
 					}
 
 					// Заполняем высоту и минимум для кластера
@@ -2746,12 +3132,19 @@ int ResourceManager::Create_Terrain_Clusters ( Terrain* TerrainObj )
 					TerrainObj->VB_Data[Index2].Position.y < Min_Y ? Min_Y = TerrainObj->VB_Data[Index2].Position.y : Min_Y;
 				}
 			}
-			// Сохраняем в AABB кластера Min и Max высоты клстера
+			// Сохраняем в AABB кластера Min и Max высоты кластера
 			ClasterObject->AABB.RUF.Fl3.y = Max_Y;
 			ClasterObject->AABB.LDB.Fl3.y = Min_Y;
 
+			ClasterObject->AABB.XSize = Max_X - Min_X;
+			ClasterObject->AABB.YSize = Max_Y - Min_Y;
+			ClasterObject->AABB.ZSize = Max_Z - Min_Z;
+
 			// Расчёт AABB
 			CalkTerrainClusterAABB ( ClasterObject );
+
+			// Создаём индексный буфер для кластера
+			Cluster_IB->Indexes = new IndexBuffer <Index_Type> (Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, NO_CPU_ACCESS_BUFFER, TerrainObj->Total_Indexs_In_Cluster, nullptr/*IB_Data*/);
 
 			// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			//	Обновить массив кластеров Cluster_IB->Indexes и удалить IB_Data
@@ -2831,10 +3224,8 @@ int ResourceManager::AddTerrain ( int _TerrainTextureIndex,
 
 	NewTerrain->Total_Indexs_In_Terrain = NewTerrain->Row_Col_VertexAmountInClasterAnyDir * NewTerrain->Row_Col_VertexAmountInClasterAnyDir * NewTerrain->ClustersAmount * 6;
 
-	NewTerrain->IB_Data = new Index_Type[NewTerrain->Total_Indexs_In_Terrain]; // Создаём массив индексов
-
 	// Создаём буфер позицию для одного Instance Terrain
-	NewTerrain->InstancePositionsBuffer = new VertexBuffer <PositionType> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, false, 1 );
+	NewTerrain->InstancePositionsBuffer = new VertexBuffer <PositionType> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, NO_CPU_ACCESS_BUFFER, 1, nullptr );
 
 	if ( NewTerraindata->HightFileName == nullptr )
 		GenerateVertexes ( NewTerrain );	// Размещаем вертексы в соответствии с размерами и формой Terrain
@@ -2846,15 +3237,19 @@ int ResourceManager::AddTerrain ( int _TerrainTextureIndex,
 			return -1;
 		}
 	}
-	
-	GenerateIndexes ( NewTerrain, 1 );	// Заполняем индексный буфер
+
+	if ( NewTerrain->ClusterRender )
+		Create_Terrain_Clusters ( NewTerrain );
+	else
+	{
+		NewTerrain->IB_Data = new Index_Type[NewTerrain->Total_Indexs_In_Terrain]; // Создаём массив индексов
+		GenerateIndexes ( NewTerrain, 1 );	// Заполняем индексный буфер
+	}
+
 
 	CalculateNormals ( NewTerrain );
 
 	Create_Terrain_Mesh_Buffer ( NewTerrain );
-
-	if ( NewTerrain->ClusterRender )
-		Create_Terrain_Clusters ( NewTerrain );
 
 	Result = Get_New_Terrain_Index ( NewTerrain );
 

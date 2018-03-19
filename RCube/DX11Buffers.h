@@ -4,17 +4,23 @@
 #ifndef _DX11BUFFERS_H_
 #define _DX11BUFFERS_H_
 
-#include <vector>
-
 #ifdef RCube_DX11
 #include <d3d11.h>
 #include "Buffers_def.h"
-#include <vector>
+//#include <vector>
 
 typedef ID3D11Buffer DXBuffer;
 typedef ID3D11ShaderResourceView DXTextureSRV;
 
 static const wchar_t* DX11BuffersError = L"ResourceManager Error" ;
+
+// Buffers types
+enum
+{
+	NO_CPU_ACCESS_BUFFER = 0,	// GPU Read / Write
+	CPU_ACCESS_BUFFER,			// CPU Write
+	CONST_BUFFER				// Immutable
+};
 
 // + ConstantBuffer
 template <typename T>
@@ -116,7 +122,7 @@ template <typename T>
 class VertexBuffer
 {
 public:
-	VertexBuffer ( ID3D11Device* d3dDevice, ID3D11DeviceContext* D3DContext, bool CPUAccess, UINT InstanceAmount );
+	VertexBuffer ( ID3D11Device* d3dDevice, ID3D11DeviceContext* D3DContext, int CPUAccess, UINT InstanceAmount, T* InitRes);
 	~VertexBuffer ();
 
 	DXBuffer* GetBuffer () { return Buffer; }
@@ -132,15 +138,17 @@ public:
 
 private:
 
-	bool CPU_Access;
+	 int CPU_Access;
 	UINT BufferSize;
 
 };
 
 
 template <typename T>
-VertexBuffer<T>::VertexBuffer ( ID3D11Device* d3dDevice, ID3D11DeviceContext* D3DContext, bool _CPUAccess, UINT _InstanceAmount )
+VertexBuffer<T>::VertexBuffer ( ID3D11Device* d3dDevice, ID3D11DeviceContext* D3DContext, int _CPUAccess, UINT _InstanceAmount, T* InitRes)
 {
+	HRESULT hr;
+
 #ifdef RCube_DX11
 	InstanceAmount = _InstanceAmount;
 	BufferSize = sizeof ( T ) * InstanceAmount;
@@ -152,12 +160,27 @@ VertexBuffer<T>::VertexBuffer ( ID3D11Device* d3dDevice, ID3D11DeviceContext* D3
 		0,	// Misc Flags
 		0	// Structure Bytes Stride
 	);
+	// Imutable Buffer
+	_CPUAccess == 2 ? desc.Usage = D3D11_USAGE_IMMUTABLE : desc.Usage;
+	_CPUAccess == 2 ? desc.CPUAccessFlags = 0 : desc.CPUAccessFlags;
 
-	HRESULT hr = d3dDevice->CreateBuffer ( &desc, 0, &Buffer );
-	if (FAILED ( hr ))
+	D3D11_SUBRESOURCE_DATA SubRes;
+	if ( InitRes )
 	{
-		MessageBox ( 0, L"Could not create Vertex buffer.", DX11BuffersError, MB_OK );
+		SubRes.pSysMem = InitRes;
+		SubRes.SysMemPitch = 0;
+		SubRes.SysMemSlicePitch = 0;
+		hr = d3dDevice->CreateBuffer (&desc, &SubRes, &Buffer);
 	}
+	else
+	{
+		hr = d3dDevice->CreateBuffer (&desc, 0, &Buffer);
+	}
+	if ( FAILED (hr) )
+	{
+		MessageBox (0, L"Could not create Vertex buffer.", DX11BuffersError, MB_OK);
+	}
+
 
 	CPU_Access = _CPUAccess;
 
@@ -212,7 +235,7 @@ template <typename T>
 class IndexBuffer
 {
 public:
-	IndexBuffer ( ID3D11Device* d3dDevice, ID3D11DeviceContext* D3DContext, bool _CPUAccess, UINT Amount );
+	IndexBuffer ( ID3D11Device* d3dDevice, ID3D11DeviceContext* D3DContext, int _CPUAccess, UINT Amount, T* InitRes);
 	~IndexBuffer ();
 
 	DXBuffer* GetBuffer () { return Buffer; }
@@ -227,14 +250,16 @@ public:
 
 private:
 
-	bool CPU_Access;
+	 int CPU_Access;
 	UINT BufferSize;
 };
 
 
 template <typename T>
-IndexBuffer<T>::IndexBuffer ( ID3D11Device* d3dDevice, ID3D11DeviceContext* D3DContext, bool _CPUAccess, UINT Amount )
+IndexBuffer<T>::IndexBuffer ( ID3D11Device* d3dDevice, ID3D11DeviceContext* D3DContext, int _CPUAccess, UINT Amount, T* InitRes)
 {
+	HRESULT hr;
+
 #ifdef RCube_DX11
 	BufferSize = sizeof ( T ) * (size_t)Amount;
 	CD3D11_BUFFER_DESC desc (
@@ -246,10 +271,25 @@ IndexBuffer<T>::IndexBuffer ( ID3D11Device* d3dDevice, ID3D11DeviceContext* D3DC
 		0	// Structure Bytes Stride
 	);
 
-	HRESULT hr = d3dDevice->CreateBuffer ( &desc, 0, &Buffer );
-	if (FAILED ( hr ))
+	// Imutable Buffer
+	_CPUAccess == 2 ? desc.Usage = D3D11_USAGE_IMMUTABLE : desc.Usage;
+	_CPUAccess == 2 ? desc.CPUAccessFlags = 0 : desc.CPUAccessFlags;
+
+	D3D11_SUBRESOURCE_DATA SubRes;
+	if ( InitRes )
 	{
-		MessageBox ( 0, L"Could not create Index buffer.", DX11BuffersError, MB_OK );
+		SubRes.pSysMem = InitRes;
+		SubRes.SysMemPitch = 0;
+		SubRes.SysMemSlicePitch = 0;
+		hr = d3dDevice->CreateBuffer (&desc, &SubRes, &Buffer);
+	}
+	else
+	{
+		hr = d3dDevice->CreateBuffer (&desc, 0, &Buffer);
+	}
+	if ( FAILED (hr) )
+	{
+		MessageBox (0, L"Could not create Index buffer.", DX11BuffersError, MB_OK);
 	}
 
 	DX11Context = D3DContext;

@@ -51,7 +51,8 @@ bool TimerClass::Initialize()
 
 	QueryPerformanceCounter(&startTime);
 
-	srand((unsigned int)time(0));
+	BigBangTime = startTime.QuadPart;
+//	srand((unsigned int)time(0));
 
 	return true;
 }
@@ -107,19 +108,40 @@ void TimerClass::StopTimer(float& Result)
 }
 
 
-void TimerClass::GenRandUInt(int& data, int range)
+float TimerClass::GenerateRandFloatRegion (float& Max, float& Min)
 {
-	data = rand() % range ;
+	QueryPerformanceCounter (&TempCounter);
+/*
+	__int64 Temp = TempCounter.QuadPart;
+
+	Temp % 2 ? Odd = false : Odd = true;
+	Temp % 3 ? Divede3 = false : Divede3 = true;
+	Temp % 5 ? Divede5 = false : Divede5 = true;
+
+	Algo = static_cast < int > ( Temp & 0x0000000f) ;
+
+	LastFloat = static_cast < float > ( TempCounter.QuadPart );
+
+	LastFloat = RandomFloat = Min + static_cast < float > ( static_cast < float > ( Temp / ( Max - Min ) ));
+*/
+	srand (TempCounter.LowPart);
+//	while ( Result < Min )
+//		Result = Min + static_cast <float> ( rand () ) / ( static_cast <float> ( RAND_MAX / ( Max - Min ) ) );
+
+	return RandomFloat = 0.0f;
 }
 
-int TimerClass::GenerateRandNym(int MinValue, int MaxValue) {
 
-	int Result = 0 ;
+int  TimerClass::GenerateRandIntRegion (int& Max, int& Min)
+{
+	int Result = Min - 1;
 
-	Result = ((rand() % MaxValue * 2 * 10) / 10) + MinValue;
+	while ( Result < Min )
+		Result = rand () % Max;
 
 	return Result;
 }
+
 
 // Индивидуальный таймер
 void TimerClass::StartTimer(LARGE_INTEGER& Counter)

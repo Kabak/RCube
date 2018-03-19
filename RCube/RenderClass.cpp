@@ -131,7 +131,7 @@ void RenderClass::RenderMenu (int Index)
 
 void RenderClass::RenderScene ()
 {
-	int Objects_Amount = (int)ResManager->_3DModels.size ();
+	int Objects_Amount = ( int ) ResManager->_3DModels.size ();
 	for(int i = 0; i < Objects_Amount; ++i )
 	{
 		Render3D_Object ( i, false );
@@ -140,8 +140,10 @@ void RenderClass::RenderScene ()
 	Objects_Amount = ( int ) ResManager->Terrains.size ();
 	for ( int i = 0; i < Objects_Amount; ++i )
 	{
-		if ( ResManager->Terrains[i]->ClusterRender )
-			ResManager->FrustumTerrain ( Local_Frustum, ResManager->Terrains[i] );
+		Terrain* Terrain = ResManager->Terrains[i];
+
+		if ( Terrain->ClusterRender )
+			ResManager->FrustumTerrain ( Local_Frustum, Terrain);
 
 		RenderTerrain ( i, false );
 	}
@@ -161,13 +163,11 @@ void RenderClass::RenderFlatObject ( Flat_Obj_Buffers* FlatObject )
 
 	Local_D3DGC->DX_deviceContext->IASetIndexBuffer ( FlatObject->IndexBs->Buffer, DXGI_FORMAT_R32_UINT, 0 );
 
-	Local_D3DGC->DX_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+//	Local_D3DGC->DX_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	Local_D3DGC->DX_deviceContext->PSSetShaderResources ( 0, 1, &FlatObject->RenderTexture );
 
 	Local_D3DGC->DX_deviceContext->IASetInputLayout( ResManager->Layouts[FLATOBJECT] );
-
-	//	D3DGC->DX_deviceContext->PSSetSamplers(0, 1, &m_sampleState);
 
 	Local_D3DGC->DX_deviceContext->DrawIndexed ( 6, 0, 0 );
 }
@@ -1533,7 +1533,7 @@ void RenderClass::ShowScrolling ( int i )
 void RenderClass::RenderText ( int Level )
 {
 
-	Local_D3DGC->DX_deviceContext->IASetPrimitiveTopology ( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+//	Local_D3DGC->DX_deviceContext->IASetPrimitiveTopology ( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
 
 	for (UINT i = 0, j = (UINT)ResManager->RCube_Sentences.size (); i < j; ++i)
 	{
@@ -1648,7 +1648,7 @@ void RenderClass::RenderTerrain ( int ObjectIndex, bool Shadows )
 	Local_D3DGC->DX_deviceContext->IASetVertexBuffers ( 0, 2, bufferPointers, strides, offsets );
 
 	// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
-	Local_D3DGC->DX_deviceContext->IASetPrimitiveTopology ( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+//	Local_D3DGC->DX_deviceContext->IASetPrimitiveTopology ( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
 
 	// Set shader texture resource in the pixel shader.
 	Local_D3DGC->DX_deviceContext->PSSetShaderResources ( 0, 1, &ResManager->TexturesArr[_Terrain->TerrainTextureIndex]->SRV );
@@ -1664,11 +1664,11 @@ void RenderClass::RenderTerrain ( int ObjectIndex, bool Shadows )
 
 			if ( Shadows )
 			{
-				Local_D3DGC->DX_deviceContext->DrawIndexed ( _Terrain->Total_Indexs_In_Terrain, 0, 0 );
+				Local_D3DGC->DX_deviceContext->DrawIndexed ( _Terrain->Total_Indexs_In_Cluster, 0, 0 );
 			}
 			else
 			{
-				Local_D3D->RenderIndextedClustered ( ResManager->TexturesArr[_Terrain->TerrainTextureIndex]->SRV, _Terrain->Total_Indexs_In_Terrain, 1 );
+				Local_D3D->RenderIndextedClustered ( ResManager->TexturesArr[_Terrain->TerrainTextureIndex]->SRV, _Terrain->Total_Indexs_In_Cluster, 1 );
 			}
 		}
 	}
@@ -1694,7 +1694,7 @@ void RenderClass::RenderCubeMap ( int ObjectIndex )
 
 	UINT stride = sizeof ( Vertex_FlatObject );
 	UINT offset = 0;
-	Local_D3DGC->DX_deviceContext->IASetPrimitiveTopology ( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+//	Local_D3DGC->DX_deviceContext->IASetPrimitiveTopology ( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
 
 	Local_D3DGC->DX_deviceContext->IASetIndexBuffer ( ResManager->FlatObjectBuffers[ResManager->CubeMaps[ObjectIndex]->CubeMapBuffersIndex]->IndexBs->Buffer, DXGI_FORMAT_R32_UINT, 0 );
 
@@ -1743,10 +1743,12 @@ void RenderClass::DrawObjectUsingShadows ( XMVECTOR DrawPosition )
 	Objects_Amount = ( int ) ResManager->Terrains.size ();
 	for ( int i = 0; i < Objects_Amount; ++i )
 	{
-		if ( ResManager->Terrains[i]->CastShadow )
+		Terrain* Terrain = ResManager->Terrains[i];
+
+		if ( Terrain->CastShadow )
 		{
-			if ( ResManager->Terrains[i]->ClusterRender )
-				ResManager->FrustumTerrain ( Local_Frustum, ResManager->Terrains[i] );
+			if ( Terrain->ClusterRender )
+				ResManager->FrustumTerrain ( Local_Frustum, Terrain);
 
 			RenderTerrain ( i, true );
 		}

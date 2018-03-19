@@ -174,7 +174,7 @@ enum {
 	   LABEL	= 2,
 	   EDIT		= 3
 	};
-
+/*
 enum {
 		MIDLE = 0,
 		UP	  = 1,
@@ -183,7 +183,7 @@ enum {
 		RIGHT = 4,
 		FREE  = 5
 	};
-
+*/
 
 enum {
 	   ANYSYMBOL  = 1,

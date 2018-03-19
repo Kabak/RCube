@@ -13,14 +13,14 @@ public:
 
    int ClusterBufferIndex;	// Номер индексного буферы кластера
 
-   int ClusterBufferIndexH;	// Номер индексного буферы кластера HIGH
-   int ClusterBufferIndexM;	// Номер индексного буферы кластера MEDIUM
-   int ClusterBufferIndexL;	// Номер индексного буферы кластера LOW
-   int ClusterBufferIndexN;	// Номер индексного буферы кластера miNimum
+//   int ClusterBufferIndexH;	// Номер индексного буферы кластера HIGH
+//   int ClusterBufferIndexM;	// Номер индексного буферы кластера MEDIUM
+//   int ClusterBufferIndexL;	// Номер индексного буферы кластера LOW
+//   int ClusterBufferIndexN;	// Номер индексного буферы кластера miNimum
 
-   int LOD;					// Каким уровнем деталей рисуется кластер
+ //  int LOD;					// Каким уровнем деталей рисуется кластер
 
-   bool InFrustum;			// Рисуется ли кластер
+ //  bool InFrustum;			// Рисуется ли кластер
 
    Cluster_AABB	AABB;	// Положение кластера в 3D мире для быстрой проверки Frustum
 

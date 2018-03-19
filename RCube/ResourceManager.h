@@ -21,6 +21,7 @@
 #include "Terrain_def.h"
 #include "Terrain.h"
 #include "CubeMap.h"
+#include "TimerClass.h"
 
 #ifdef RCube_DX11
 #include "DX11Buffers.h"
@@ -51,7 +52,7 @@ public:
 	ResourceManager();
 	~ResourceManager();
 
-	void Init ( D3DGlobalContext * g_D3DGC );
+	void Init ( D3DGlobalContext * g_D3DGC, TimerClass* _Timer);
 
 	int GetShaderIndexByName( wchar_t* Name );				// Получить номер шейрера по его имени
 	ID3D11InputLayout* GetLayoutByIndex ( int LayoutNumber);// Получить Layout по его индексу
@@ -177,8 +178,11 @@ public:
 	int Delete_Terrain_Clusters ( Terrain* TerrainObj );	// Удаление кластеров Terrain
 
 	int Create_Terrain_Mesh_Buffer ( Terrain* TerrainObj );	// Создание буфера вертексов Terrain
+
 	int Create_Terrain_Clusters ( Terrain* TerrainObj );// Раздел вертексного буфера на кластеры и инициализация IB для каждого кластера
-	int Create_Terrain_Cluster_Index_Buffer ( TerrainCluster* ClasterObject );	// Создать IB для кластера
+
+	void Update_Terrain_Clusters_AABB (Terrain* TerrainObj);	// Needed after GenerateLandScape()
+
 	void Calc_Next_Cluster_Start_Pos (int& Start_X_ROW, int& Start_Z_COL, Terrain* TerrainObj );	// Определить стартовую позицию следуещего кластера
 
 	Terrain* Get_Terrain_Object_Pointer ( int ObjectIndex );	// Получить указатель на объект 3D модели из списка по индексу
@@ -188,22 +192,36 @@ public:
 	void Calculate_FirstVertexPos ( Terrain* TerrainObj );	// Расчёт 1-го вертекса в зависимости от параметров Terrain
 	void GenerateVertexes ( Terrain* TerrainObj );		// Создаёт все вертексы по 1-му
 	void GenerateIndexes ( Terrain* TerrainObj, int GridScale );// Создаёт IB всех вертексов.
-//	 int ComeputeIndex ( Terrain* TerrainObj, int X, int Z ); // рассчёт номера индекса по позиции XZ вертекса
-	void GetQuadIndex ( Terrain* TerrainObj , int UL, int DR , Point* _Result); // Расчёт индексов вертексов составляющих квадрат | UL - UpLeft , DR - DownRight индекс вертекса
 
-	bool GenerateRandTerrain ( Terrain* TerrainObj );
+	void LandParamChecker (Terrain_GenInit* LandParam);
+	void GenerateLandScape ( Terrain* TerrainObj, Terrain_GenInit* InintData);
 	
+	//  X_Z - XZ - Position of center ;  HRMinMax : X - Height Min; Y - Height Max ; Z - Radius Min ; W - Radius Max
+	bool CreateLandScapeBending (Terrain* TerrainObj, XMFLOAT2 X_Z, XMFLOAT4 HRMinMax);
+
 	bool ReadTerrainFromTexture ( Terrain* TerrainObj, char* FileName );
 
 	void CalculateNormals ( Terrain* TerrainObj );
 	
-	void GenerateLandScape ( Terrain* TerrainObj, TerrainInitData* Data);  // НОВАЯ ВЕРСИЯ
-	
-	int GenerateRandRadius ( int MaxRadius, int MinRadius );
-	Point GenerateRandPoint ( Terrain* TerrainObj );
+	int	 GenerateRandIntRegion ( int& Max, int& Min );
+  float  GenerateRandFloatRegion (float& Max, float& Min);
+   void  GenerateRandPoint (Terrain* TerrainObj, PointCoord& Result);	// Генерация произвольной точки
 
-	void FrustumTerrain ( FrustumClass* Frustum, Terrain* TerrainObj );
-	void CalkTerrainClusterAABB ( TerrainCluster* ClasterObject );	// Расчёт AABB кластера
+    int  GetIndexByCoord (Terrain* TerrainObj, PointCoord& Coord);		// Получить индекс вертекса по координатам XZ
+   void  GetCoordsByIndex (Terrain* TerrainObj, int Coord, PointCoord& Result);
+
+   void FrustumTerrain ( FrustumClass* Frustum, Terrain* TerrainObj );
+
+   void CalkTerrainClusterAABB ( TerrainCluster* ClasterObject );	// Расчёт AABB кластера
+
+   void CalkAmountPointsInDir (Terrain* TerrainObj, DirectionsAmount& PointData);// Расчёт количества точек от эпицентра во всех направлениях
+
+  float Formula (float& Value);
+
+   void MoveTerrain (Terrain* TerrainObj, DirectionsAmount& PointData, float Height);// Изменить Terrain вокруг точки
+
+
+
 // - Terrain
 
 // + Sentence Works
@@ -306,6 +324,7 @@ private:
 	void CharKey(unsigned char * Check);
 	
 	D3DGlobalContext * Local_D3DGC;
+	TimerClass* Local_Timer;
 
 	HWND active_hwnd;
 

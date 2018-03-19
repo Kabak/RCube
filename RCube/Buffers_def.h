@@ -76,9 +76,16 @@ struct Vertex_Model3D
 
 // + Terrain
 
-struct Point
+struct PointCoord
 {
-	int x, y;
+	int x;
+	int z;
+
+	PointCoord ()
+	{
+		x = 0;
+		z = 0;
+	}
 };
 
 struct TerrainPositionType

@@ -3,3 +3,8 @@
 
 // Реальный генератор случайных чисел 
 // http://www.gamedev.ru/code/forum/?id=220033
+
+class Emitter
+{
+
+};

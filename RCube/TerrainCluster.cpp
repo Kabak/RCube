@@ -3,13 +3,13 @@
 
 TerrainCluster::TerrainCluster ()
 {
-	InFrustum = true;
-		  LOD = 0;
+//	InFrustum = true;
+//		  LOD = 0;
 		  ClusterBufferIndex  = -1;
-		  ClusterBufferIndexH = -1;
-		  ClusterBufferIndexM = -1;
-		  ClusterBufferIndexL = -1;
-		  ClusterBufferIndexN = -1;
+//		  ClusterBufferIndexH = -1;
+//		  ClusterBufferIndexM = -1;
+//		  ClusterBufferIndexL = -1;
+//		  ClusterBufferIndexN = -1;
 		  AABB.LDB.Vec	= { 0.0f, 0.0f, 0.0f, 0.0f};
 		  AABB.RUF.Vec	= { 0.0f, 0.0f, 0.0f, 0.0f };
 		  AABB.Pos.Vec	= { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -18,5 +18,5 @@ TerrainCluster::TerrainCluster ()
 
 TerrainCluster::~TerrainCluster ()
 {
-		InFrustum = false;
+//		InFrustum = false;
 }

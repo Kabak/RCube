@@ -1,6 +1,18 @@
 ========================================================================
     WIN32 APPLICATION : RCube Project Overview
 ========================================================================
+// ОПТИМИЗАЦИЯ
+https://developer.apple.com/library/content/documentation/3DDrawing/Conceptual/OpenGLES_ProgrammingGuide/TechniquesforWorkingwithVertexData/TechniquesforWorkingwithVertexData.html
+
+// Сдвиг чисел С++  >>  <<
+https://docs.microsoft.com/ru-ru/cpp/cpp/left-shift-and-right-shift-operators-input-and-output
+
+// Decals
+http://martindevans.me/game-development/2015/02/27/Drawing-Stuff-On-Other-Stuff-With-Deferred-Screenspace-Decals/
+
+// Типы данных справка
+https://msdn.microsoft.com/en-us/library/s3f49ktz.aspx?f=255&MSPPError=-2147217396
+
 // Нормали к поверхности
 https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
 http://netlib.narod.ru/library/book0032/ch05_03.htm
@@ -13,9 +25,6 @@ http://www.txutxi.com/?p=584
 
 // Тени от кунтуров с прозрачностью
 https://turanszkij.wordpress.com/2018/01/18/easy-transparent-shadow-maps/amp/
-
-// Типы данных справка
-https://msdn.microsoft.com/en-us/library/s3f49ktz.aspx?f=255&MSPPError=-2147217396
 
 // Tessalation
 https://msdn.microsoft.com/en-us/library/windows/desktop/ff476340(v=vs.85).aspx
@@ -41,7 +50,7 @@ https://software.intel.com/en-us/articles/snb-terrain-sample?cid=sw%3AISNnews_82
 https://www.google.by/url?sa=t&rct=j&q=&esrc=s&source=web&cd=3&cad=rja&uact=8&ved=0ahUKEwik55bLlfDXAhXIqKQKHZ9_BLsQFgg5MAI&url=https%3A%2F%2Fwww.cosc.canterbury.ac.nz%2Fresearch%2Freports%2FHonsReps%2F2005%2Fhons_0502.pdf&usg=AOvVaw2AORkFu8Z2xd-FYtncoKS_
 https://developer.nvidia.com/gpugems/GPUGems2/gpugems2_chapter02.html
 
-http://www.gamedev.ru/code/forum/?id=92154					// ИДЕЯ !
+http://www.gamedev.ru/code/forum/?id=92154					// ИДЕЯ !  Разделение поверхности на треугольники ( Landscape )
 http://www.gamedev.ru/code/forum/?id=63126					// тема Андрея
 http://www.gamedev.ru/code/forum/?id=196939
 http://www.rastertek.com/tutterr.html 						// Rastertek

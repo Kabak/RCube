@@ -175,7 +175,7 @@ void SnowFallParticles::Render()
 	D3DGC_Local->DX_deviceContext->IASetIndexBuffer( m_indexBuffer, DXGI_FORMAT_R32_UINT, 0 );
 
 	// Set the type of primitive that should be rendered from this vertex buffer.
-	D3DGC_Local->DX_deviceContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+//	D3DGC_Local->DX_deviceContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
 
 	// Set shader texture resource in the pixel shader.
 	D3DGC_Local->DX_deviceContext->PSSetShaderResources( 0, 1, &FireTexture );

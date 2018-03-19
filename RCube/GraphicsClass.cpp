@@ -106,7 +106,7 @@ D3DGlobalContext *GraphicsClass::GetD3DGC()
 }
 
 
-bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight, int& WindowPosX, int& WindowPosY, InputClass* _Input )
+bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight, int& WindowPosX, int& WindowPosY, InputClass* _Input, TimerClass* _Timer)
 {
 	bool result;
 //	XMMATRIX baseViewMatrix;
@@ -165,7 +165,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	m_Camera->Render();
 
 	MyManager = new ResourceManager;
-	MyManager->Init(m_D3D->D3DGC);
+	MyManager->Init(m_D3D->D3DGC, _Timer);
 
 // Грузим ресурсы
 	hr = MyManager->InitTextures(L"Textures/Result.kaf");
@@ -1801,8 +1801,8 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 
 
 // -------------------     Создаём свет на сцене     -----------------------
-		XMFLOAT3 Lpos;
-		m_D3D->GetLightPos(0, Lpos);
+//		XMFLOAT3 Lpos;
+//		m_D3D->GetLightPos(0, Lpos);
 //		m_Camera->SetPosition(Lpos.x + 20, Lpos.y, Lpos.z);
 // Тень ракеты
 //		m_Camera->SetPosition( -3.05f, 14.25f, -4.97f );
@@ -1819,17 +1819,35 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 
 		TerrainInitData NewTerrainData;
 		NewTerrainData._QuadVertexStep = 1.0f;
-		NewTerrainData._QuadsPerCluster = 511;
-		NewTerrainData._ClustersX_ROW = 4;
-		NewTerrainData._ClustersZ_COL = 4;
-		NewTerrainData._CastShadow = false;
-		NewTerrainData._ClusterRender = false;
+		NewTerrainData._QuadsPerCluster = 127;
+		NewTerrainData._ClustersX_ROW = 16;
+		NewTerrainData._ClustersZ_COL = 16;
+		NewTerrainData._CastShadow = true;
+		NewTerrainData._ClusterRender = true;
 		NewTerrainData.HightFileName = nullptr;
 
-		int TerrainNumber = MyManager->AddTerrain ( 21, &NewTerrainData );
+		int TerrainNumber = MyManager->AddTerrain ( 21, &NewTerrainData ); // 21  9
 //		MyManager->Delete_Terrain ( TerrainNumber );
 
 		m_D3D->ShadowMapShaderIndex = MyManager->GetShaderIndexByName ( L"LightRenderSM" );
+
+		Terrain_GenInit TerrainData;
+		TerrainData.HeightNum = 600;
+		TerrainData.LowlandNum = 600;
+		TerrainData.MaxRadius = 200;
+		TerrainData.MinRadius = 70;
+		TerrainData.Max_Height = 800.0f;
+		TerrainData.Min_Height = 50.0f;
+		TerrainData.Max_Low		= -500.0f;
+		TerrainData.Min_Low		= -50.0f;
+
+		// Create one Hight in the middle of terrain
+		Terrain* TerrainObj = MyManager->Get_Terrain_Object_Pointer (TerrainNumber);
+		XMFLOAT2 Position = { (float)TerrainObj->VertexInX_Row / 2, ( float ) TerrainObj->VertexInZ_Col / 2};
+		XMFLOAT4 HRMaxMin = {100.0f, 200.0f, 45.0f, 50.0f};
+		MyManager->CreateLandScapeBending (TerrainObj, Position, HRMaxMin);
+//		MyManager->GenerateLandScape (MyManager->Get_Terrain_Object_Pointer (TerrainNumber), &TerrainData);
+
 		return true;
 }
 
@@ -1911,7 +1929,7 @@ bool GraphicsClass::Frame( FPSTimers &Counters, DXINPUTSTRUCT& InputStruct1)
 		// Измеряем быстродействие
 
 // ++++++++++++    Как часто рисуем Тень     +++++++++++++++++++
-	if ( m_D3D->D3DGC->ShadowsOn && ShadowFrameCounts > 0 )//Counters.FpsRate / 25
+	if ( m_D3D->D3DGC->ShadowsOn )// && ShadowFrameCounts > 0
 	{
 		MyManager->SetActiveShadersInProgramm ( m_D3D->ShadowMapShaderIndex );
 		RCubeRender->RenderSpotLightsSadowMaps ( &m_D3D->SpotLightsWithShadowsIndexes );

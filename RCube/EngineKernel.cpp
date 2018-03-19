@@ -121,10 +121,30 @@ bool EngineKernel::Initialize()
 		return false;
 	}
 
+	// Create and initialize the CpuClass.
+
+	// Create the cpu object.
+	m_Cpu = new CpuClass;
+	// Initialize the cpu object.
+	m_Cpu->Initialize ();
+
+	// Create and initialize the TimerClass.
+
+	// Create the timer object.
+	m_Timer = new TimerClass;
+	// Initialize the timer object.
+	result = m_Timer->Initialize ();
+	if ( !result )
+	{
+		MessageBox (m_hwnd, L"Could not initialize the Timer object.", L"Error", MB_OK);
+		Shutdown ();
+		return false;
+	}
+
 	// Create the graphics object.  This object will handle rendering all the graphics for this application.
 	m_Graphics = new GraphicsClass;
 	// Initialize the graphics object.
-	result = m_Graphics->Initialize( m_hwnd, screenWidth, screenHeight, WindowPosX, WindowPosY, m_Input );
+	result = m_Graphics->Initialize( m_hwnd, screenWidth, screenHeight, WindowPosX, WindowPosY, m_Input, m_Timer);
 	if (!result)
 	{
 		Shutdown();
@@ -241,25 +261,7 @@ bool EngineKernel::Initialize()
 
 
 	// ------------------------------   Init Objects   -----------------------------------
-	// Create and initialize the CpuClass.
 
-	// Create the cpu object.
-	m_Cpu = new CpuClass;
-	// Initialize the cpu object.
-	m_Cpu->Initialize();
-
-	// Create and initialize the TimerClass.
-
-	// Create the timer object.
-	m_Timer = new TimerClass;
-	// Initialize the timer object.
-	result = m_Timer->Initialize();
-	if (!result)
-	{
-		MessageBox( m_hwnd, L"Could not initialize the Timer object.", L"Error", MB_OK );
-		Shutdown();
-		return false;
-	}
 
 	/*
 	Force the main thread to always run on CPU 0.
@@ -530,7 +532,7 @@ bool EngineKernel::Frame()
 	{
 		if ( Counters.FrameTime < 1.0f )
 			TimePased += EngineFrameTime;// Counters.FrameTime * 60;
-		if ( TimePased > 2.0f )
+		if ( TimePased > 1.0f )
 		{
 			PxControl->JoinAllCubes ();
 			StartJoints = false;
