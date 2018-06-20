@@ -89,7 +89,7 @@ void TimerClass::ComputeTimePassed(float & result, LARGE_INTEGER startTime, LARG
 
 void TimerClass::GetFps(int& FpsRate)
 {
-	FpsRate = (int)m_fps;
+	FpsRate = m_fps;
 
 	return; 
 }

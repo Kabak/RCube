@@ -3,7 +3,12 @@
 #ifndef _D3DGLOBALCONTEXT_H_
 #define _D3DGLOBALCONTEXT_H_
 
+#include"Buffers_def.h"
+#ifdef RCube_DX11
 #include <d3d11.h>
+#include "DX11Buffers.h"
+#endif //RCube_DX11
+
 #include <d2d1.h>
 #include <DWrite.h>
 #include "DirectXMath.h"
@@ -11,27 +16,31 @@
 #include <vector>
 #include "Text_def.h"
 
-#include"Buffers_def.h"
-#ifdef RCube_DX11
-#include "DX11Buffers.h"
-typedef ID3D11Device D3D_device;
-#endif //RCube_DX11
-
 using namespace DirectX;
 
-// Константный слот  0 - матрицы World, View, Projection, Ortho, Camera Position для кадра
-// Константный слот  1 - свет LightClass
-// Константный слот 13 - цвет шрифта для рисования
-// Константный слот 12 - FXAA фильтрация
+// Константный слот VS  0 - матрицы World, View, Projection, Ortho, Camera Position для кадра
+// Константный слот VS  1 - свет LightClass
+// Константный слот VS 13 - цвет шрифта для рисования   НЕ ИСПОЛЬЗУЕТСЯ УЖЕ
+
+// Константный слот PS 1  - свет D3DClass Light PerFrameConstants  ( DEBUG Constants )
+// Константный слот PS 12 - FXAA фильтрация
+/*
+Samplers Slots
+0 - 3D Model Samspling
+1 - Shadow Map Sampling
+2 - Shadow Map PCF Filter Sampling
+3 - Flat Object Sampling (Text, Menu, 2DAnimation, Particles, CubMap)
+*/
 
 // Используется для передачи IDXGIAdapter1,ID3D11Device и т.д. из D3D во все классы для отрисовки
 // смотри D3DGlobalContext.h
+
 	struct D3DGlobalContext 
 	{
 					HWND  hwnd;
 		  IDXGIAdapter1*  Adapter;
-			 D3D_device*  DX_device;
-	ID3D11DeviceContext*  DX_deviceContext;
+				 Device*  DX_device;
+		  DeviceContext*  DX_deviceContext;
 		 IDXGISwapChain*  DX_swapChain;
 		  ID3D10Device1*  D10_device;
 		ID3D11Texture2D*  BackBuffer2DT;	// Собственно BackBuffer
@@ -87,8 +96,10 @@ ID3D11ShaderResourceView* sharedTex11_SRV;	// SRV Текстуры на которой рисуются ш
 		ID3D11Texture2D* m_depthStencilBuffer;
   ID3D11RasterizerState* DefaultRasterizerState;
   ID3D11RasterizerState* WireFrameRasterizerState;
-ID3D11DepthStencilState* m_depthStencilState;
-ID3D11DepthStencilState* CubeMap_DepthStencilState;
+ID3D11DepthStencilState* depthStencil_State;
+ID3D11DepthStencilState* CubeMap_DepthStencil_State;
+ID3D11DepthStencilState* depthStencil_Disabled_State;
+ID3D11DepthStencilState* depthStencil_NoWrite_Particles;
  	   ID3D11BlendState* mGeometryBlendState;
 // Для системы частиц, чтобы был эффект кристаликов
 	   ID3D11RasterizerState* RasterStateCullNone;
@@ -102,6 +113,7 @@ ID3D11DepthStencilState* CubeMap_DepthStencilState;
 					float PCF_Step;
 					float ShadowCLAMP;
 					float Shadow_Divider;
+					  int ClustersAmount;
 
 // Engine default samplers
 	  ID3D11SamplerState* Wrap_Model_Texture;
@@ -286,23 +298,6 @@ enum {
 
 
 // ++++++++++++++++++++++++++++    PARTICLE SYSTEM     +++++++++++++++++++++++++++++++++
-
-struct TorchFireSmoke
-{
-	XMFLOAT3 TorchPosition;	// Позиция факела
-	int UX_Amount;			// Количество строк в текстуре анимации
-	int VY_Amount;			// Количестко столбцов в текстуре анимации
-
-	int FireFrameStart;		// Стартовый кадр Fire
-	int SmokeFrameStart;	// Стартовый уадр Smoke
-
-	int FireFlyFrameNumber;	// Кадр из которого нарезаются FireFly
-	int FireFlyCutWidth;	// Размер нарезки куска для FireFly по ширине
-	int FireFlyCutHeight;	// Размер нарезки куска для FireFly по высоте
-
-	int FireFramesAmount;	// Реальное количество анимаций в текстуре Fire
-	int SmokeFramesAmount;	// Реальное количество анимаций в текстуре Smoke
-};
 
 // Информация о каждой модели на сцене ( Для обработки отрисовки модели )
 struct Model_data

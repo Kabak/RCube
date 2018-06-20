@@ -27,9 +27,9 @@ using namespace Microsoft::WRL::Wrappers;
 
 using namespace DirectX;
 
-union RCube_VecFloat34
+union RCube_VecFloat234
 {
-	RCube_VecFloat34(){}; //MyData.Vec = { 0.0f, 0.0f, 0.0f, 1.0f };
+	RCube_VecFloat234(){}; //MyData.Vec = { 0.0f, 0.0f, 0.0f, 1.0f };
 	XMFLOAT2 Fl2;
 	XMFLOAT3 Fl3;
 	XMFLOAT4 Fl4;

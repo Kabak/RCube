@@ -68,10 +68,10 @@ private:
 	    int Algo;
 
 // техническое значение кадров в секунду
-	   UINT frameCount;
+	    int frameCount;
 
 //  оличество кадров в секунду
-	   UINT m_fps;
+	    int m_fps;
 
 // ¬ремени за один такт CPU в наносекундах
 	float TickTime_Sec; // ¬ремени за один такт в секундах

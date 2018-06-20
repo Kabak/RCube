@@ -15,6 +15,8 @@
 #ifndef CLUSTERED_HLSL
 #define CLUSTERED_HLSL
 
+#pragma pack_matrix( row_major )
+
 //--------------------------------------------------------------------------------------
 // Lighting phase utilities
 //--------------------------------------------------------------------------------------
@@ -180,9 +182,13 @@ matrix QuatToMatrix(float4 Quat) {
 //--------------------------------------------------------------------------------------
 // Utility
 //--------------------------------------------------------------------------------------
-float3 texOffset(float u, float v, float w, float Divider)
+float3 texOffset(float3 Offset)
 {
-	return float3(u * (1.0f / Divider ) , v * (1.0f / Divider ) , w);
+	float3 result = 0.0f;
+
+	result.xy = Offset.xy * Offset.z;
+
+	return result;
 }
 
 float linstep(float min, float max, float v)
@@ -390,15 +396,18 @@ void AccumulateBRDF(SurfaceData surface, Light light, inout float3 lit)
 						//PCF sampling for shadow map
 
 						float sum = 0.0f;
+						float3 Offset;	// Для скорости  всё загнал во float3
+						Offset.z = 1.0f / mUI.Shadow_Divider;
+
 						//perform PCF filtering on a 4 x 4 texel neighborhood
 						float val = mUI.PCF_Amount;
 						float Step = mUI.PCF_Step;
 						float Devider = ( val * 2 ) * ( val / Step );
-						for (float y = -val; y <= val; y += Step )
+						for ( Offset.y = -val; Offset.y <= val; Offset.y += Step )
 						{
-							for (float x = -val; x <= val; x += Step )
+							for ( Offset.x = -val; Offset.x <= val; Offset.x += Step )
 							{
-								sum += ShadowMap3D.SampleCmpLevelZero( SM_PCF_Sampler, projectTexCoord.xyz + texOffset( x, y, 0.0f, mUI.Shadow_Divider ), surface.lightViewPosition.z ).r;
+								sum += ShadowMap3D.SampleCmpLevelZero( SM_PCF_Sampler, projectTexCoord.xyz + texOffset(Offset), surface.lightViewPosition.z ).r;
 							}
 						}
 

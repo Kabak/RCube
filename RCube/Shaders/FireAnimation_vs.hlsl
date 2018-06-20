@@ -1,3 +1,5 @@
+#pragma pack_matrix( row_major )
+
 cbuffer MatrixBuffer
 {
 	matrix worldMatrix;
@@ -13,15 +15,15 @@ cbuffer MatrixBuffer
 
 struct VertexInputType
 {
-	float4 position : POSITION;
-	float2 tex : TEXCOORD0;
+	float4 position		: POSITION;
+	float4 tex			: TEXCOORD0;
 };
 
 
 struct PixelInputType
 {
-	float4 position : SV_POSITION;
-	float2 tex : TEXCOORD0;
+	float4 position		: SV_POSITION;
+	float2 tex			: TEXCOORD0;
 };
 
 
@@ -46,7 +48,7 @@ PixelInputType TextureVertexShader( VertexInputType input )
 	// a copy of the texture coordinates and pass them to the pixel shader.
 
 	// Store the texture coordinates for the pixel shader.
-	output.tex = input.tex;
+	output.tex = input.tex.xy;
 
 	return output;
 }

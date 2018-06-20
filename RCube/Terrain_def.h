@@ -27,6 +27,7 @@ struct TerrainInitData
 	int	_ClustersZ_COL;		// Количество секторов по Z
    bool _CastShadow;		// Рисовать ли тень от объекта ?
    bool _ClusterRender;		// Рисовать кусками ?
+   bool _StaticBuffers;		// Create Immutable buffers for updates ( STATIC ) NO Buffer changes possible after creation
    char* HightFileName;		// Имя файла высот для создания Terrain
 };
 
@@ -34,9 +35,9 @@ struct TerrainInitData
 // BVH for Terrain cluster
 struct Cluster_AABB
 {
-	RCube_VecFloat34 RUF;	// Right Up Forward coner
-	RCube_VecFloat34 LDB;	// Left Down Backward coner
-	RCube_VecFloat34 Pos;	// 3D position of this Cluster
+	RCube_VecFloat234 RUF;	// Right Up Forward coner
+	RCube_VecFloat234 LDB;	// Left Down Backward coner
+	RCube_VecFloat234 Pos;	// 3D position of this Cluster
 	float XSize;
 	float YSize;
 	float ZSize;
@@ -47,19 +48,19 @@ struct Cluster_AABB
 // Terrain Landscape generator init structure
 struct Terrain_GenInit
 {
-	int	  HeightNum;
-	int   LowlandNum;
-	float Min_Height;
+	int	  HeightNum;	// Heights amount
+	int   LowlandNum;	// Lowland amount
+	float Min_Height;	//
 	float Max_Height;
 	float Min_Low;
 	float Max_Low;
-	float MinRadius;
-	float MaxRadius;
+	float MinRadius;	// Radius of terrain irregularity
+	float MaxRadius;	//
 };
 
 struct PointsList
 {
-	RCube_VecFloat34 Point;
+	RCube_VecFloat234 Point;
 };
 
 

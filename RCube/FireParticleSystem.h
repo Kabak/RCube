@@ -3,7 +3,7 @@
 #include <d3d11.h>
 #include "DirectXMath.h"
 #include "D3DGlobalContext.h"
-#include "ParticleSystemDefinitions.h"
+#include "ParticleSystem_def.h"
 #include "FPSTimers.h"
 #include "D3dClass.h"
 #include "Light_def.h"
@@ -27,23 +27,11 @@ public:
    bool Initialize( HWND hwnd, 
 	   D3DGlobalContext *D3DGC_Local, 
    ID3D11ShaderResourceView* texture, 
-					   int _UX_Amount,							// Количество строк в текстуре анимации
-					   int _VY_Amount,							// Количестко столбцов в текстуре анимации
-					   int FramesAmount,					// Реальное количество анимаций в текстуре с верха , слева направо
+					   int _UX_Amount,		// Количество строк в текстуре анимации
+					   int _VY_Amount,		// Количестко столбцов в текстуре анимации
+//					   int FramesAmount,	// Реальное количество анимаций в текстуре сверху , слева направо
 				D3DClass *_EngineLight
 	);
-
-
-			bool InitFireSystem( HWND hwnd, 
-				   D3DGlobalContext *D3DGC, 
-						  ID3D10Blob* Blob, 
-	ID3D11ShaderResourceView *_FireTexture, 
-//	ID3D11ShaderResourceView *_SmokeTexture,
-//	ID3D11ShaderResourceView *_HeartTexture,
-//	ID3D11ShaderResourceView *_ParticlesTexture,
-//						 int  InstanceAmount,
-				D3DClass *_EngineLight
-			);
 
 	void Shutdown();
 	void Frame( FPSTimers &Timers );
@@ -57,10 +45,6 @@ public:
 	void KillParticles();
 
 	int GetActiveParticleAmmount();
-
-	int GetInstanceCount();
-
-	int GetMaxParticles();
 
 	int ShaderForDraw = -1;
 
@@ -77,25 +61,27 @@ private:
 	void ShutdownParticleSystem();
 
 	ID3D11ShaderResourceView *FireTexture;
-	ID3D11ShaderResourceView *SmokeTexture;
-	ID3D11ShaderResourceView *HeartTexture;
-	ID3D11ShaderResourceView *ParticlesTexture;
+//	ID3D11ShaderResourceView *SmokeTexture;
+//	ID3D11ShaderResourceView *HeartTexture;
+//	ID3D11ShaderResourceView *ParticlesTexture;
 
 	int UX_Amount;			// Ширина текстуры Width X U
 	int VY_Amount;			// Высота текстуры Height Y V
 
-	float m_particleDeviationX, m_particleDeviationY, m_particleDeviationZ;
-	float m_particleVelocity, m_particleVelocityVariation;
-	float m_particleSize, m_particlesPerSecond;
+	float ParticlesPositionDeviationX, ParticlesPositionDeviationY, ParticlesPositionDeviationZ;
+	float ParticleVelocity, ParticleVelocityVariation;
+	float ParticleSize, ParticlesPerSecond;
 
 	int maxActiveParticles; // Максимальное количество частиц на экране ( для регулировки одновременного количества частиц )
 
-	int m_maxParticles;
+	int MaxParticles;
 
-	int m_currentParticleCount;
-	float m_accumulatedTime;
+	//  int Amount_Active;
+	int CreatedParticlesCount;
+	int ActiveParticlesCount;
+	float AccumulatedTime;
 	
-	FireType1* m_particleList;
+	Particles_Data* m_particleList;
 
 	void SetInstanceStartFrame(int FrameNumber, XMFLOAT4& Data2 );
 
@@ -104,14 +90,14 @@ private:
 	ID3D11Buffer *m_vertexBuffer;
 	ID3D11Buffer *m_indexBuffer;
 	// +++++++++++++++++   Instancing   ++++++++++++++++++++++++++++++++
-	ParticleShaderInstance_FIRE* instances;
+	BB_Particle_Instance* instances;
 	ID3D11Buffer* m_instanceBuffer;
 	int m_instanceCount;
 	// -----------------   Instancing   --------------------------------
 
 
 // Анимация
-	int RealFramesAmount;
+//	int RealFramesAmount;
 	// ШИрина одного кадра в текстурных координатах 0 - 1
 	float OneFrameWidth;
 	// Высота одного кадра в текстурных координатах 0 - 1
@@ -131,7 +117,7 @@ private:
 	float *TextcordLeft;
 	
 	// Количество инстансе огня 
-	int FlameInstances;
+//	int FlameInstances;
 
 	// Массив индексов для сортировки по расстоянию от камеры
 	int *FireInstIndNumber;
@@ -140,8 +126,8 @@ private:
 	
 //	ParticleShaderInstance_FIRE* Unsortedinstance;
 
-	RCube_VecFloat34 Camera;
-	RCube_VecFloat34 Object;
+	RCube_VecFloat234 Camera;
+	RCube_VecFloat234 Object;
 
 	// Находим расстояние от объекта до камеры
 	void DistanceCalk( XMFLOAT3 &ObjPos, XMFLOAT3 &Camerapos, float &DistanceStore );

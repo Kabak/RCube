@@ -22,7 +22,7 @@
     <ProjectGuid>{311F6B45-3C14-43FF-9236-2FAD3E2207DA}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>RCube</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -209,11 +209,12 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
       <AdditionalIncludeDirectories>C:\PhysX-3.4-master\PxShared\include;C:\PhysX-3.4-master\PxShared\include\foundation\windows;C:\PhysX-3.4-master\PhysX_3.4\Include;$(SolutionDir)\DirectXTK-master\\Src;$(SolutionDir)\DirectXTex-master\DDSTextureLoader;$(SolutionDir)\DirectXTex-master\WICTextureLoader;$(SolutionDir)\DirectXTK-master\\Inc;$(SolutionDir)\DirectXTex-master\DirectXTex</AdditionalIncludeDirectories>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DebugInformationFormat>None</DebugInformationFormat>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <FloatingPointModel>Fast</FloatingPointModel>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -259,6 +260,7 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClInclude Include="CubeMap.h" />
     <ClInclude Include="D3DGlobalContext.h" />
     <ClInclude Include="DX11Buffers.h" />
+    <ClInclude Include="DX11_Render.h" />
     <ClInclude Include="DxInputStruct.h" />
     <ClInclude Include="EffectsManager.h" />
     <ClInclude Include="Emiters.h" />
@@ -271,15 +273,16 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClInclude Include="Light_def.h" />
     <ClInclude Include="Menu.h" />
     <ClInclude Include="Mesh_Data.h" />
+    <ClInclude Include="ParticleSystem.h" />
+    <ClInclude Include="ParticleSystemController.h" />
     <ClInclude Include="RenderClass.h" />
     <ClInclude Include="ResourceManager.h" />
     <ClInclude Include="SceneObject.h" />
-    <ClInclude Include="KF_PXControler.h" />
+    <ClInclude Include="PhysXControler.h" />
     <ClInclude Include="LightGrid.h" />
     <ClInclude Include="Material.h" />
     <ClInclude Include="NetworkClass.h" />
-    <ClInclude Include="ParticleSystemDefinitions.h" />
-    <ClInclude Include="ParticleSystemsManager.h" />
+    <ClInclude Include="ParticleSystem_def.h" />
     <ClInclude Include="RCubeNetwork.h" />
     <ClInclude Include="RCubeProfiling.h" />
     <ClInclude Include="SnowFallParticles.h" />
@@ -325,13 +328,14 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClCompile Include="KFPicking.cpp" />
     <ClCompile Include="Menu.cpp" />
     <ClCompile Include="Mesh_Data.cpp" />
+    <ClCompile Include="ParticleSystem.cpp" />
+    <ClCompile Include="ParticleSystemController.cpp" />
     <ClCompile Include="RenderClass.cpp" />
     <ClCompile Include="ResourceManager.cpp" />
-    <ClCompile Include="KF_PXControler.cpp" />
+    <ClCompile Include="PhysXControler.cpp" />
     <ClCompile Include="LightGrid.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="NetworkClass.cpp" />
-    <ClCompile Include="ParticleSystemsManager.cpp" />
     <ClCompile Include="RCubeNetwork.cpp" />
     <ClCompile Include="RCubeProfiling.cpp" />
     <ClCompile Include="SnowFallParticles.cpp" />

@@ -2,7 +2,7 @@
 #include "BoundingBox.h"
 
 
-void BoundingBox::CreateBoundStruct ( RCube_VecFloat34 minValues, RCube_VecFloat34 maxValues ) {
+void BoundingBox::CreateBoundStruct ( RCube_VecFloat234 minValues, RCube_VecFloat234 maxValues ) {
 
 	MinValues.Fl4 = minValues.Fl4;
 	MaxValues.Fl4 = maxValues.Fl4;

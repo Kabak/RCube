@@ -7,12 +7,12 @@ static const int MAX_LIGHTS_WITH_SHADOW = 4096;
 struct PointLight
 {
 	XMFLOAT3 position;			// Позиция источника света на сцене
-	float attenuationBegin;		// размер начала границы света
+	   float attenuationBegin;	// размер начала границы света
 	XMFLOAT3 color;				// Цвет свечения
-	float attenuationEnd;		// размер окончания границы света
+	   float attenuationEnd;	// размер окончания границы света
 	XMFLOAT3 direction;			// Направление света, если свет - SpotLight
-	float angel;				// Угол свечения, если свет - SpotLight   ( Если угол равен 0, то свет - PointLight )
-	XMFLOAT4X4 qtwvp;			// Матрица ViewProjection света
+	   float angel;				// Угол свечения, если свет - SpotLight   ( Если угол равен 0, то свет - PointLight )
+  XMFLOAT4X4 qtwvp;				// Матрица ViewProjection света
 								//		XMFLOAT4 RotQuat;			// Кватернион поворота
 	bool HaveShadow;			// Имеет ли свет тень
 	int ShadowMapSliceNumber;	// Номер текстуры ShadowMap в массиве Shadow Maps

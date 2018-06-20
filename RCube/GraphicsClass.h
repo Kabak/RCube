@@ -27,9 +27,11 @@
 #include "RenderTextureClass.h"
 #include "Light_def.h"
 // ++++++++++++++++++++++++  PARTICLE SYSTEM  ++++++++++
-#include "FireParticleSystem.h"
-#include "SnowFallParticles.h"
+#include "ParticleSystemController.h"
+//#include "FireParticleSystem.h"
+//#include "SnowFallParticles.h"
 #include "TorchFireParticles.h"
+#include "ParticleSystem_def.h"
 // ++++++++++++   Измеряем быстродействие кода   +++++++++++++
 #include "RCubeProfiling.h"
 
@@ -79,7 +81,7 @@ public:
 
 	int CubeMapIndex;
 	// Для отладки
-	RCube_VecFloat34 CamLook;
+	RCube_VecFloat234 CamLook;
 
 // Переопределяем операторы New и delete для правильного размещения XMMATRIX в памяти
     void* operator new(size_t i)
@@ -93,7 +95,7 @@ public:
     }
 // ------------------------------------
 
-	bool Initialize(HWND , int&, int&, int& , int&, InputClass* _Input, TimerClass* _Timer);
+	bool Initialize(HWND , int&, int&, int& , int&, InputClass* _Input, TimerClass* _Timer, PhysXControler* PhysX );
 //	void Shutdown();
 	bool Frame(FPSTimers& , DXINPUTSTRUCT&);
 	bool Render(int& mouseX, int& mouseY);
@@ -110,7 +112,7 @@ public:
 	D3DGlobalContext *GraphicsClass::GetD3DGC();
 
 	ResourceManager * MyManager;
-
+	PhysXControler* _PhysX;
 	RenderClass * RCubeRender;
 
 private:
@@ -134,9 +136,11 @@ public:
 			   FontClass* TempFont;
 
 //	   ParticleSystemClass* m_ParticleSystem;
-	   FireParticleSystem  *FireParticles;
+//	   FireParticleSystem  *FireParticles;
 	   TorchFireParticles  *TorchFire;
-	   SnowFallParticles   *SnowParticles;
+//	   SnowFallParticles   *SnowParticles;
+
+	   ParticleSystemController *Snow;
 
 			RCubeProfiling* Profile;
 			  FrustumClass* m_Frustum;

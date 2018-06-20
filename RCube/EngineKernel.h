@@ -30,7 +30,7 @@
 #include "FPSTimers.h"
 #include "KFPicking.h"
 #include "RCubeNetwork.h"
-#include "KF_PXControler.h"
+#include "PhysXControler.h"
 
 #include <process.h>
 
@@ -148,7 +148,7 @@ private:
 // -----  Системные переменные работы программы
 
 //	++++++++++++++++++++++++++++++   PhysX Initialisation   ++++++++++++++++++++++++++++++++++++++++++
-	 KF_PXControler * PxControl;
+	 PhysXControler * PxControl;
  //	------------------------------	 PhysX Initialisation   -------------------------------------------
 
 };

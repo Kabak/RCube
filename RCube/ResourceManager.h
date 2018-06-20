@@ -22,6 +22,11 @@
 #include "Terrain.h"
 #include "CubeMap.h"
 #include "TimerClass.h"
+//#include "Emiters.h"
+//#include "ParticleSystem_def.h"
+#include "ParticleSystem.h"
+#include "PhysXControler.h"
+
 
 #ifdef RCube_DX11
 #include "DX11Buffers.h"
@@ -31,6 +36,35 @@ using namespace std;
 
 class ResourceManager{
 private:
+/*
+	template <class T>
+	int GetIndexBuf ( T StoreType )
+	{
+		int i = (int)StoreType.size ();
+		return i;
+	}
+	*/
+
+	template <class BufferType, class UnusedBuffer, class VarType >
+	int GetNewBufferIndex ( BufferType& Buffer, UnusedBuffer& IndBuf, VarType* Obj )
+	{
+		int Index = -1;
+		if ( !IndBuf.empty () )
+		{
+			Index = IndBuf.back ();
+			IndBuf.pop_back ();
+			Buffer[Index] = Obj;
+		}
+		else
+		{
+			Buffer.push_back ( Obj );
+			Index = ( int ) ( Buffer.size () - 1 );
+		}
+
+		Obj->ThisBufferIndex = Index;
+
+		return Index;
+	}
 
 	struct KFShadresBunch //  базовая связка шейдеров если нет в этом комлексе определенного шейдера то Nullptr
 	{
@@ -52,7 +86,7 @@ public:
 	ResourceManager();
 	~ResourceManager();
 
-	void Init ( D3DGlobalContext * g_D3DGC, TimerClass* _Timer);
+	void Init ( D3DGlobalContext * g_D3DGC, TimerClass* _Timer, PhysXControler* PhysX );
 
 	int GetShaderIndexByName( wchar_t* Name );				// Получить номер шейрера по его имени
 	ID3D11InputLayout* GetLayoutByIndex ( int LayoutNumber);// Получить Layout по его индексу
@@ -107,13 +141,21 @@ public:
 	vector <UINT>						UnusedTerrainsIndex;//
 	vector <UINT>						UnusedTerrainsBuffersIndex;// 
 
+// Menu
+	vector< Menu* >						Menus;				// Меню созданные в движке
+
+// Particle Systems
+	vector < ParticleSystem* >			ParticleSystems;
+	vector < BB_Particles_Buffers* >	BB_ParticleSystems_Buffers;
+	vector <UINT>						UnusedParticleSystemIndex;
+	vector <UINT>						Unused_BB_BuffersIndex;
+//	vector <UINT>						UnusedEmittersIndex;
+
+
 // CubeMap
 // UnusedFlatObjBuffersIndex
 	vector < CubeMap* >					CubeMaps;			// Список CubeMaps
 	vector <UINT>						UnusedCubeMapsIndex;//
-
-
-	vector< Menu* >						Menus;				// Меню созданные в движке
 
 // + CubeMap
 	int Add_CubeMap ( WCHAR* TextureName );
@@ -167,8 +209,25 @@ public:
 
 // - 3D Models Works
 
+// + Particle Systems
+
+	int Create_Emitter_BB_Buffers ( bool CPUAccess, UINT InstanceAmount, UINT TempTextureIndex, Emitter* NewEmitter );
+	int GetNewEmitter_BB_Buffers_Index ( BB_Particles_Buffers* NewBuffer );
+	
+   bool Delete_Emitter_BB_Buffer ( int BufferIndex );
+
+	BB_Particles_Buffers* GetEmitters_BB_Buffers_By_Index ( int BufferIndex );
+
+	void CreateInitial_BB_VertexBuffer ( Vertex_FlatObject* Vertices, Emitter* NewEmitter );
+
+	int AddParticleSystem (ParticleSystem* ParticleSys);
+	bool DeleteParticleSystem ( int ObjectIndex );
+
+// - Particle Systems
+
 // + Terrain
-	int AddTerrain ( int _TerrainTextureIndex, TerrainInitData* NewTerrainData );
+	// If Terrain_GenInit = nullptr , no terrain random generation occure
+	int AddTerrain ( int _TerrainTextureIndex, TerrainInitData* NewTerrainData, Terrain_GenInit* TerrainData);
 	
 	int Get_New_Terrain_Index ( Terrain* TerrainObj );// Получить свободный индекс Terrain в массиве Terrain
 	int Get_Terrain_VB_Index ( _3D_Obj_Buffers* NewBuffer );
@@ -177,16 +236,18 @@ public:
 	int Delete_Terrain_Buffers ( int ObjectIndex );
 	int Delete_Terrain_Clusters ( Terrain* TerrainObj );	// Удаление кластеров Terrain
 
-	int Create_Terrain_Mesh_Buffer ( Terrain* TerrainObj );	// Создание буфера вертексов Terrain
+	int Create_Terrain_Mesh_Buffer ( Terrain* TerrainObj, bool StaticBuffers );	// Создание буфера вертексов Terrain
 
-	int Create_Terrain_Clusters ( Terrain* TerrainObj );// Раздел вертексного буфера на кластеры и инициализация IB для каждого кластера
+	int Create_Terrain_Clusters ( Terrain* TerrainObj, bool StaticBuffers );// Раздел вертексного буфера на кластеры и инициализация IB для каждого кластера
 
 	void Update_Terrain_Clusters_AABB (Terrain* TerrainObj);	// Needed after GenerateLandScape()
 
 	void Calc_Next_Cluster_Start_Pos (int& Start_X_ROW, int& Start_Z_COL, Terrain* TerrainObj );	// Определить стартовую позицию следуещего кластера
 
 	Terrain* Get_Terrain_Object_Pointer ( int ObjectIndex );	// Получить указатель на объект 3D модели из списка по индексу
+
 	_3D_Obj_Buffers* Get_Terrain_Buffers_By_Index ( int ObjectIndex ); // Получаем VB, IB для Terrain
+
 	bool Update_Terrain_Position ( int ObjectIndex, PositionType* PositionRotation ); // Caution !  Should be changed in PhysX ( TDO )
 
 	void Calculate_FirstVertexPos ( Terrain* TerrainObj );	// Расчёт 1-го вертекса в зависимости от параметров Terrain
@@ -194,8 +255,11 @@ public:
 	void GenerateIndexes ( Terrain* TerrainObj, int GridScale );// Создаёт IB всех вертексов.
 
 	void LandParamChecker (Terrain_GenInit* LandParam);
+
+private :
 	void GenerateLandScape ( Terrain* TerrainObj, Terrain_GenInit* InintData);
-	
+
+public :
 	//  X_Z - XZ - Position of center ;  HRMinMax : X - Height Min; Y - Height Max ; Z - Radius Min ; W - Radius Max
 	bool CreateLandScapeBending (Terrain* TerrainObj, XMFLOAT2 X_Z, XMFLOAT4 HRMinMax);
 
@@ -219,8 +283,6 @@ public:
   float Formula (float& Value);
 
    void MoveTerrain (Terrain* TerrainObj, DirectionsAmount& PointData, float Height);// Изменить Terrain вокруг точки
-
-
 
 // - Terrain
 
@@ -309,10 +371,13 @@ public:
 	
 	void SetNullAllShaders();
 
+	// Holding Last shader for checking at render. So we will not set same shader multiple times
+	int ActiveShaderNumber;
+
 private:
 // + Sentence Works	
 	bool InitializeSentence ( SentenceType*, int& maxLength );
-	void BuildSentanceVertexArray ( FontClass* Font, void* vertices, char* sentence, float& drawX, float& drawY, float& RenderFontSize );
+	void BuildSentanceVertexArray ( FontClass* Font, Vertex_FlatObject* vertices, char* sentence, float& drawX, float& drawY, float& RenderFontSize );
 	int GetNewSentenceIndex ( SentenceType* NewSentence );	// Получить свободный индекс предложения в системе
 // - Sentence Works
 
@@ -325,6 +390,7 @@ private:
 	
 	D3DGlobalContext * Local_D3DGC;
 	TimerClass* Local_Timer;
+	PhysXControler* Local_PhysX;
 
 	HWND active_hwnd;
 

@@ -12,6 +12,8 @@
 // assume any responsibility for any errors which may appear in this software nor any
 // responsibility to update it.
 
+#pragma pack_matrix( row_major )
+
 cbuffer MatrixBuffer : register(b0)
 {
 	matrix worldMatrix;
@@ -27,21 +29,22 @@ cbuffer MatrixBuffer : register(b0)
 
 struct GeometryVSIn
 {
-	float3 position : POSITION;
-	float2 texCoord : TEXCOORD;
-	float3 normal : NORMAL;
-	float3 tangent : TANGENT;
-	float4 instancePosition : ObjPOSITION;
-	float4 instanceRotation : ObjROTATION;
+	float4 position				: POSITION;
+	float2 texCoord				: TEXCOORD;
+	float3 normal				: NORMAL;
+	float3 tangent				: TANGENT;
+
+	float4 instancePosition		: ObjPOSITION;
+	float4 instanceRotation		: ObjROTATION;
 };
 
 struct GeometryVSOut
 {
-	float4 position     : SV_Position;
-	float4 positionView : positionView;      // View space position
-	float3 normal       : normal;
-	float2 texCoord     : texCoord;
-	float3 viewDirection : TEXCOORD1;
+	float4 position				: SV_Position;
+	float4 positionView			: positionView;      // View space position
+	float3 normal				: normal;
+	float2 texCoord				: texCoord;
+	float3 viewDirection		: TEXCOORD1;
 	// +++++++++++++++++++++++++    Shadow Map    ++++++++++++++++++++++++++++++
 //	float4 lightViewPosition : TEXCOORD2;
 //	matrix TransRotObjMatrix : TEXCOORD3;
@@ -84,8 +87,9 @@ GeometryVSOut GeometryVS(GeometryVSIn input, uint VertexNum : SV_VertexID )
 	GeometryVSOut output;
 
 //	float4 InputPosition = float4(input.position, 1.0f);
+	float4 TempPosition = 1.0f;
 
-	float4 TempPosition = float4(qtransform(input.instanceRotation, input.position.xyz) + input.instancePosition.xyz, 1.0f);
+	TempPosition.xyz = qtransform(input.instanceRotation, input.position.xyz) + input.instancePosition.xyz;
 
 	output.positionView = TempPosition;
 

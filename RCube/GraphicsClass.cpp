@@ -26,9 +26,9 @@ GraphicsClass::GraphicsClass()
 						 Hud = nullptr;
 
 // + Particel systems
-			   SnowParticles = nullptr;
+//			   SnowParticles = nullptr;
 				   TorchFire = nullptr;
-			   FireParticles = nullptr;
+//			   FireParticles = nullptr;
 // - Particel systems
 
 
@@ -66,6 +66,8 @@ GraphicsClass::GraphicsClass(const GraphicsClass& other)
 GraphicsClass::~GraphicsClass()
 {
 
+	delete Snow;
+
 //	RCUBE_DELETE ( TempFont )
 
 	delete [] Global;
@@ -84,9 +86,9 @@ GraphicsClass::~GraphicsClass()
 	Strings.clear();
 
 	RCUBE_DELETE ( RCubeRender );
-  RCUBE_SHUTDOWN ( FireParticles );
+ // RCUBE_SHUTDOWN ( FireParticles );
   RCUBE_SHUTDOWN ( TorchFire );
-  RCUBE_SHUTDOWN ( SnowParticles );
+//  RCUBE_SHUTDOWN ( SnowParticles );
 	RCUBE_DELETE ( Hud );
 	RCUBE_DELETE ( AnimTexture );
 	RCUBE_DELETE ( MainMenu );
@@ -106,7 +108,7 @@ D3DGlobalContext *GraphicsClass::GetD3DGC()
 }
 
 
-bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight, int& WindowPosX, int& WindowPosY, InputClass* _Input, TimerClass* _Timer)
+bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight, int& WindowPosX, int& WindowPosY, InputClass* _Input, TimerClass* _Timer, PhysXControler* PhysX )
 {
 	bool result;
 //	XMMATRIX baseViewMatrix;
@@ -130,7 +132,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 
 	m_D3D = new D3DClass;
 
-	result = m_D3D->Initialize(hwnd, screenWidth, screenHeight, VSYNC_ENABLED, FULL_SCREEN, SCREEN_DEPTH, SCREEN_NEAR, m_Frustum );
+	result = m_D3D->Initialize(hwnd, screenWidth, screenHeight, VSYNC_ENABLED, FULL_SCREEN, SCREEN_DEPTH, SCREEN_NEAR, m_Frustum);
 	if(!result)
 	{
 		MessageBox(hwnd, L"Could not initialize m_D3D Class", Error, MB_OK);
@@ -149,6 +151,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 
 	// Инициализируем глобальную ссылку на InputClass 
 	m_D3D->D3DGC->m_EngineInputClass = _Input;
+	_PhysX = PhysX;
 	// Инициализируем глобальные размеры окна и положение окна не экране
 	m_D3D->D3DGC->ScreenWidth = _screenWidth;
 	m_D3D->D3DGC->ScreenHeight = _screenHeight;
@@ -165,7 +168,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	m_Camera->Render();
 
 	MyManager = new ResourceManager;
-	MyManager->Init(m_D3D->D3DGC, _Timer);
+	MyManager->Init(m_D3D->D3DGC, _Timer, PhysX );
 
 // Грузим ресурсы
 	hr = MyManager->InitTextures(L"Textures/Result.kaf");
@@ -1170,7 +1173,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	KFScrollBar_Elements Bars[11];
 	
 	Bars[0].Horizontal = false;
-	Bars[0].Values = { 0.0f, 1.0f, 0.0f, 0.01f };
+	Bars[0].Values = { 0.0f, 1.0f, 0.5f, 0.01f };
 	Bars[0].ShowButtons = true;
 	Bars[0].ObjParam = { 200.0f, 50.0f, 0.0f, 200.0f };
 	Bars[0].UpSideDown = true;
@@ -1552,25 +1555,107 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	// Обязательно для систем частиц !!!
 	m_Camera->GetPosition( m_D3D->D3DGC->CameraPosition );
 
+	ParticleSysInitData* _InitData = new ParticleSysInitData;
+
+	_InitData->ReserveEmittersCount = 1;
+	_InitData->ParticleSystemType = ONEBUFFER;
+	_InitData->Position.Fl3 = XMFLOAT3 ( 0.0f, 35.0f, 0.0f );
+
+	Snow = new ParticleSystemController ( &fpstimers, m_D3D, PhysX, MyManager, _InitData );
+
+	Emitter_Init_Data* Emitter_Data = new Emitter_Init_Data;
+	
+	Emitter_Data->InitPosition.Fl3 = _InitData->Position.Fl3;	// Set Particle System Position Offset in 3D World
+	Emitter_Data->EmitterType = EM_BILLBOARD;
+	Emitter_Data->InitParticleSize = 0.05f;
+	Emitter_Data->InitParticleVelocity = 1.95f;
+	Emitter_Data->InitParticleVelocityVariation = -1.0f;
+
+	Emitter_Data->XPosition = false;
+	Emitter_Data->YPosition = true;
+	Emitter_Data->ZPosition = false;
+	Emitter_Data->KillPosition.Fl3 = XMFLOAT3 ( 0.0f, 0.0f, 0.0f );
+	
+	Emitter_Data->KillBySize = 0;
+	Emitter_Data->KillSize.Fl3 = XMFLOAT3 ( 0.0f, 0.0f, 0.0f );
+
+	Emitter_Data->KillByVelocity = 0;
+	Emitter_Data->KillVelocity.Fl3 = XMFLOAT3 ( 0.0f, 0.0f, 0.0f );
+
+	Emitter_Data->ApplyLightSourceToParticlses = false;
+	Emitter_Data->LifeTime = -1.0f;
+	Emitter_Data->MaxParticles = 5000;
+	Emitter_Data->MaxActiveParticles = 5000;
+	Emitter_Data->ParticlesPerSecond = 500.0f;
+	Emitter_Data->Init3DParticleVelocity.Fl3 = XMFLOAT3 ( 10.95f, 0.95f, 0.95f );
+	Emitter_Data->PlayFPS = 30;
+	Emitter_Data->InitPositionDeviation.Fl3 = XMFLOAT3 ( 30.5f, 0.0f, 30.0f );
+	Emitter_Data->ShaderForDraw = MyManager->GetShaderIndexByName ( L"particle" );
+
+	Emitter_Data->TextureIndex = 20; // Star Texture
+	Emitter_Data->UpdateType = U_SNOWFALL;
+	Emitter_Data->UX_Amount = 1;
+	Emitter_Data->VY_Amount = 1;
+
+	// Snow
+	Snow->AddEmitter ( Emitter_Data );
+	Snow->Render = true;
+
+	Emitter_Data->InitParticleVelocity = 5.95f;
+	Emitter_Data->InitParticleVelocityVariation = -5.0f;
+	Emitter_Data->InitPosition.Fl3 = XMFLOAT3 ( 100.0f, 50.0f, 10.0f );
+	Emitter_Data->InitParticleSize = 0.5f;
+	Emitter_Data->KillPosition.Fl3 = XMFLOAT3 ( 0.0f, 35.0f, 0.0f );
+	Emitter_Data->MaxParticles = 500;
+	Emitter_Data->MaxActiveParticles = 500;
+	Emitter_Data->ParticlesPerSecond = 500.0f;
+	// Big Snow
+	Snow->AddEmitter ( Emitter_Data );
+
+
+
+	Emitter_Data->InitPositionDeviation.Fl3 = XMFLOAT3 ( 10.5f, 0.0f, 10.0f );
+	Emitter_Data->InitParticleVelocity = 15.9f;
+	Emitter_Data->InitParticleVelocityVariation = -15.0f;
+	Emitter_Data->KillPosition.Fl3 = XMFLOAT3 ( 0.0f, 0.0f, 0.0f );
+	Emitter_Data->InitPosition.Fl3 = XMFLOAT3 ( 100.0f, 30.0f, -100.0f );
+	Emitter_Data->ApplyLightSourceToParticlses = true;
+	Emitter_Data->InitParticleSize = 1.0f;
+	Emitter_Data->TextureIndex = 8;
+	Emitter_Data->UX_Amount = 8;
+	Emitter_Data->VY_Amount = 8;
+	Emitter_Data->MaxParticles = 500;
+	Emitter_Data->MaxActiveParticles = 50;
+	Emitter_Data->ParticlesPerSecond = 50.0f;
+	Emitter_Data->ShaderForDraw = MyManager->GetShaderIndexByName ( L"FireParticle3D" );
+
+	Snow->AddEmitter ( Emitter_Data );
+
+
+	// All over map
+	Emitter_Data->InitPositionDeviation.Fl3 = XMFLOAT3 ( 250.0f, 0.1f, 250.0f );
+	Emitter_Data->InitParticleVelocity = 1.0f;
+	Emitter_Data->InitParticleVelocityVariation = 0.9f;
+	Emitter_Data->KillPosition.Fl3 = XMFLOAT3 ( 0.0f, 0.0f, 0.0f );
+	Emitter_Data->InitPosition.Fl3 = XMFLOAT3 ( 0.0f, 30.0f, 0.0f );
+	Emitter_Data->ApplyLightSourceToParticlses = true;
+	Emitter_Data->InitParticleSize = 1.0f;
+	Emitter_Data->TextureIndex = 8;	//MyManager->TexturesArr[8]->SRV
+	Emitter_Data->UX_Amount = 8;
+	Emitter_Data->VY_Amount = 8;
+	Emitter_Data->MaxParticles = 3000;
+	Emitter_Data->MaxActiveParticles = 150;
+	Emitter_Data->ParticlesPerSecond = 50.0f;
+	Emitter_Data->ShaderForDraw = MyManager->GetShaderIndexByName ( L"FireParticle3D" );
+
+	Snow->AddEmitter ( Emitter_Data );
+
+	delete Emitter_Data;
+
+	delete _InitData;
+
+
 	// Create the particle system object.
-	SnowParticles = new SnowFallParticles;
-	SnowParticles->ShaderForDraw = MyManager->GetShaderIndexByName ( L"particle" );
-
-	if (!SnowParticles )
-	{
-		return false;
-	}
-
-	result = SnowParticles->Initialize
-		(
-		hwnd,
-		m_D3D->D3DGC,
-		MyManager->TexturesArr[20]->SRV,	// Текстура звезды
-		1,
-		1,
-		1
-		);
-		
 		TorchFire = new TorchFireParticles;
 		TorchFire->ShaderForDraw = MyManager->GetShaderIndexByName ( L"TorchFire3D" );
 		if ( !TorchFire )
@@ -1604,29 +1689,6 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 		{
 			return false;
 		}
-
-	FireParticles = new FireParticleSystem;
-	FireParticles->ShaderForDraw = MyManager->GetShaderIndexByName ( L"FireParticle3D" );
-		if ( !FireParticles )
-		{
-			return false;
-		}
-
-	result = FireParticles->Initialize
-	(	
-		hwnd, 
-		m_D3D->D3DGC, 
-		MyManager->TexturesArr[8]->SRV, //8
-		8,
-		8,
-		0,
-		m_D3D								// Указатель на класс света в движке
-	);
-
-	if (!result)
-	{
-		return false;
-	}
 
 // --------------------------------------------------  PARTICLE SYSTEM  ---------------------------------------------
 
@@ -1818,34 +1880,35 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 		//MyManager->InitTextures(hwnd, L"Textures/RcubeTextures.kaf", m_D3D->D3DGC->DX_device, m_D3D->D3DGC->DX_deviceContext);
 
 		TerrainInitData NewTerrainData;
-		NewTerrainData._QuadVertexStep = 1.0f;
-		NewTerrainData._QuadsPerCluster = 127;
-		NewTerrainData._ClustersX_ROW = 16;
-		NewTerrainData._ClustersZ_COL = 16;
+		NewTerrainData._QuadVertexStep = 10.0f;
+		NewTerrainData._QuadsPerCluster = 63;
+		NewTerrainData._ClustersX_ROW = 32;
+		NewTerrainData._ClustersZ_COL = 32;
 		NewTerrainData._CastShadow = true;
 		NewTerrainData._ClusterRender = true;
+		NewTerrainData._StaticBuffers = false;
 		NewTerrainData.HightFileName = nullptr;
-
-		int TerrainNumber = MyManager->AddTerrain ( 21, &NewTerrainData ); // 21  9
-//		MyManager->Delete_Terrain ( TerrainNumber );
-
-		m_D3D->ShadowMapShaderIndex = MyManager->GetShaderIndexByName ( L"LightRenderSM" );
 
 		Terrain_GenInit TerrainData;
 		TerrainData.HeightNum = 600;
 		TerrainData.LowlandNum = 600;
 		TerrainData.MaxRadius = 200;
 		TerrainData.MinRadius = 70;
-		TerrainData.Max_Height = 800.0f;
+		TerrainData.Max_Height = 200.0f;
 		TerrainData.Min_Height = 50.0f;
-		TerrainData.Max_Low		= -500.0f;
-		TerrainData.Min_Low		= -50.0f;
+		TerrainData.Max_Low = -200.0f;
+		TerrainData.Min_Low = -50.0f;
+
+		int TerrainNumber = MyManager->AddTerrain ( 21, &NewTerrainData, &TerrainData); // 21  9
+//		MyManager->Delete_Terrain ( TerrainNumber );
+
+		m_D3D->ShadowMapShaderIndex = MyManager->GetShaderIndexByName ( L"LightRenderSM" );
 
 		// Create one Hight in the middle of terrain
 		Terrain* TerrainObj = MyManager->Get_Terrain_Object_Pointer (TerrainNumber);
 		XMFLOAT2 Position = { (float)TerrainObj->VertexInX_Row / 2, ( float ) TerrainObj->VertexInZ_Col / 2};
 		XMFLOAT4 HRMaxMin = {100.0f, 200.0f, 45.0f, 50.0f};
-		MyManager->CreateLandScapeBending (TerrainObj, Position, HRMaxMin);
+//		MyManager->CreateLandScapeBending (TerrainObj, Position, HRMaxMin);
 //		MyManager->GenerateLandScape (MyManager->Get_Terrain_Object_Pointer (TerrainNumber), &TerrainData);
 
 		return true;
@@ -1887,11 +1950,11 @@ bool GraphicsClass::Frame( FPSTimers &Counters, DXINPUTSTRUCT& InputStruct1)
 // +++++++++++++++++++++++++++++++++++++++++++++++++++  PARTICLE SYSTEM  ++++++++++++++++++++++++++++	
 	// Измеряем быстродействие
 	// Федя 540 ns    Мой  517 ns   
-//	char Str[25];// = new char [25];
-//	Profile->StartTimer();
+	char Str[25];// = new char [25];
+	Profile->StartTimer();
 	// Измеряем быстродействие
-	SnowParticles->Frame( Counters );
-
+	Snow->Frame ();
+	Profile->StopTimer( Str );
 
 // Потоки
 // https://msdn.microsoft.com/en-us/library/ms682516(v=vs.85).aspx
@@ -1911,11 +1974,10 @@ bool GraphicsClass::Frame( FPSTimers &Counters, DXINPUTSTRUCT& InputStruct1)
 //	_beginthreadex( NULL, 0, reinterpret_cast<_beginthreadex_proc_type>( &Duck ), &fpstimers, CREATE_SUSPENDED, &ThreadAdr );
 //	_beginthreadex(NULL,0, reinterpret_cast<_beginthreadex_proc_type>(SnowThread), &fpstimers , CREATE_SUSPENDED , &ThreadAdr );
 
-//	Profile->StopTimer( Str );
+
 //	MyManager->->UpdateSentence( 4, Str, 100, 160 );
 
 	TorchFire->Frame( Counters );
-	FireParticles->Frame( Counters );
 	// Измеряем быстродействие
 //	Profile->StopTimer(Str);
 //	MyManager->->UpdateSentence(5, Str, 100, 160);
@@ -1951,8 +2013,8 @@ bool GraphicsClass::Frame( FPSTimers &Counters, DXINPUTSTRUCT& InputStruct1)
 	m_Frustum->ConstructFrustumNew( m_D3D->D3DGC->ViewProjection );
 
 	// Федя 540 ns    Мой  517 ns   
-	char Str[32];// = new char [25];
-	Profile->StartTimer ();
+//	char Str[32];// = new char [25];
+//	Profile->StartTimer ();
 	// Измеряем быстродействие
 /*	int Objects_Amount = ( int ) MyManager->Terrains.size ();
 	for ( int i = 0; i < Objects_Amount; ++i )
@@ -1961,7 +2023,7 @@ bool GraphicsClass::Frame( FPSTimers &Counters, DXINPUTSTRUCT& InputStruct1)
 		MyManager->FrustumTerrain ( m_Frustum, MyManager->Terrains[i] );
 	}
 */	// Измеряем быстродействие
-	Profile->StopTimer ( Str );
+//	Profile->StopTimer ( Str );
 // ----------------------  FRUSTUM    --------------------------------------------------
 
 // ++++++++++++    Как часто рисем Тень     +++++++++++++++++++
@@ -1969,6 +2031,7 @@ bool GraphicsClass::Frame( FPSTimers &Counters, DXINPUTSTRUCT& InputStruct1)
 
 // Обновляем свет сцены
 // Обязательно после отрисовки теней !!!
+// Frame свету
 		m_D3D->Frame();
 // ------------------------------------------------------------
 
@@ -2069,7 +2132,7 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 	MyManager->SetActiveShadersInProgramm( m_D3D->LightShaderForDraw );
 	// Устанавливаем сразу всё что нужно для отрисовки всех моделей со светом
 	// Чтобы не устанаваить это в цикле много раз
-	m_D3D->D3DGC->DX_deviceContext->OMSetDepthStencilState(m_D3D->D3DGC->m_depthStencilState, 0);
+	m_D3D->D3DGC->DX_deviceContext->OMSetDepthStencilState(m_D3D->D3DGC->depthStencil_State, 0);
 	m_D3D->SetDefaultResterizeState ();
 	m_D3D->D3DGC->DX_deviceContext->OMSetRenderTargets(1, &m_D3D->D3DGC->BackBuffer_RTV, m_D3D->D3DGC->m_depthStencilView);
 
@@ -2119,28 +2182,17 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 
 	// +++++++++++++++++++++++++++++++++++++++++++++++++++  PARTICLE SYSTEM  ++++++++++++++++++++++++++++
 	m_D3D->TurnOnParticleBlending();
-	m_D3D->TurnZBufferOff();
+	m_D3D->ZBufferNoWrite ();// TurnZBufferOff ();
 	// Put the particle system vertex and index buffers on the graphics pipeline to prepare them for drawing.
-	
-	// SNOW система частиц
-	MyManager->SetActiveShadersInProgramm( SnowParticles->ShaderForDraw );
-	SnowParticles->Render();
+
+	// NEW PARTICLE SYSTEM
+	// SNOW система частиц Render
+	RCubeRender->RenderParticleSystem ( 0 );
 
 //	Profile->StopTimer( Str );
 //	MyManager->UpdateSentence( 5, Str, 100, 160 );
 
-
-	// Измеряем быстродействие
-	// Федя 540 ns    Мой  517 ns   
-	//		char Str[25];// = new char [25];
-//	Profile->StartTimer();
-	// FIRE Летающий анимированный огонь
-	MyManager->SetActiveShadersInProgramm( FireParticles->ShaderForDraw );
-	FireParticles->Render();
-//	Profile->StopTimer( Str );
-//	MyManager->UpdateSentence( 5, Str, 100, 160 );
 	// TorchFire Факел, костёр
-
 	// Измеряем быстродействие
 	// Федя 540 ns    Мой  517 ns   
 	//		char Str[25];// = new char [25];
@@ -2187,19 +2239,6 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 	Profile->StopTimer( Global );
 // Измеряем быстродействие
 	}
-
-/*
-	// Выключаем свет
-	m_Light->LightRender(0, 0);
-	else
-	m_Light->LightRender(0, 1);
-*/
-
-/*	if (!result)
-	{
-		return false;
-	}*/
-//	MyManager->SetActiveShadersInProgramm(2);
 	// ++++++++++++++++++++++++     Рисуем Текст в игре     +++++++++++++++++++++++++++++
 
 	// ++++++++++++++++++++++++     Рисуем текст в HUD      +++++++++++++++++++++++++++++
@@ -2233,7 +2272,8 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 	m_D3D->D3DGC->Shadow_Divider = Hud->GetScrollBarValue( 7 );
 
 	// Регулировка частиц
-	FireParticles->ChangeActiveParticleAmount((int)Hud->GetScrollBarValue(10));
+	Snow->ChangeActiveParticleAmount(3, ( int ) Hud->GetScrollBarValue ( 10 ) );
+
 /*
 	if ( !m_D3D->D3DGC->SoftShadowsOn )
 	{
@@ -2282,29 +2322,9 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 		RCubeRender->RenderFlatObject ( MyManager->Get_Flat_ObjectBuffers_ByIndex ( m_Bitmap->BuffersIndex ) );
 		// Рисуем мышкин курсор
 
-//	if (IsSettingsMenuOn)
-		//			Settingsmenu->Draw(m_D3D->D3DGC->OrthoMatrix) ;
-
-		m_D3D->SetBackBufferRenderTarget();
-
-
-	// ++++++++++++++++++++++++   Собственный мышиный курсор   ++++++++++++++++++++++++++++++++
-
-
-
+	m_D3D->SetBackBufferRenderTarget();
 	m_D3D->TurnOffAlphaBlending();
-
 	m_D3D->TurnZBufferOn();
-	// -----------------------   Собственный мышиный курсор   --------------------------------
-
-
-	//	m_D3D->TurnZBufferOff() ;
-
-	//	m_D3D->TurnZBufferOn() ;
-
-	// ----------------------------------блок с выключеным Z буфером
-
-
 	m_D3D->EndScene();
 
 	return true;
@@ -2318,9 +2338,7 @@ void GraphicsClass::UpdateCamera()
 	m_Camera->GetPosition( m_D3D->D3DGC->CameraPosition );
 	// Считываем матрицу камеры
 	m_Camera->GetViewMatrix( m_D3D->D3DGC->ViewMatrix );
-	// Проекционная матрица изначально в m_D3D->D3DGC->ProjectionMatrix; 
-	// Identity матрица изначально в m_D3D->D3DGC->WorldMatrix; 
-	// Orthomatrix изначально в m_D3D->D3DGC->OrthoMatrix
+
 	m_D3D->D3DGC->ViewProjection = m_D3D->D3DGC->ViewMatrix * m_D3D->D3DGC->ProjectionMatrix;
 }
 
@@ -2335,14 +2353,16 @@ void GraphicsClass::UpdateConstantBuffer()
 	XMMATRIX Translation = XMMatrixTranslation(m_D3D->D3DGC->CameraPosition.x, m_D3D->D3DGC->CameraPosition.y, m_D3D->D3DGC->CameraPosition.z);
 	XMMATRIX mtr = Scale * Translation * m_D3D->D3DGC->ViewProjection;
 
-	cbPerObj.World = XMMatrixTranspose(m_D3D->D3DGC->WorldMatrix);
-	cbPerObj.View = XMMatrixTranspose(m_D3D->D3DGC->ViewMatrix);
-	cbPerObj.Projection = XMMatrixTranspose(m_D3D->D3DGC->ProjectionMatrix);
-	cbPerObj.ViewProjection = XMMatrixTranspose(m_D3D->D3DGC->ViewProjection);
-	cbPerObj.ScaleMatrix = XMMatrixTranspose(mtr);	// CubeMapMatrix
-	cbPerObj.Ortho = XMMatrixTranspose(m_D3D->D3DGC->OrthoMatrix);
+	//No XMMatrixTranspose needed
+	// https://softwaretrickery.com/2014/03/25/directx-why-examples-call-xmmatrixtranspose/
+	cbPerObj.World = m_D3D->D3DGC->WorldMatrix;
+	cbPerObj.View = m_D3D->D3DGC->ViewMatrix;
+	cbPerObj.Projection = m_D3D->D3DGC->ProjectionMatrix;
+	cbPerObj.ViewProjection = m_D3D->D3DGC->ViewProjection;
+	cbPerObj.ScaleMatrix = mtr;	// CubeMapMatrix
+	cbPerObj.Ortho = m_D3D->D3DGC->OrthoMatrix; 
 	cbPerObj.cameraPosition = m_D3D->D3DGC->CameraPosition;
-	RCube_VecFloat34 Temp;
+	RCube_VecFloat234 Temp;
 	Temp.Vec = XMQuaternionRotationMatrix(m_D3D->D3DGC->ViewMatrix);
 	cbPerObj.TransposedCameraRotation2 = Temp.Fl4;
 
@@ -2365,5 +2385,5 @@ void GraphicsClass::GetWindowPos ( HWND hWnd, int &x, int &y )
 
 void GraphicsClass::SnowThread( FPSTimers& fpstimers )
 {
-	SnowParticles->Frame( fpstimers );
+	Snow->Frame( );
 }

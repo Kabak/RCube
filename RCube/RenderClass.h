@@ -28,6 +28,8 @@ public:
 
 	void RenderMenu ( int Index );
 
+	void RenderParticleSystem ( int Index );
+
 	void RenderFlatObject ( Flat_Obj_Buffers* FlatObject );
 
 	// Рисует все предложения которые есть в списке и у них включен Render
@@ -44,7 +46,7 @@ public:
 
 	void RenderSpotLightsSadowMaps ( std::vector <int>* SpotLightsWithShadowsIndexes );
 	
-	void RenderClass::DrawObjectUsingShadows ( XMVECTOR DrawPosition );
+	void DrawObjectUsingShadows ( XMVECTOR DrawPosition );
 
 // + Font Works
 
@@ -118,7 +120,7 @@ private:
 	ID3D11ShaderResourceView* FontShaderRes;
 
 	D3D11_DEPTH_STENCIL_VIEW_DESC DSD2;
-	RCube_VecFloat34 LightPosition, LightTarget;
+	RCube_VecFloat234 LightPosition, LightTarget;
 	XMVECTOR Up;
 
 	// Задаём условный размер текстуры (зависит от размера шрифта) для начального рисования 

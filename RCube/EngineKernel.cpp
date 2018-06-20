@@ -141,17 +141,28 @@ bool EngineKernel::Initialize()
 		return false;
 	}
 
+	PxControl = new PhysXControler; // выделение памяти под его
+	
 	// Create the graphics object.  This object will handle rendering all the graphics for this application.
 	m_Graphics = new GraphicsClass;
 	// Initialize the graphics object.
-	result = m_Graphics->Initialize( m_hwnd, screenWidth, screenHeight, WindowPosX, WindowPosY, m_Input, m_Timer);
+	result = m_Graphics->Initialize( m_hwnd, screenWidth, screenHeight, WindowPosX, WindowPosY, m_Input, m_Timer, PxControl );
 	if (!result)
 	{
 		Shutdown();
 		return false;
 	}
+
+	//++++++++++++++++++++инит физикса++++++++++++++++++++++++++++++
+	// Инициализация после m_Graphics  потому, что нужно передать D3DDEVICE
+	PxControl->Init ( &m_hwnd, m_Graphics->GetD3DGC () );
+	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   С ЭТИМ МЕСТОМ МОГУТ БЫТЬ ВОПРОСЫ !!!
+	PxDefaultMemoryOutputStream Stream;
+	PxControl->outStream = &Stream;
+	//++++++++++++++++++++инит физикса++++++++++++++++++++++++++++++
+
 	/*
-	********************************************ОПИСАНИЕ KF_PXControler класса********************************************
+	********************************************ОПИСАНИЕ PhysXControler класса********************************************
 	пока наш контролер достатосно прост это не глюк а скорее не использование физикса в полной менре.Я не супер человек а физика достаточно кастомная так что так или 
 	иначе мне придеттся чтото добавлять т.е если чего то нет это не значит что я это специально не сделал  прост я проэто скорее всего не знал , это может касаться 
 	некоторых доп функции физикса или различны его настроек. Прост если чтото необходимо добавить (скорре всего это понадобиться в реализации конкретного обьекта 
@@ -184,30 +195,14 @@ bool EngineKernel::Initialize()
 	для того чтобы понять как создается Fiz файл смотри фйл пример- описатние Models/Пример Fiz файла.txt
 
 
-	********************************************ОПИСАНИЕ KF_PXControler класса********************************************
+	********************************************ОПИСАНИЕ PhysXControler класса********************************************
 	*/
 
 
 
-	KF_PXControler::ObjectData data; // эта структура дает функции полное понимае о индексах обьета в моделЛисте
+	PhysXControler::ObjectData data; // эта структура дает функции полное понимае о индексах обьета в моделЛисте
 
-	//++++++++++++++++++++инит физикса++++++++++++++++++++++++++++++
 
-	PxControl = new KF_PXControler; // выделение памяти под его
-	PxControl->Init( &m_hwnd/*это параметры окна в котором находиться выполнение движка (необходимо для вывода сообщении об ошибках)*/, 
-	m_Graphics->GetD3DGC(),
-	m_Graphics->MyManager
-		/*глобальный моделлист в котором обьекты которые добавляются в физику*/); //  инит его
-
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   С ЭТИМ МЕСТОМ МОГУТ БЫТЬ ВОПРОСЫ !!!
-
-//	m_Graphics->m_Camera->SetPosition(0.0f, 0.0f, 0.0f);
-
-	//я не знаю на счет этих строк я пробовал вынести их в PXControl->init но ничего не вышло  ошибка происходит
-	PxDefaultMemoryOutputStream Stream;
-	PxControl->outStream = &Stream;
-	//*1*1*1*1*1*1*1*1*1*1*1*1*1*1*1*1*1*1*1*1*1*1*1*1*1*1*1*1*
-	//++++++++++++++++++++инит физикса++++++++++++++++++++++++++++++
 
 	// ++++++++++++++++++++++++++++++   Init Objects   +++++++++++++++++++++++++++++++++++
 //	int BlobIndex = m_Graphics->MyManager->GetShaderIndexByName ( L"ClusteredSM" ) * 2;
@@ -232,7 +227,8 @@ bool EngineKernel::Initialize()
 	PxControl->CreateInstancingObjects(
 	L"Models/Cube.fiz.txt",	// имя файла с данными о физике 
 	true,					// это значит динамическии обьект или статическии
-	0						// это номер обьекта в индексах ModelList который используется в движке
+	0,						// это номер обьекта в индексах ModelList который используется в движке
+	m_Graphics->MyManager->_3DModels[0]
 	);
 
 	// Joints
@@ -583,7 +579,38 @@ bool EngineKernel::Frame()
 //		m_Timer->StartTimer ();
 	// Измеряем быстродействие
 	/// Frame*********************************************
-	PxControl->Frame();
+//	PxControl->Frame();
+
+	PxTransform KinematicData;
+	int c = 0;
+
+	PhysXControler::_QuatXMfloat3 QuatXMfloat3;
+	PhysXControler::_QuatXMfloat4 QuatXMfloat4;
+
+	PhysXControler::ObjectData * Temp = PxControl->DynamicDataArr;
+	// ЭТО СПЕЦИАЛЬНО ДЛЯ обновления КУБИКОВ !!!!
+	PositionType  * Temp3 = m_Graphics->MyManager->_3DModels[0]->Positions;
+
+	while ( c <  PxControl->DynamicDataArrCounter )
+	{
+
+		KinematicData = PxControl->DymanicRigitArray[c]->getGlobalPose ();
+
+		QuatXMfloat3.Position = &KinematicData.p;
+		Temp3->position.Fl3 = *QuatXMfloat3.Temp;
+		QuatXMfloat4.Rotation = &KinematicData.q;
+
+		float W = QuatXMfloat4.Temp->w;
+		*QuatXMfloat4.Vec = -*QuatXMfloat4.Vec;// * -1.0f;   В PhysX поворот объекта нужно домножить на -1.0f
+		QuatXMfloat4.Temp->w = W;
+
+		Temp3->rotation.Fl4 = *QuatXMfloat4.Temp;
+
+		++Temp3;
+		++c;
+	}
+
+	m_Graphics->MyManager->Update_3D_Object_InstancesPosBuffer ( 0, -1, m_Graphics->MyManager->_3DModels[0]->InstanceCount );
 	/// Frame*********************************************
 	// Измеряем быстродействие
 //		m_Timer->StopTimer(Str);

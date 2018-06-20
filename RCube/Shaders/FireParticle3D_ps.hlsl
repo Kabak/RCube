@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Filename: particle.ps
+// Filename: FireParticle3D_ps.hlsl
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -18,7 +18,6 @@ struct PixelInputType
     float4 position : SV_POSITION;
     float2 tex : TEXCOORD0;
 	float4 color : COLOR;
-	float  Draw : DATA;
 };
 
 
@@ -28,9 +27,9 @@ struct PixelInputType
 float4 ParticlePixelShader(PixelInputType input) : SV_TARGET
 {
 	float4 textureColor;
-float4 finalColor = 0.0f;
+	float4 finalColor = 0.0f;
 
-	if (input.Draw > 0.0f)
+	if (input.position.w > 0.0f)
 	{
 		// Sample the pixel color from the texture using the sampler at this texture coordinate location.
 		textureColor = shaderTexture.Sample( FlatObject, input.tex);

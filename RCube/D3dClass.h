@@ -7,7 +7,7 @@
 #ifndef _D3DCLASS_H_
 #define _D3DCLASS_H_
 
-#include "D3DGlobalContext.h"
+
 #include <dxgi.h>
 #include <d3dcommon.h>
 #include <d3d11.h>
@@ -15,9 +15,13 @@
 #include <vector>
 
 #include "Buffers_def.h"
+
 #ifdef RCube_DX11
+#include "DX11_Render.h"
 #include "DX11Buffers.h"
 #endif
+
+#include "D3DGlobalContext.h"
 
 #include "Light_def.h"
 #include "ClusterShadingFragmentFactory.h"
@@ -47,6 +51,7 @@ public:
         _mm_free(p);
     }
 // ------------------------------------
+	const WCHAR *Error = L"D3DClass Error";
 
 	bool Initialize(HWND, int, int, bool, bool, float, float, FrustumClass* frustum );
 	void Shutdown();
@@ -68,8 +73,9 @@ public:
 
 	void BlurScene(ID3D11ComputeShader* Horizont, ID3D11ComputeShader* Vertical, int BlurAmont);
 
-	void TurnZBufferOn();
-	void TurnZBufferOff();
+	void TurnZBufferOn ();
+	void TurnZBufferOff ();
+	void ZBufferNoWrite ();
 
 //We have two new functions for turning on and off alpha blending.
 
@@ -137,7 +143,7 @@ public:
 	// ++++++++++++++++++++++    Ускорители частиц    +++++++++++++++++++++
 	// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-	RCube_VecFloat34 LightPos, LightPosCopy, Temp, Temp2;
+	RCube_VecFloat234 LightPos, LightPosCopy, Temp, Temp2;
 
 	// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	// ++++++++++++++++++++++    Ускорители частиц    +++++++++++++++++++++
@@ -338,8 +344,6 @@ private:
 	vector < CustomSampler >	CustomSamplers;			// Samplers созданные пользователем
 	vector < CustomRasterizer > CustomRasterizers;		// Rasterizers созданные пользователем
 	vector < CustomDepthStencil > CustomDepthStencils;	// DipthStencils созданные пользователем
-
-	ID3D11DepthStencilState* m_depthDisabledStencilState;
 
 #endif // RCube_DX11
 

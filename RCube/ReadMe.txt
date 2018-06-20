@@ -1,8 +1,32 @@
 ========================================================================
     WIN32 APPLICATION : RCube Project Overview
 ========================================================================
+// Фиксированное время в Игре
+// http://www.gamedev.ru/code/forum/?id=221794
+// Рендер сцен Irrlicht в отдельном потоке
+// https://gamedev.ru/community/irrlicht/articles/?id=3095
+// http://www.gamedev.ru/code/forum/?id=201239
+
+// Указатели на функцию
+// http://www.amse.ru/courses/cpp2/2011_04_11.html
+
+// Multithreading DX11
+// https://msdn.microsoft.com/en-us/library/windows/desktop/ff476891(v=vs.85).aspx
+// Command list in DX11
+// https://msdn.microsoft.com/en-us/library/windows/desktop/ff476887(v=vs.85).aspx
+
+// DX Samples
+// http://developer.download.nvidia.com/SDK/10.5/direct3d/samples.html#Sparkles
+
+// Реальный генератор случайных чисел 
+// http://www.gamedev.ru/code/forum/?id=220033
+
+// D3D11_RESOURCE_MISC_DRAWINDIRECT_ARGS  VOXELISATION
+http://www.alexandre-pestana.com/tag/directx/
+
 // ОПТИМИЗАЦИЯ
 https://developer.apple.com/library/content/documentation/3DDrawing/Conceptual/OpenGLES_ProgrammingGuide/TechniquesforWorkingwithVertexData/TechniquesforWorkingwithVertexData.html
+https://softwaretrickery.com/2014/03/25/directx-why-examples-call-xmmatrixtranspose/
 
 // Сдвиг чисел С++  >>  <<
 https://docs.microsoft.com/ru-ru/cpp/cpp/left-shift-and-right-shift-operators-input-and-output
@@ -140,6 +164,11 @@ http://www.gamedev.ru/terms/AABB
 
 // Многопоточность
 // http://www.gamedev.ru/code/articles/?id=4244
+// https://gamedev.ru/code/articles/?id=5533
+// Intel scalable particle system
+// https://software.intel.com/ru-ru/articles/ticker-tape-sample
+// https://gamedev.ru/code/articles/?id=4207#teoriya_i_ne_tol_ko
+
 // Много всего по теме движков
 // http://www.gamedev.ru/flame/forum/?id=216202
 
@@ -170,8 +199,11 @@ http://www.gamedev.ru/terms/AABB
 
 Vertex Shader Constant Buffers slots
 0  VS - матрицы World , View, Projection, Ortho, Camera Position для кадра
-1  VS - свет D3DClass Light PerFrameConstants
-13 VS - цвет шрифта для рисования
+1  VS - ShadowMap LightView Matrix 
+
+.. 13 VS - цвет шрифта для рисования  ( СВОБОДЕН  Not using )
+
+1  PS - свет D3DClass Light PerFrameConstants  ( DEBUG Constants )
 12 PS - FXAA фильтрация 
 
 Samplers Slots

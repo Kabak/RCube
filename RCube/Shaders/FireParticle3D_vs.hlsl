@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Filename: particle.vs
 ////////////////////////////////////////////////////////////////////////////////
-
+#pragma pack_matrix( row_major )
 
 cbuffer MatrixBuffer : register( b0 )
 {
@@ -19,19 +19,20 @@ cbuffer MatrixBuffer : register( b0 )
 
 struct VertexInputType
 {
-	float3 position : POSITION0;
-	float2 tex : TEXCOORD0;
-	float4 instancePosition : POSITION1;
-	float4 color : COLOR;
-	float4 NewTexCord : InsTEXCOORD;
+	float4 position				: POSITION0;
+	float4 tex					: TEXCOORD0;
+
+	float4 instancePosition		: POSITION1;
+	float4 color				: COLOR;
+	float4 NewTexCord			: InsTEXCOORD;
 };
 
 struct PixelInputType
 {
-	float4 position : SV_POSITION;
-	float2 tex : TEXCOORD0;
-	float4 color : COLOR;
-	float  Draw : DATA;
+	float4 position				: SV_POSITION;
+	float2 tex					: TEXCOORD0;
+	float4 color				: COLOR;
+//	float  Draw					: DATA;
 };
 
 
@@ -70,16 +71,15 @@ PixelInputType ParticleVertexShader( VertexInputType input, uint VertexNumber : 
 	// http://www.gamedev.ru/code/articles/?id=4175#bliki
 	// http://www.gamedev.ru/code/forum/?id=170578
 
-	output.position = 0.0;
 	output.tex = 0.0f;
+	output.position = 0.0f;
+
+	output.position.w = input.instancePosition.w;	// Set Render or not
 
 	if (input.instancePosition.w > 0.0f)
 	{
-		float4 RotQuat = ViewTransQuat;
+		output.position.xyz = qtransform(ViewTransQuat, input.position.xyz) + input.instancePosition.xyz;
 
-		output.position = float4(qtransform(ViewTransQuat, input.position.xyz), 1.0f);
-
-		output.position.xyz += input.instancePosition.xyz;
 		output.position = mul(output.position, viewprojection);
 
 		switch (VertexNumber)
@@ -112,6 +112,6 @@ PixelInputType ParticleVertexShader( VertexInputType input, uint VertexNumber : 
 
 	// Store the particle color for the pixel shader. 
 	output.color = input.color;
-	output.Draw = input.instancePosition.w; // Draw particle 0.0f - Yes   1.0f - No
+//	output.Draw = input.instancePosition.w; // Draw particle 0.0f - Yes   1.0f - No
 	return output;
 }

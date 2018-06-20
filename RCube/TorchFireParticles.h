@@ -3,7 +3,7 @@
 #include <d3d11.h>
 #include "DirectXMath.h"
 #include "D3DGlobalContext.h"
-#include "ParticleSystemDefinitions.h"
+#include "ParticleSystem_def.h"
 #include "FPSTimers.h"
 #include "D3DClass.h"
 #include "Light_def.h"
@@ -30,18 +30,6 @@ public:
 					 TorchFireSmoke TorchFIreSmokeInit,
 					 D3DClass *_EngineLight
 					 );
-
-
-	bool InitFireSystem( HWND hwnd,
-						 D3DGlobalContext *D3DGC,
-
-						 ID3D11ShaderResourceView *_FireTexture,
-						 //	ID3D11ShaderResourceView *_SmokeTexture,
-						 //	ID3D11ShaderResourceView *_HeartTexture,
-						 //	ID3D11ShaderResourceView *_ParticlesTexture,
-						 //						 int  InstanceAmount,
-						 D3DClass *_EngineLight
-						 );
 
 	void Shutdown();
 	void Frame( FPSTimers &Timers );
@@ -85,13 +73,13 @@ private:
 	ID3D11ShaderResourceView *ParticlesTexture;
 
 	// Размер частиц при инициализации Вертексного буферы
-	float m_particleSize; 
+	float ParticleSize; 
 
 	// Номер света присвоенный системой
 	int LightIndex;
 	float TimeToUpdateLight;
 
-	int RealFramesAmount;	// Анимация
+//	int RealFramesAmount;	// Анимация
 	
 	int UX_Amount;			// Ширина текстуры Width X U
 	int VY_Amount;			// Высота текстуры Height Y V
@@ -171,16 +159,16 @@ XMFLOAT4 FireFlyFrameCoord;	// Координаты кадра из которого нарезаются FireFly (
 	XMFLOAT4 InitAlpha;			// Начальная прозрачность текстуры при появлении
 
 	// Дополнительные характеристики для манипуляции пламенем
-	Torch_FireSmoke1* TorchFireFlamesAddData;
-	Torch_FireSmoke1* TorchFireSmokeAddData;
-	Torch_FireSmoke1* TorchFireFlyAddData;
+	Particles_Data* TorchFireFlamesAddData;
+	Particles_Data* TorchFireSmokeAddData;
+	Particles_Data* TorchFireFlyAddData;
 	// Тип Vertex Buffer
 	Vertex_FlatObject *FlameVertices;
 	// Тип Instance Buffer
-	ParticleShaderInstance_TORCH_FIRE *FlameInstances;
-	ParticleShaderInstance_TORCH_FIRE *SmokeInstances;
-	ParticleShaderInstance_TORCH_FIRE *FireFlyInstances;
-	ParticleShaderInstance_TORCH_FIRE *ShaderInstanceAll;
+	BB_Particle_Instance *FlameInstances;
+	BB_Particle_Instance *SmokeInstances;
+	BB_Particle_Instance *FireFlyInstances;
+	BB_Particle_Instance *ShaderInstanceAll;
 	// Сам Inctance Buffer
 	ID3D11Buffer *FlameInstanceBuffer;
 	// Вертексный буфер одной сущности частицы
@@ -190,8 +178,8 @@ XMFLOAT4 FireFlyFrameCoord;	// Координаты кадра из которого нарезаются FireFly (
 
 // ПЛАМЯ --------------------------------------------------
 
-	RCube_VecFloat34 Camera;
-	RCube_VecFloat34 Object;
+	RCube_VecFloat234 Camera;
+	RCube_VecFloat234 Object;
 
 	// Находим расстояние от объекта до камеры
 	void DistanceCalk( XMFLOAT3 &ObjPos, XMFLOAT3 &Camerapos, float &DistanceStore );

@@ -137,6 +137,9 @@ void RenderClass::RenderScene ()
 		Render3D_Object ( i, false );
 	}
 
+//	Local_D3DGC->DX_deviceContext->RSSetState ( Local_D3DGC->WireFrameRasterizerState );
+
+
 	Objects_Amount = ( int ) ResManager->Terrains.size ();
 	for ( int i = 0; i < Objects_Amount; ++i )
 	{
@@ -147,6 +150,8 @@ void RenderClass::RenderScene ()
 
 		RenderTerrain ( i, false );
 	}
+
+//	Local_D3DGC->DX_deviceContext->RSSetState ( Local_D3DGC->DefaultRasterizerState );
 }
 
 
@@ -1444,7 +1449,7 @@ void RenderClass::RenderSentence ( SentenceType* sentence )
 
 void RenderClass::ShowGlowing ( int i )
 {
-	RCube_VecFloat34 TextV34;
+	RCube_VecFloat234 TextV34;
 
 	SentenceType* Source = ResManager->RCube_Sentences[i];
 	if (Source->ShowGoOn == false)
@@ -1704,7 +1709,7 @@ void RenderClass::RenderCubeMap ( int ObjectIndex )
 
 	ResManager->SetActiveShadersInProgramm ( ResManager->CubeMaps[ObjectIndex]->ShaderIndex );
 
-	Local_D3DGC->DX_deviceContext->OMSetDepthStencilState ( Local_D3DGC->CubeMap_DepthStencilState, 0 );
+	Local_D3DGC->DX_deviceContext->OMSetDepthStencilState ( Local_D3DGC->CubeMap_DepthStencil_State, 0 );
 
 	Local_D3DGC->DX_deviceContext->DrawIndexed ( ResManager->CubeMaps[ObjectIndex]->NumSphereFaces, 0, 0 );
 
@@ -1822,7 +1827,7 @@ void RenderClass::RenderSpotLightsSadowMaps ( std::vector <int>* SpotLightsWithS
 		// Это пока не нужно.  У нас пока нет отсеивание объектов по светам. Это нужно не здесь.
 		Local_Frustum->ConstructFrustumNew ( LightViewProj );
 
-		cbPerObj.LightViewProjection = XMMatrixTranspose ( LightViewProj );
+		cbPerObj.LightViewProjection = ( LightViewProj ); //XMMatrixTranspose 
 
 //		Local_D3DGC->DX_deviceContext->UpdateSubresource ( cbShadowBuffer, 0, NULL, &cbPerObj, 0, 0 );
 		Local_D3DGC->ShadowMapLightView->Update ( &cbPerObj );
@@ -1851,4 +1856,71 @@ void RenderClass::RenderSpotLightsSadowMaps ( std::vector <int>* SpotLightsWithS
 	}
 	// Устанавливаем ViewPort для RCube
 	Local_D3DGC->DX_deviceContext->RSSetViewports ( 1, &Local_D3D->viewport );
+}
+
+
+void RenderClass::RenderParticleSystem ( int Index )
+{
+	unsigned int strides[2];
+	unsigned int offsets[2];
+	ID3D11Buffer* bufferPointers[2];
+
+	// Set the buffer offsets.
+	offsets[0] = 0;
+	offsets[1] = 0;
+
+	int Size = ( int ) ResManager->ParticleSystems.size ();
+
+	if ( Index < Size )
+	{
+		ParticleSystem* TempSystem = ResManager->ParticleSystems[Index];
+
+		if ( TempSystem->Render != false )
+		{
+			size_t EmittersAmount = ResManager->ParticleSystems[Index]->Emitters.size ();
+
+			for ( size_t c = 0; c < EmittersAmount; ++c )
+			{
+				
+				Emitter* TempEmitter = TempSystem->Emitters[c];
+
+				if ( TempEmitter->Active )
+				{
+					ResManager->SetActiveShadersInProgramm ( TempEmitter->Init_Data.ShaderForDraw );
+					
+					switch ( TempSystem->SystemType )
+					{
+						case ONEBUFFER:
+						{
+							// Set vertex buffer stride and offset.
+							strides[0] = sizeof ( Vertex_FlatObject );
+							strides[1] = sizeof ( BB_Particle_Instance );
+
+							BB_Particles_Buffers* TempBuffers = ResManager->GetEmitters_BB_Buffers_By_Index ( TempEmitter->Emitter_Buffers_Index );
+							// Set the array of pointers to the vertex and instance buffers.
+							bufferPointers[0] = TempBuffers->FlatObjectVB->Buffer;// m_vertexBuffer;
+							bufferPointers[1] = TempBuffers->InstanceVBs->Buffer;// m_instanceBuffer;
+
+																				 // Set the vertex buffer to active in the input assembler so it can be rendered.
+							Local_D3DGC->DX_deviceContext->IASetVertexBuffers ( 0, 2, bufferPointers, strides, offsets );
+
+							// Set the index buffer to active in the input assembler so it can be rendered.
+							Local_D3DGC->DX_deviceContext->IASetIndexBuffer ( TempBuffers->IndexBs->Buffer, DXGI_FORMAT_R32_UINT, 0 );
+
+							// Set the type of primitive that should be rendered from this vertex buffer.
+							//	D3DGC_Local->DX_deviceContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+
+							// Set shader texture resource in the pixel shader.
+							Local_D3DGC->DX_deviceContext->PSSetShaderResources ( 0, 1, &TempBuffers->RenderTexture );
+
+							// Render the triangle.
+							Local_D3DGC->DX_deviceContext->DrawIndexedInstanced ( 6, TempEmitter->CreatedParticlesCount, 0, 0, 0 );
+
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
 }

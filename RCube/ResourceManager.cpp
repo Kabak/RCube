@@ -32,6 +32,22 @@ void ResourceManager::ShutDown()
 	}
 	CubeMaps.clear ();
 	
+// PARTICLE SYSTEMS
+/*
+	c = 0;
+	i = ParticleSystems.size ();
+	while ( c < i )
+	{
+		Delete_Particle_System ( c );
+		++c;
+	}
+	ParticleSystems.clear ();
+*/
+	ParticleSystems.clear ();
+	UnusedParticleSystemIndex.clear ();
+	BB_ParticleSystems_Buffers.clear ();
+	Unused_BB_BuffersIndex.clear ();
+
 // TERRAIN
 	c = 0;
 	i = Terrains.size ();
@@ -551,7 +567,7 @@ bool ResourceManager::CreateLayouts ()
 {
 	ID3D11InputLayout* TempLayout;
 
-	UINT numElements = ARRAYSIZE ( Model3D_Layout );
+	UINT numElements = _ARRAYSIZE ( Model3D_Layout );
 
 	ID3D10Blob* TempBlob = GetShaderBlobByName ( L"ClusteredSM" );
 
@@ -568,7 +584,7 @@ bool ResourceManager::CreateLayouts ()
 
 
 	TempBlob = GetShaderBlobByName ( L"Font" );
-	numElements = ARRAYSIZE ( FlatObject_Layout );
+	numElements = _ARRAYSIZE ( FlatObject_Layout );
 
 	hr = Local_D3DGC->DX_device->CreateInputLayout ( FlatObject_Layout, numElements, TempBlob->GetBufferPointer (),
 		TempBlob->GetBufferSize (), &TempLayout );
@@ -583,22 +599,22 @@ bool ResourceManager::CreateLayouts ()
 
 
 
-	numElements = ARRAYSIZE ( FireParticles_Layout );
+	numElements = _ARRAYSIZE ( BB_Particle_Instance_Layout );
 
 	TempBlob = GetShaderBlobByName ( L"FireParticle3D" );
 
-	hr = Local_D3DGC->DX_device->CreateInputLayout ( FireParticles_Layout, numElements, TempBlob->GetBufferPointer (),
+	hr = Local_D3DGC->DX_device->CreateInputLayout ( BB_Particle_Instance_Layout, numElements, TempBlob->GetBufferPointer (),
 		TempBlob->GetBufferSize (), &TempLayout );
 	if (FAILED ( hr ))
 	{
-		MessageBox ( Local_D3DGC->hwnd, L"FireParticles_Layout ошибка в создании лайаута.", L"Error", MB_OK );
+		MessageBox ( Local_D3DGC->hwnd, L"BB_Particle_Instance_Layout ошибка в создании лайаута.", L"Error", MB_OK );
 		return 0;
 	}
 
 	// Сохраняем Layout
 	Layouts.push_back ( TempLayout );
 
-
+/*
 	numElements = ARRAYSIZE ( TorchFire_Layout );
 
 	TempBlob = GetShaderBlobByName ( L"TorchFire3D" );
@@ -613,7 +629,7 @@ bool ResourceManager::CreateLayouts ()
 
 	// Сохраняем Layout
 	Layouts.push_back ( TempLayout );
-
+*/
 	return 1;
 
 }
@@ -674,35 +690,43 @@ ID3D10Blob* ResourceManager::GetShaderBlobByName ( wchar_t* Name )
 
 void ResourceManager::SetActiveShadersInProgramm(int ShadersIndex) 
 {
-	if (BunchArr[ShadersIndex].PS != NULL)
-		Local_D3DGC->DX_deviceContext->PSSetShader ( BunchArr[ShadersIndex].PS, NULL, 0 );
-	else
-		 Local_D3DGC->DX_deviceContext->PSSetShader( NULL, NULL, NULL );
+	// If the same shader skeep setting it
+	if ( ActiveShaderNumber != ShadersIndex )
+	{
+		// Setting Last shader for checking later in render. So we will not set same shader multiple times
+		ActiveShaderNumber = ShadersIndex;
 
-	if (BunchArr[ShadersIndex].VS != NULL)
-		Local_D3DGC->DX_deviceContext->VSSetShader ( BunchArr[ShadersIndex].VS, NULL, 0 );
-	else
-		Local_D3DGC->DX_deviceContext->VSSetShader( NULL, NULL, NULL );
+		KFShadresBunch *BunchArray = &BunchArr[ShadersIndex];
+		if ( BunchArray->PS != NULL )
+			Local_D3DGC->DX_deviceContext->PSSetShader ( BunchArray->PS, NULL, 0 );
+		else
+			Local_D3DGC->DX_deviceContext->PSSetShader ( NULL, NULL, NULL );
 
-	if (BunchArr[ShadersIndex].GS != NULL)
-		Local_D3DGC->DX_deviceContext->GSSetShader ( BunchArr[ShadersIndex].GS, NULL, 0 );
-	else
-		Local_D3DGC->DX_deviceContext->GSSetShader ( NULL, NULL, NULL );
+		if ( BunchArray->VS != NULL )
+			Local_D3DGC->DX_deviceContext->VSSetShader ( BunchArray->VS, NULL, 0 );
+		else
+			Local_D3DGC->DX_deviceContext->VSSetShader ( NULL, NULL, NULL );
 
-	if (BunchArr[ShadersIndex].DS != NULL)
-		Local_D3DGC->DX_deviceContext->DSSetShader ( BunchArr[ShadersIndex].DS, NULL, 0 );
-	else
-		Local_D3DGC->DX_deviceContext->DSSetShader ( NULL, NULL, NULL );
+		if ( BunchArray->GS != NULL )
+			Local_D3DGC->DX_deviceContext->GSSetShader ( BunchArray->GS, NULL, 0 );
+		else
+			Local_D3DGC->DX_deviceContext->GSSetShader ( NULL, NULL, NULL );
 
-	if (BunchArr[ShadersIndex].HS != NULL)
-		Local_D3DGC->DX_deviceContext->HSSetShader ( BunchArr[ShadersIndex].HS, NULL, 0 );
-	else
-		Local_D3DGC->DX_deviceContext->HSSetShader ( NULL, NULL, NULL );
+		if ( BunchArray->DS != NULL )
+			Local_D3DGC->DX_deviceContext->DSSetShader ( BunchArray->DS, NULL, 0 );
+		else
+			Local_D3DGC->DX_deviceContext->DSSetShader ( NULL, NULL, NULL );
 
-	if (BunchArr[ShadersIndex].Layout > -1)
-		Local_D3DGC->DX_deviceContext->IASetInputLayout ( Layouts[(BunchArr[ShadersIndex].Layout)] );
-	else
-		Local_D3DGC->DX_deviceContext->IASetInputLayout ( NULL );
+		if ( BunchArray->HS != NULL )
+			Local_D3DGC->DX_deviceContext->HSSetShader ( BunchArray->HS, NULL, 0 );
+		else
+			Local_D3DGC->DX_deviceContext->HSSetShader ( NULL, NULL, NULL );
+
+		if ( BunchArray->Layout > -1 )
+			Local_D3DGC->DX_deviceContext->IASetInputLayout ( Layouts[( BunchArray->Layout )] );
+		else
+			Local_D3DGC->DX_deviceContext->IASetInputLayout ( NULL );
+	}
 }
 
 int ResourceManager::InitOneShader( WCHAR * CSOFileName) {
@@ -1077,11 +1101,12 @@ HRESULT ResourceManager::InitSounds( WCHAR * kafFilename, SoundClass * ActiveSou
 	return S_OK;
 }
 
-void  ResourceManager::Init(D3DGlobalContext * g_D3DGC, TimerClass* _Timer)
+void  ResourceManager::Init(D3DGlobalContext * g_D3DGC, TimerClass* _Timer, PhysXControler* PhysX )
 {
 
 	Local_D3DGC	= g_D3DGC;
 	Local_Timer = _Timer;
+	Local_PhysX = PhysX;
 //	active_hwnd = Local_D3DGC->hwnd;
 }
 
@@ -1435,27 +1460,19 @@ bool ResourceManager::SaveTextureToFile ( int Index, WCHAR* Name )
 }
 
 
-void ResourceManager::BuildSentanceVertexArray ( FontClass* Font, void* vertices, char* sentence, float& drawX, float& drawY, float& RenderFontSize )
+void ResourceManager::BuildSentanceVertexArray ( FontClass* Font, Vertex_FlatObject* vertices, char* sentence, float& drawX, float& drawY, float& RenderFontSize )
 {
-	Vertex_FlatObject* vertexPtr;
-	int numLetters, index, i, letter;
-
-
-	// Coerce the input vertices into a VertexType structure.
-	vertexPtr = (Vertex_FlatObject*)vertices;
+	int numLetters, letter;
 
 	// Get the number of letters in the sentence.
 	numLetters = (int)strlen ( sentence );
-
-	// Initialize the index to the vertex array.
-	index = 0;
 
 	// The following loop will now build the vertex and index arrays. It takes each character from the sentence and creates two triangles for it. It then maps the character from the font texture onto 
 	// those two triangles using the m_Font array which has the TU texture coordinates and pixel size. Once the polygon for that character has been created it then updates the X coordinate on the 
 	// screen of where to draw the next character.
 
 	// Draw each letter onto a quad.
-	for (i = 0; i<numLetters; ++i)
+	for (int i = 0; i < numLetters; ++i)
 	{
 		//  +++++++++   Добавлена поддержка ASCII символов после 127   +++++++++++
 		char *Source = &sentence[i];
@@ -1470,7 +1487,6 @@ void ResourceManager::BuildSentanceVertexArray ( FontClass* Font, void* vertices
 		// Бука ё
 		else if (*Source == -72)
 			letter = 160;
-
 		//  --------   Добавлена поддержка ASCII символов после 127   -----------
 
 		// If the letter is a space then just move over three pixels.
@@ -1485,30 +1501,30 @@ void ResourceManager::BuildSentanceVertexArray ( FontClass* Font, void* vertices
 			float DYRFS = drawY - RenderFontSize;
 			float DXSS = drawX + Source->Symbol_Width;
 			// First triangle in quad.
-			vertexPtr[index].Position = XMFLOAT3 ( drawX, drawY, 0.0f );  // Top left.
-			vertexPtr[index].TexCoord = XMFLOAT2 ( Source->Start, 0.0f );
-			++index;
+			vertices->Position = XMFLOAT3 ( drawX, drawY, 0.0f );  // Top left.
+			vertices->TexCoord = XMFLOAT2 ( Source->Start, 0.0f );
+			++vertices;
 
-			vertexPtr[index].Position = XMFLOAT3 ( (drawX + Source->Symbol_Width), DYRFS, 0.0f );  // Bottom right.
-			vertexPtr[index].TexCoord = XMFLOAT2 ( Source->End, 1.0f );
-			++index;
+			vertices->Position = XMFLOAT3 ( (drawX + Source->Symbol_Width), DYRFS, 0.0f );  // Bottom right.
+			vertices->TexCoord = XMFLOAT2 ( Source->End, 1.0f );
+			++vertices;
 
-			vertexPtr[index].Position = XMFLOAT3 ( drawX, DYRFS, 0.0f );  // Bottom left.
-			vertexPtr[index].TexCoord = XMFLOAT2 ( Source->Start, 1.0f );
-			++index;
+			vertices->Position = XMFLOAT3 ( drawX, DYRFS, 0.0f );  // Bottom left.
+			vertices->TexCoord = XMFLOAT2 ( Source->Start, 1.0f );
+			++vertices;
 
 			// Second triangle in quad.
-			vertexPtr[index].Position = XMFLOAT3 ( drawX, drawY, 0.0f );  // Top left.
-			vertexPtr[index].TexCoord = XMFLOAT2 ( Source->Start, 0.0f );
-			++index;
+			vertices->Position = XMFLOAT3 ( drawX, drawY, 0.0f );  // Top left.
+			vertices->TexCoord = XMFLOAT2 ( Source->Start, 0.0f );
+			++vertices;
 
-			vertexPtr[index].Position = XMFLOAT3 ( DXSS, drawY, 0.0f );  // Top right.
-			vertexPtr[index].TexCoord = XMFLOAT2 ( Source->End, 0.0f );
-			++index;
+			vertices->Position = XMFLOAT3 ( DXSS, drawY, 0.0f );  // Top right.
+			vertices->TexCoord = XMFLOAT2 ( Source->End, 0.0f );
+			++vertices;
 
-			vertexPtr[index].Position = XMFLOAT3 ( DXSS, DYRFS, 0.0f );  // Bottom right.
-			vertexPtr[index].TexCoord = XMFLOAT2 ( Source->End, 1.0f );
-			++index;
+			vertices->Position = XMFLOAT3 ( DXSS, DYRFS, 0.0f );  // Bottom right.
+			vertices->TexCoord = XMFLOAT2 ( Source->End, 1.0f );
+			++vertices;
 
 			// Update the x location for drawing by the size of the letter and one pixel.
 			drawX = drawX + Source->Symbol_Width + 1.0f;
@@ -1586,14 +1602,13 @@ void ResourceManager::UpdateSentence ( int SentenceNumber, char* text, int posit
 
 	// Build the vertex array using the FontClass and the sentence information.
 	// Use the font class to build the vertex array from the sentence text and sentence draw location.
-	BuildSentanceVertexArray ( RCube_Font[Source->FontType], (void*)vertices, text, drawX, drawY, RenderFontSize );
+	BuildSentanceVertexArray ( RCube_Font[Source->FontType], vertices, text, drawX, drawY, RenderFontSize );
 
 	// Copy the vertex array information into the sentence vertex buffer.
 	FlatObjectBuffers[Source->VertexBufferIndex]->FlatObjectVB->Update ( vertices );
 
 	// Release the vertex array as it is no longer needed.
-	delete[] vertices;
-	vertices = nullptr;
+	RCUBE_DELETE( vertices);
 
 }
 
@@ -1750,8 +1765,8 @@ int ResourceManager::Create_3D_Obj_Mesh_Buffers( bool CPUAccess, UINT InstanceAm
 bool ResourceManager::LoadKFObject ( std::wstring FileName, _3DModel* New_3D_Model )
 {
 
-	RCube_VecFloat34 TempFloat3;
-	RCube_VecFloat34 TempFloat3_2;
+	RCube_VecFloat234 TempFloat3;
+	RCube_VecFloat234 TempFloat3_2;
 
 	std::basic_ifstream< UCHAR > file ( FileName, std::ios::in | std::ios::binary );
 	if ( !file )
@@ -2123,7 +2138,7 @@ void ResourceManager::Frustum_3D_Objects ( FrustumClass* Frustum )
 	int counter = 0, instanceCounter = 0, CuledInstancesCout = 0;
 
 	_3DModel* Temp;
-	RCube_VecFloat34 TempPositions;
+	RCube_VecFloat234 TempPositions;
 
 	size_t Size = sizeof ( XMVECTOR ) * 2;
 
@@ -2346,20 +2361,20 @@ void ResourceManager::MoveTerrain (Terrain* TerrainObj, DirectionsAmount& PointD
 {
 	PointCoord Result;
 
-	RCube_VecFloat34 VeetexPosition;
-	RCube_VecFloat34 CenterPosition;
+	RCube_VecFloat234 VeetexPosition;
+	RCube_VecFloat234 CenterPosition;
 
 	VeetexPosition.Vec = { 0.0f, 0.0f, 0.0f, 0.0f };
 	CenterPosition.Vec = { 0.0f, 0.0f, 0.0f, 0.0f };
 
-	RCube_VecFloat34 Temp1, Temp2;
+	RCube_VecFloat234 Temp1, Temp2;
 
 	float VertexTempHeight = 0.0f;
 	float CenterTempHeight = 0.0f;
 
 	int Index = 0;
 	
-	CenterPosition.Fl3 = TerrainObj->VB_Data[PointData.Index].Position;	// Geting Center vertex Position and Height
+	CenterPosition.Fl4 = TerrainObj->VB_Data[PointData.Index].Position;	// Geting Center vertex Position and Height
 	CenterTempHeight = CenterPosition.Fl3.y;
 	CenterPosition.Fl3.y = 0.0f;	// Exluding Height
 
@@ -2372,7 +2387,7 @@ void ResourceManager::MoveTerrain (Terrain* TerrainObj, DirectionsAmount& PointD
 			Result.z = j;
 			Index = GetIndexByCoord (TerrainObj, Result);
 
-			VeetexPosition.Fl3 = TerrainObj->VB_Data[Index].Position;	// Geting vertex Position and Height
+			VeetexPosition.Fl4 = TerrainObj->VB_Data[Index].Position;	// Geting vertex Position and Height
 			VertexTempHeight = VeetexPosition.Fl3.y;							// Store vertex Height
 			
 			// Checking distance from Center without Height to vertex without Height
@@ -2397,6 +2412,11 @@ void ResourceManager::MoveTerrain (Terrain* TerrainObj, DirectionsAmount& PointD
 
 bool ResourceManager::CreateLandScapeBending (Terrain* TerrainObj, XMFLOAT2 X_Z, XMFLOAT4 HRMinMax)
 {
+	// Checking if any buffer was creater as IMMUTABLE for updates ( static buffers )
+	_3D_Obj_Buffers*  Buffers = Get_Terrain_Buffers_By_Index (TerrainObj->TerrainBuffersIndex);
+	if ( Buffers->Vertexes->GetCPU_Access() == 2 )
+		return false;
+
 	DirectionsAmount *PointData = new DirectionsAmount;
 
 	PointCoord CenterPoint;
@@ -2466,7 +2486,7 @@ void ResourceManager::GenerateLandScape (Terrain* TerrainObj, Terrain_GenInit* I
 	
 	CalculateNormals (TerrainObj);
 
-	Terrain_Buffers->Vertexes->Update (TerrainObj->VB_Data);
+//	Terrain_Buffers->Vertexes->Update (TerrainObj->VB_Data);
 
 	Update_Terrain_Clusters_AABB ( TerrainObj );	// Update for clusters frustum culling
 
@@ -2478,8 +2498,8 @@ void ResourceManager::CalculateNormals ( Terrain* TerrainObj )
 {
 	int Index0, Index1, Index2, Index3;
 
-	RCube_VecFloat34 Vertex0, Vertex1, Vertex2, Vertex3;
-	RCube_VecFloat34 Vector1, Vector2, Vector_1, Vector_2, *Normals, Summ;
+	RCube_VecFloat234 Vertex0, Vertex1, Vertex2, Vertex3;
+	RCube_VecFloat234 Vector1, Vector2, Vector_1, Vector_2, *Normals, Summ;
 
 	Vertex0.Vec = { 0.0f, 0.0f, 0.0f, 0.0f };
 	Vertex1.Vec = Vertex0.Vec;
@@ -2495,7 +2515,9 @@ void ResourceManager::CalculateNormals ( Terrain* TerrainObj )
 	int Normal_Index = 0;
 
 	// Create a temporary array to hold the un-normalized normal vectors.
-	Normals = new RCube_VecFloat34[ TerrainObj->Total_Vertexs_In_Terrain ];
+	Normals = new RCube_VecFloat234[ TerrainObj->Total_Vertexs_In_Terrain ];
+
+	memset (Normals, 0, TerrainObj->Total_Vertexs_In_Terrain);
 
 	// Go through all the faces in the mesh and calculate their normals.
 
@@ -2513,9 +2535,9 @@ void ResourceManager::CalculateNormals ( Terrain* TerrainObj )
 			Index1 = Index3 + 1;
 			Index2 = Index0 + 1;
 
-			Vertex0.Fl3 = TerrainObj->VB_Data[Index0].Position;
-			Vertex3.Fl3 = TerrainObj->VB_Data[Index3].Position;
-			Vertex1.Fl3 = TerrainObj->VB_Data[Index1].Position;
+			Vertex0.Fl4 = TerrainObj->VB_Data[Index0].Position;
+			Vertex3.Fl4 = TerrainObj->VB_Data[Index3].Position;
+			Vertex1.Fl4 = TerrainObj->VB_Data[Index1].Position;
 //			Vertex2.Fl3 = TerrainObj->VB_Data[Index2].Position;
 
 			Vector1.Vec = Vertex0.Vec - Vertex3.Vec;
@@ -2575,6 +2597,11 @@ void ResourceManager::CalculateNormals ( Terrain* TerrainObj )
 			Summ.Vec /= 3.0f;
 
 			Normals[Normal_Index].Vec = -XMVector3Normalize ( Summ.Vec );	//   !!!!!!!!!!!!!!!!!!  - 
+
+//			Vector_1.Vec = { 0.0f, 0.0f, 0.0f, 0.0f };
+//			Vector_1.Fl3 = TerrainObj->VB_Data[Normal_Index].Normal;
+//			Vector_1.Vec += Normals[Normal_Index].Vec;
+//			TerrainObj->VB_Data[Normal_Index].Normal = Vector_1.Fl3;
 
 			TerrainObj->VB_Data[Normal_Index].Normal = Normals[Normal_Index].Fl3;
 
@@ -2638,7 +2665,7 @@ void ResourceManager::GenerateVertexes ( Terrain* TerrainObj )
 				Height = 0;
 */	
 			// Устанавливаем позицию вертексу
-			TerrainObj->VB_Data[index].Position = XMFLOAT3(XSetPos, Height, ZSetPos);
+			TerrainObj->VB_Data[index].Position = XMFLOAT4(XSetPos, Height, ZSetPos, 0.0f);
 
 			// Устанавливаем текстурные координаты
 			TerrainObj->VB_Data[index].TexCoord = XMFLOAT2 ( Texture_X_U, Texture_Z_V ); ;// XMFLOAT2 ( ( ( float ) i / ( float ) TerrainObj->VertexInX_Row ) * 1.0f, ( ( float ) j / ( float ) TerrainObj->VertexInZ_Col ) * 1.0f );//XMFLOAT2 ( Texture_X_U, Texture_Z_V );
@@ -2775,23 +2802,34 @@ int ResourceManager::Get_Terrain_VB_Index ( _3D_Obj_Buffers* NewBuffer )
 }
 
 
-int ResourceManager::Create_Terrain_Mesh_Buffer ( Terrain* TerrainObj )
+int ResourceManager::Create_Terrain_Mesh_Buffer ( Terrain* TerrainObj, bool StaticBuffers )
 {
 	_3D_Obj_Buffers *Terrain_Buffers = new _3D_Obj_Buffers ();
 
 	int ReturnIndex = Get_Terrain_VB_Index ( Terrain_Buffers );
 	// Создаём буфер вертексов Terrain
-	Terrain_Buffers->Vertexes = new VertexBuffer <Vertex_Model3D> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, NO_CPU_ACCESS_BUFFER, TerrainObj->Total_Vertexs_In_Terrain, nullptr/*TerrainObj->VB_Data*/ );
-	// Сохраняем вертексы в Вертексный буфер
-	Terrain_Buffers->Vertexes->Update ( TerrainObj->VB_Data );
+	if ( StaticBuffers )
+		Terrain_Buffers->Vertexes = new VertexBuffer <Vertex_Model3D> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, CONST_BUFFER, TerrainObj->Total_Vertexs_In_Terrain, TerrainObj->VB_Data );
+	else
+	{
+		Terrain_Buffers->Vertexes = new VertexBuffer <Vertex_Model3D> (Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, NO_CPU_ACCESS_BUFFER, TerrainObj->Total_Vertexs_In_Terrain, nullptr);
+		// Сохраняем вертексы в Вертексный буфер
+		Terrain_Buffers->Vertexes->Update (TerrainObj->VB_Data);
+	}
+	
 
 	// Если Terrain НЕ рисуется кластерами
 	if ( !TerrainObj->ClusterRender )
 	{
 		// Создаём Индексный буфер для всего Terrain
-		Terrain_Buffers->Indexes = new IndexBuffer <Index_Type> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, NO_CPU_ACCESS_BUFFER, TerrainObj->Total_Indexs_In_Terrain, nullptr/*TerrainObj->IB_Data */);
-		// Сохраняем индексы в Индексный буфер
-		Terrain_Buffers->Indexes->Update ( TerrainObj->IB_Data );
+		if ( StaticBuffers )
+			Terrain_Buffers->Indexes = new IndexBuffer <Index_Type> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, CONST_BUFFER, TerrainObj->Total_Indexs_In_Terrain, TerrainObj->IB_Data );
+		else
+		{
+			Terrain_Buffers->Indexes = new IndexBuffer <Index_Type> (Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, NO_CPU_ACCESS_BUFFER, TerrainObj->Total_Indexs_In_Terrain, nullptr);
+			// Сохраняем индексы в Индексный буфер
+			Terrain_Buffers->Indexes->Update (TerrainObj->IB_Data);
+		}
 	}
 
 	TerrainObj->TerrainBuffersIndex = ReturnIndex;
@@ -2827,7 +2865,7 @@ _3D_Obj_Buffers* ResourceManager::Get_Terrain_Buffers_By_Index ( int ObjectIndex
 // расчёт реального размера кластера по его крайним точкам RUF и LDB
 void ResourceManager::CalkTerrainClusterAABB ( TerrainCluster* ClasterObject )
 {
-	RCube_VecFloat34 Nul_Point, Temp, Position;
+	RCube_VecFloat234 Nul_Point, Temp, Position;
 
 	float MinY;
 	float MaxY;
@@ -2975,7 +3013,7 @@ void ResourceManager::Update_Terrain_Clusters_AABB (Terrain* TerrainObj)
 					// LDB - Left Down Backward
 					if ( ( Row_Index == StartCluster_X_ROW_Index ) && ( Column_Index == StartCluster_Z_COL_Index ) )
 					{
-						ClasterObject->AABB.LDB.Fl3 = TerrainObj->VB_Data[Index0].Position;
+						ClasterObject->AABB.LDB.Fl4 = TerrainObj->VB_Data[Index0].Position;
 						Min_X = TerrainObj->VB_Data[Index0].Position.x;
 						Min_Z = TerrainObj->VB_Data[Index0].Position.z;
 					}
@@ -2984,7 +3022,7 @@ void ResourceManager::Update_Terrain_Clusters_AABB (Terrain* TerrainObj)
 					// RUF - Right Up Forward
 					if ( ( Row_Index == Last_Row_Index_In_Cluster - 1 ) && ( Column_Index == Column_End - 1 ) )
 					{
-						ClasterObject->AABB.RUF.Fl3 = TerrainObj->VB_Data[Index1].Position;
+						ClasterObject->AABB.RUF.Fl4 = TerrainObj->VB_Data[Index1].Position;
 						Max_X = TerrainObj->VB_Data[Index1].Position.x;
 						Max_Z = TerrainObj->VB_Data[Index1].Position.z;
 					}
@@ -3022,7 +3060,7 @@ void ResourceManager::Update_Terrain_Clusters_AABB (Terrain* TerrainObj)
 }
 
 
-int ResourceManager::Create_Terrain_Clusters ( Terrain* TerrainObj )
+int ResourceManager::Create_Terrain_Clusters ( Terrain* TerrainObj, bool StaticBuffers )
 {
 	int ReturnIndex = -1;
 
@@ -3106,7 +3144,7 @@ int ResourceManager::Create_Terrain_Clusters ( Terrain* TerrainObj )
 					// LDB - Left Down Backward
 					if ( ( Row_Index == StartCluster_X_ROW_Index ) && ( Column_Index == StartCluster_Z_COL_Index ) )
 					{
-						ClasterObject->AABB.LDB.Fl3 = TerrainObj->VB_Data[Index0].Position;
+						ClasterObject->AABB.LDB.Fl4 = TerrainObj->VB_Data[Index0].Position;
 						Min_X = TerrainObj->VB_Data[Index0].Position.x;
 						Min_Z = TerrainObj->VB_Data[Index0].Position.z;
 					}
@@ -3115,7 +3153,7 @@ int ResourceManager::Create_Terrain_Clusters ( Terrain* TerrainObj )
 					// RUF - Right Up Forward
 					if ( ( Row_Index == Last_Row_Index_In_Cluster - 1 ) && ( Column_Index == Column_End - 1 ) )
 					{
-						ClasterObject->AABB.RUF.Fl3 = TerrainObj->VB_Data[Index1].Position;
+						ClasterObject->AABB.RUF.Fl4 = TerrainObj->VB_Data[Index1].Position;
 						Max_X = TerrainObj->VB_Data[Index1].Position.x;
 						Max_Z = TerrainObj->VB_Data[Index1].Position.z;
 					}
@@ -3144,12 +3182,18 @@ int ResourceManager::Create_Terrain_Clusters ( Terrain* TerrainObj )
 			CalkTerrainClusterAABB ( ClasterObject );
 
 			// Создаём индексный буфер для кластера
-			Cluster_IB->Indexes = new IndexBuffer <Index_Type> (Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, NO_CPU_ACCESS_BUFFER, TerrainObj->Total_Indexs_In_Cluster, nullptr/*IB_Data*/);
+			if ( StaticBuffers )
+				Cluster_IB->Indexes = new IndexBuffer <Index_Type> (Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, CONST_BUFFER, TerrainObj->Total_Indexs_In_Cluster, IB_Data);
+			else
+			{
+				Cluster_IB->Indexes = new IndexBuffer <Index_Type> (Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, NO_CPU_ACCESS_BUFFER, TerrainObj->Total_Indexs_In_Cluster, nullptr);
+				Cluster_IB->Indexes->Update (IB_Data);
+			}
 
 			// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			//	Обновить массив кластеров Cluster_IB->Indexes и удалить IB_Data
 			// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-			Cluster_IB->Indexes->Update ( IB_Data );
+
 			TerrainObj->Clusters.push_back ( ClasterObject );
 			RCUBE_ARR_DELETE ( IB_Data );
 
@@ -3165,7 +3209,8 @@ int ResourceManager::Create_Terrain_Clusters ( Terrain* TerrainObj )
 
 
 int ResourceManager::AddTerrain ( int _TerrainTextureIndex,
-				 TerrainInitData* NewTerraindata )
+				 TerrainInitData* NewTerraindata, 
+				 Terrain_GenInit* TerrainData)
 {
 	int Result = -1;
 	bool bool_result = false;
@@ -3239,17 +3284,20 @@ int ResourceManager::AddTerrain ( int _TerrainTextureIndex,
 	}
 
 	if ( NewTerrain->ClusterRender )
-		Create_Terrain_Clusters ( NewTerrain );
+		Create_Terrain_Clusters ( NewTerrain, NewTerraindata->_StaticBuffers );
 	else
 	{
 		NewTerrain->IB_Data = new Index_Type[NewTerrain->Total_Indexs_In_Terrain]; // Создаём массив индексов
 		GenerateIndexes ( NewTerrain, 1 );	// Заполняем индексный буфер
 	}
 
+	// Generate random Terrain if needed
+	if ( TerrainData )
+		GenerateLandScape (NewTerrain, TerrainData);
+	else
+		CalculateNormals (NewTerrain);
 
-	CalculateNormals ( NewTerrain );
-
-	Create_Terrain_Mesh_Buffer ( NewTerrain );
+	Create_Terrain_Mesh_Buffer ( NewTerrain, NewTerraindata->_StaticBuffers );
 
 	Result = Get_New_Terrain_Index ( NewTerrain );
 
@@ -3296,7 +3344,7 @@ int ResourceManager::Add_CubeMap ( WCHAR* TextureName )
 	vector<Vertex_FlatObject> vertices ( NumSphereVertices );
 	vector<Index_Type> indices ( NumSphereFaces * 3 );
 
-	RCube_VecFloat34 currVertPos;
+	RCube_VecFloat234 currVertPos;
 
 	TempShaderIndex = GetShaderIndexByName ( L"CubeMap" );// Получаем индекс Шейдера для отрисовки CubeMap
 
@@ -3422,4 +3470,141 @@ ERROR_END:
 	if ( CubeMapBufferIndex > -1 )
 		Delete_Flat_ObjectBuffers ( CubeMapBufferIndex );
 	return Result;
+}
+
+
+BB_Particles_Buffers* ResourceManager::GetEmitters_BB_Buffers_By_Index ( int BufferIndex )
+{
+	int Size = (int)BB_ParticleSystems_Buffers.size ();
+	if ( BufferIndex < Size )
+	{
+		return BB_ParticleSystems_Buffers[BufferIndex];
+	}
+	return nullptr;
+}
+
+
+bool ResourceManager::Delete_Emitter_BB_Buffer ( int BufferIndex )
+{
+
+	int Size = ( int ) BB_ParticleSystems_Buffers.size ();
+	
+	if ( BufferIndex < Size )
+	{
+		Unused_BB_BuffersIndex.push_back ( ( UINT ) BufferIndex );
+		RCUBE_DELETE ( BB_ParticleSystems_Buffers[BufferIndex] );
+		return true;
+	}
+
+	return  false;
+}
+
+
+int ResourceManager::GetNewEmitter_BB_Buffers_Index ( BB_Particles_Buffers* NewBuffer )
+{
+	int Index = -1;
+	if ( !Unused_BB_BuffersIndex.empty () )
+	{
+		Index = Unused_BB_BuffersIndex.back ();
+		Unused_BB_BuffersIndex.pop_back ();
+		BB_ParticleSystems_Buffers[Index] = NewBuffer;
+	}
+	else
+	{
+		BB_ParticleSystems_Buffers.push_back ( NewBuffer );
+		Index = ( int ) ( BB_ParticleSystems_Buffers.size () - 1 );
+	}
+
+	NewBuffer->ThisBufferIndex = Index;
+
+	return  Index;
+}
+
+
+void ResourceManager::CreateInitial_BB_VertexBuffer ( Vertex_FlatObject* Vertices, Emitter* NewEmitter )
+{
+	// Initialize vertex array to zeros at first.
+	memset ( Vertices, 0, ( sizeof ( Vertex_FlatObject ) * 4 ) );
+
+	// Top left.
+	Vertices[0].Position = XMFLOAT3 ( -1.0f * NewEmitter->Init_Data.InitParticleSize, 1.0f *  NewEmitter->Init_Data.InitParticleSize, 0.0f );  // Top left
+	Vertices[0].TexCoord = XMFLOAT2 ( 0.0f, 0.0f );
+
+	// Bottom right.
+	Vertices[1].Position = XMFLOAT3 ( 1.0f *  NewEmitter->Init_Data.InitParticleSize, -1.0f *  NewEmitter->Init_Data.InitParticleSize, 0.0f );  // Bottom right
+	Vertices[1].TexCoord = XMFLOAT2 ( 1.0f, 1.0f );
+
+	// Bottom left.
+	Vertices[2].Position = XMFLOAT3 ( -1.0f *  NewEmitter->Init_Data.InitParticleSize, -1.0f *  NewEmitter->Init_Data.InitParticleSize, 0.0f );  // Bottom left.
+	Vertices[2].TexCoord = XMFLOAT2 ( 0.0f, 1.0f );
+
+	// Top right.
+	Vertices[3].Position = XMFLOAT3 ( 1.0f *  NewEmitter->Init_Data.InitParticleSize, 1.0f *  NewEmitter->Init_Data.InitParticleSize, 0.0f );  // Top right.
+	Vertices[3].TexCoord = XMFLOAT2 ( 1.0f, 0.0f );
+
+}
+
+
+int ResourceManager::Create_Emitter_BB_Buffers ( bool CPUAccess, UINT InstanceAmount, UINT TempTextureIndex, Emitter* NewEmitter )
+{
+	int ReturnIndex = -1;
+
+	BB_Particles_Buffers* _EmitterBuffers = new BB_Particles_Buffers ();
+
+	// Init  BillBoard 4 vertexes
+	Vertex_FlatObject* m_vertices = new Vertex_FlatObject[4];
+	CreateInitial_BB_VertexBuffer ( m_vertices, NewEmitter );
+	_EmitterBuffers->FlatObjectVB = new VertexBuffer <Vertex_FlatObject>	( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, ( int ) CPUAccess, 4, m_vertices );
+	RCUBE_ARR_DELETE ( m_vertices );
+
+	_EmitterBuffers->IndexBs	  = new IndexBuffer  <Index_Type>			( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, CPUAccess, 6, FlatObjectIndices );
+	_EmitterBuffers->InstanceVBs  = new VertexBuffer <BB_Particle_Instance> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, ( int ) CPUAccess, InstanceAmount, NewEmitter->BBInstances );
+
+	_EmitterBuffers->RenderTexture = TexturesArr[TempTextureIndex]->SRV;
+
+//	ReturnIndex = GetIndexBuf <vector < BB_Particles_Buffers* > > ( BB_ParticleSystems_Buffers );
+//	ReturnIndex = GetNewBufferIndex< vector < BB_Particles_Buffers*> , vector <UINT>, BB_Particles_Buffers > ( BB_ParticleSystems_Buffers, Unused_BB_BuffersIndex, _EmitterBuffers );
+	ReturnIndex = GetNewEmitter_BB_Buffers_Index ( _EmitterBuffers );
+
+//	_EmitterBuffers->ThisBufferIndex = ReturnIndex;
+
+	return ReturnIndex;
+}
+
+
+int ResourceManager::AddParticleSystem ( ParticleSystem* ParticleSys )
+{
+	int Index = -1;
+	if ( !UnusedParticleSystemIndex.empty () )
+	{
+		Index = UnusedParticleSystemIndex.back ();
+		UnusedParticleSystemIndex.pop_back ();
+		ParticleSystems[Index] = ParticleSys;
+	}
+	else
+	{
+		ParticleSystems.push_back ( ParticleSys );
+		Index = ( int ) ( ParticleSystems.size () - 1 );
+	}
+
+	ParticleSys->ParticleSystem_Object_Index = Index;
+
+	return  Index;
+}
+
+
+bool ResourceManager::DeleteParticleSystem ( int ObjectIndex )
+{
+	size_t i = ParticleSystems.size ();
+
+	if ( ObjectIndex < i )
+	{
+		// Сохраняем освободившийся индекс 
+		UnusedParticleSystemIndex.push_back ( ParticleSystems[ObjectIndex]->ParticleSystem_Object_Index );
+		ParticleSystems[ObjectIndex]->Render = false;
+//		RCUBE_DELETE ( ParticleSystems[ObjectIndex]);
+		return 1;
+	}
+
+	return 0;
 }

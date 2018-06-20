@@ -19,6 +19,10 @@ D3DClass::D3DClass()
 	D3DGC->PCF_Step = 1.0f;
 	D3DGC->ShadowCLAMP = 1.0f;
 	D3DGC->Shadow_Divider = 1024;
+	D3DGC->ClustersAmount = 16;	// Clustering Render base clusters XYZ amount
+
+	SMWidth = 1024;// Ширина Shadow Map
+	SMHeight = 1024;// Высота Shadow Map
 
 	D3DGC->MSAAQualityCount = 1;//1 2 4 8
 	D3DGC->MSAAQualityChoosen = 0; //0 2 16 32
@@ -37,8 +41,8 @@ D3DClass::D3DClass()
 	D3DGC->m_alphaEnableBlendingState	= nullptr;
 	D3DGC->m_alphaDisableBlendingState	= nullptr;
 	D3DGC->m_alpha_TOnT_BlendingState	= nullptr;	// Текст на текстуре
-	D3DGC->m_depthStencilState			= nullptr;
-	D3DGC->CubeMap_DepthStencilState	= nullptr;
+	D3DGC->depthStencil_State			= nullptr;
+	D3DGC->CubeMap_DepthStencil_State	= nullptr;
 	D3DGC->m_depthStencilView			= nullptr;
 	D3DGC->mGeometryBlendState			= nullptr;
 	D3DGC->m_alphaParticleBlendingState = nullptr;
@@ -47,7 +51,8 @@ D3DClass::D3DClass()
 	D3DGC->WireFrameRasterizerState		= nullptr;
 	D3DGC->m_EngineInputClass			= nullptr;
 	D3DGC->RasterStateCullNone			= nullptr;
-	m_depthDisabledStencilState			= nullptr;
+	D3DGC->depthStencil_Disabled_State	= nullptr;
+	D3DGC->depthStencil_NoWrite_Particles = nullptr;
 	D3DGC->Global_VS_ConstantsBuffer	= nullptr;
 	D3DGC->ShadowMapLightView			= nullptr;
 	D3DGC->LightRender_RS				= nullptr;
@@ -98,9 +103,6 @@ D3DClass::D3DClass()
 	SRV_ShadowMap3D = nullptr;
 
 	PointLightSize = sizeof ( PointLight );
-
-	SMWidth = 512; // Ширина Shadow Map
-	SMHeight = 512;// Высота Shadow Map
 
 	mPointLightParameters.reserve ( MAX_LIGHTS );
 
@@ -159,9 +161,9 @@ bool D3DClass::Initialize(HWND hwnd, int screenWidth, int screenHeight, bool vsy
 	D3D_FEATURE_LEVEL featureLevelSuccess;
 	D3D11_TEXTURE2D_DESC depthBufferDesc;
 	D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
+//	D3D11_DEPTH_STENCIL_DESC depthStencil_Disabled_Desc;
 	D3D11_RASTERIZER_DESC rasterDesc;
 	float fieldOfView, screenAspect;
-	D3D11_DEPTH_STENCIL_DESC depthDisabledStencilDesc;
 	D3D11_BLEND_DESC blendStateDescription;
 
 	m_videoCardDescription = new char[128];
@@ -180,8 +182,8 @@ bool D3DClass::Initialize(HWND hwnd, int screenWidth, int screenHeight, bool vsy
 	result = CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)&Factory1);
 	if (FAILED(result))
 	{
-		MessageBox(hwnd, L"Could not initialize CreateDXGIFactory1.", 0, MB_OK);
-		return false;
+		MessageBox(hwnd, L"Could not initialize CreateDXGIFactory1.", Error, MB_OK);
+			goto ERROR_EXIT;
 	}
 
 	for (UINT i = 0; Factory1->EnumAdapters1(i, &FoundAdapter1) != DXGI_ERROR_NOT_FOUND; ++i)
@@ -212,10 +214,9 @@ bool D3DClass::Initialize(HWND hwnd, int screenWidth, int screenHeight, bool vsy
 				error = wcstombs_s(&stringLength, m_videoCardDescription, 128, AdapterDesc.Description, 127);
 				if (error != 0)
 				{
-					MessageBox(hwnd, L"Could not copy VideoAdapter name.", 0, MB_OK);
+					MessageBox(hwnd, L"Could not copy VideoAdapter name.", Error, MB_OK);
 					RCUBE_RELEASE( Factory1 );
-					Shutdown();
-					return false;
+					goto ERROR_EXIT;
 				}
 				// Объединяем строки имени адаптера и количества памяти
 				sprintf_s(m_videoCardDescription, 128, "%s with %d Mb.", m_videoCardDescription, m_videoCardMemory);
@@ -228,30 +229,27 @@ bool D3DClass::Initialize(HWND hwnd, int screenWidth, int screenHeight, bool vsy
 	result = Adapters[0]->EnumOutputs(0, &AdapterOutput);
 	if (FAILED(result))
 	{
-		MessageBox(hwnd, L"Could not get Adapters[0]->EnumOutputs.", 0, MB_OK);
+		MessageBox(hwnd, L"Could not get Adapters[0]->EnumOutputs.", Error, MB_OK);
 		RCUBE_RELEASE( Factory1 );
-		Shutdown();
-		return false;
+		goto ERROR_EXIT;
 	}
 
 	result = AdapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, NULL);
 	if (FAILED(result))
 	{
-		MessageBox(hwnd, L"Could not get AdapterOutput->GetDisplayModeList.", 0, MB_OK);
+		MessageBox(hwnd, L"Could not get AdapterOutput->GetDisplayModeList.", Error, MB_OK);
 		RCUBE_RELEASE( Factory1 );
-		Shutdown();
-		return false;
+		goto ERROR_EXIT;
 	}
 
 	displayModeList = new DXGI_MODE_DESC[numModes];
 	if (!displayModeList)
 	{
-		MessageBox(hwnd, L"No DisplayMode in List.", 0, MB_OK);
+		MessageBox(hwnd, L"No DisplayMode in List.", Error, MB_OK);
 		RCUBE_ARR_DELETE( displayModeList );
 		RCUBE_RELEASE( AdapterOutput );
 		RCUBE_RELEASE( Factory1 );
-		Shutdown();
-		return false;
+		goto ERROR_EXIT;
 	}
 
 	AdapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, displayModeList);
@@ -381,17 +379,15 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	result = D3D11CreateDevice(D3DGC->Adapter, D3D_DRIVER_TYPE_UNKNOWN, NULL, nDeviceFlags, featureLevels, 1, D3D11_SDK_VERSION, &D3DGC->DX_device, &featureLevelSuccess, &D3DGC->DX_deviceContext);
 	if (FAILED(result))
 	{
-		MessageBox(hwnd, L"D3D11CreateDevice Failed.", 0, 0);
+		MessageBox(hwnd, L"D3D11CreateDevice Failed.", Error, 0);
 		RCUBE_RELEASE( Factory1 );
-		Shutdown();
-		return false;
+		goto ERROR_EXIT;
 	}
 	if (featureLevelSuccess != D3D_FEATURE_LEVEL_11_0)
 	{
-		MessageBox(hwnd, L"Direct3D Feature Level 11 unsupported.", 0, 0);
+		MessageBox(hwnd, L"Direct3D Feature Level 11 unsupported.", Error, 0);
 		RCUBE_RELEASE( Factory1 );
-		Shutdown();
-		return false;
+		goto ERROR_EXIT;
 	}
 
 #if defined( DEBUG ) || defined( _DEBUG )
@@ -405,7 +401,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	result = D3DGC->DX_device->QueryInterface(__uuidof(ID3D11Debug), reinterpret_cast<void**>(&D3DGC->DebugDevice));
 	if (FAILED(result))
 	{
-		MessageBox(hwnd, L"Could not initialize DebugDevice.", 0, MB_OK);
+		MessageBox(hwnd, L"Could not initialize DebugDevice.", Error, MB_OK);
 //		AdaptersRelease();
 		RCUBE_RELEASE( Factory1 );
 		Shutdown();
@@ -417,10 +413,9 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	result = D3DGC->DX_device->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, D3DGC->MSAAQualityCount, &MSAAQualityNumber);
 	if (FAILED(result))
 	{
-		MessageBox(hwnd, L"Direct3D CheckMultisampleQualityLevels.", 0, 0);
+		MessageBox(hwnd, L"CheckMultisampleQualityLevels.", Error, 0);
 		RCUBE_RELEASE( Factory1 );
-		Shutdown();
-		return false;
+		goto ERROR_EXIT;
 	}
 	//    assert(m4xMsaaQuality > 0 );
 
@@ -456,10 +451,9 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	result = Factory1->CreateSwapChain(D3DGC->DX_device, &swapChainDesc, &D3DGC->DX_swapChain);
 	if (FAILED(result))
 	{
-		MessageBox(hwnd, L"Direct3D CreateSwapChain.", 0, 0);
+		MessageBox(hwnd, L"CreateSwapChain.", Error, 0);
 		RCUBE_RELEASE( Factory1 );
-		Shutdown();
-		return false;
+		goto ERROR_EXIT;
 	}
 
 	// Release the adapter.
@@ -479,26 +473,23 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	result = D3DGC->DX_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&D3DGC->BackBuffer2DT );
 	if (FAILED(result))
 	{
-		MessageBox(hwnd, L"Direct3D m_swapChain->GetBuffer.", 0, 0);
-		Shutdown();
-		return false;
+		MessageBox(hwnd, L"m_swapChain->GetBuffer.", Error, 0);
+		goto ERROR_EXIT;
 	}
 
 	// Create the render target view with the back buffer pointer.
 	result = D3DGC->DX_device->CreateRenderTargetView(D3DGC->BackBuffer2DT, NULL, &D3DGC->BackBuffer_RTV );
 	if (FAILED(result))
 	{
-		MessageBox(hwnd, L"Direct3D CreateRenderTargetView.", 0, 0);
-		Shutdown();
-		return false;
+		MessageBox(hwnd, L"CreateRenderTargetView.", Error, 0);
+		goto ERROR_EXIT;
 	}
 
 	result = D3DGC->DX_device->CreateShaderResourceView(D3DGC->BackBuffer2DT, NULL, &D3DGC->BackBuffer_SRV );
 	if ( FAILED( result ) )
 	{
-		MessageBox( hwnd, L"Error CreateShaderResourceView BackBuffer_SRV.", 0, 0 );
-		Shutdown();
-		return false;
+		MessageBox( hwnd, L"CreateShaderResourceView BackBuffer_SRV.", Error, 0 );
+		goto ERROR_EXIT;
 	}
 /*
 	result = D3DGC->DX_device->CreateUnorderedAccessView( D3DGC->BackBuffer2DT, NULL, &D3DGC->BackBuffer_UAV);
@@ -535,9 +526,8 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	result = D3DGC->DX_device->CreateTexture2D(&depthBufferDesc, NULL, &D3DGC->m_depthStencilBuffer);
 	if (FAILED(result))
 	{
-		MessageBox(hwnd, L"Direct3D CreateTexture2D.", 0, 0);
-		Shutdown();
-		return false;
+		MessageBox(hwnd, L"DepthStensil CreateTexture2D.", Error, 0);
+		goto ERROR_EXIT;
 	}
 
 	// Now we need to setup the depth stencil description. This allows us to control what type of depth test Direct3D will do for each pixel.
@@ -556,6 +546,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 
 	// Stencil operations if pixel is front-facing.
 	depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
 	depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP; //D3D11_STENCIL_OP_INCR;
 	depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
 	depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
@@ -569,31 +560,78 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	// With the description filled out we can now create a depth stencil state.
 
 	// Create the depth stencil state.
-	result = D3DGC->DX_device->CreateDepthStencilState(&depthStencilDesc, &D3DGC->m_depthStencilState);
+	result = D3DGC->DX_device->CreateDepthStencilState(&depthStencilDesc, &D3DGC->depthStencil_State);
 	if (FAILED(result))
 	{
-		MessageBox(hwnd, L"Direct3D CreateDepthStencilState.", 0, 0);
-		Shutdown();
-		return false;
+		MessageBox(hwnd, L"CreateDepthStencilState.", Error, 0);
+		goto ERROR_EXIT;
+	}
+
+	depthStencilDesc.DepthEnable = false;
+	result = D3DGC->DX_device->CreateDepthStencilState ( &depthStencilDesc, &D3DGC->depthStencil_Disabled_State );
+	if ( FAILED ( result ) )
+	{
+		MessageBox ( hwnd, L"Create depthStencil_Disabled_State.", Error, 0 );
+		goto ERROR_EXIT;
 	}
 
 	ZeroMemory ( &depthStencilDesc, sizeof ( depthStencilDesc ) );
 	depthStencilDesc.DepthEnable = true;
-	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
 	depthStencilDesc.DepthFunc = D3D11_COMPARISON_EQUAL;
-	result = D3DGC->DX_device->CreateDepthStencilState ( &depthStencilDesc, &D3DGC->CubeMap_DepthStencilState );
+	result = D3DGC->DX_device->CreateDepthStencilState ( &depthStencilDesc, &D3DGC->CubeMap_DepthStencil_State );
 	if ( FAILED ( result ) )
 	{
-		MessageBox ( hwnd, L"Direct3D CreateDepthStencilState.", 0, 0 );
-		Shutdown ();
-		return false;
+		MessageBox ( hwnd, L"CreateDepthStencilState.", Error, 0 );
+		goto ERROR_EXIT;
 	}
 
-	// With the created depth stencil state we can now set it so that it takes effect. Notice we use the device context to set it.
+	// Clear the second depth stencil state before setting the parameters.
+	ZeroMemory ( &depthStencilDesc, sizeof ( depthStencilDesc ) );
 
-	// Set the depth stencil state.
-	D3DGC->DX_deviceContext->OMSetDepthStencilState(D3DGC->m_depthStencilState, 1);
+	//	Для FireParticles ( анимация частиц огня )
+	// Выключаем запись в Depth = D3D11_DEPTH_WRITE_MASK_ZERO;
+	depthStencilDesc.DepthEnable = true;
+	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;//D3D11_DEPTH_WRITE_MASK_ALL;
+	depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
+	depthStencilDesc.StencilEnable = false;
+	depthStencilDesc.StencilReadMask = 0xFF;
+	depthStencilDesc.StencilWriteMask = 0xFF;
+	depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
+	depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+	depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
+	depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
 
+	// Now create the new depth stencil.
+
+	// Create the state using the device.
+	result = D3DGC->DX_device->CreateDepthStencilState ( &depthStencilDesc, &D3DGC->depthStencil_NoWrite_Particles );
+	if ( FAILED ( result ) )
+	{
+		MessageBox ( hwnd, L"Create depthStencil_NoWrite_Particles.", Error, 0 );
+		goto ERROR_EXIT;
+	}
+
+	// ShadowMap
+	{
+		CD3D11_DEPTH_STENCIL_DESC desc ( D3D11_DEFAULT );
+		// NOTE: Complementary Z => GREATER test
+		desc.DepthEnable = true;
+		desc.StencilEnable = false;
+		desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+		desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;//D3D11_COMPARISON_GREATER;//D3D11_COMPARISON_LESS;
+		result = D3DGC->DX_device->CreateDepthStencilState ( &desc, &D3DGC->LightRender_DS );
+		if ( FAILED ( result ) )
+		{
+			MessageBox ( hwnd, L"Create ShadowMap DepthStencilState.", Error, 0 );
+			goto ERROR_EXIT;
+		}
+	}
+
+	// ShadowMap Rasterizer State
 	{
 		CD3D11_RASTERIZER_DESC desc ( D3D11_DEFAULT );
 		desc.CullMode = D3D11_CULL_FRONT; //D3D11_CULL_BACK; //D3D11_CULL_FRONT; //D3D11_CULL_NONE;//
@@ -611,28 +649,27 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 
 	// The next thing we need to create is the description of the view of the depth stencil buffer. We do this so that Direct3D knows to use the depth buffer as a depth stencil texture.
 	// After filling out the description we then call the function CreateDepthStencilView to create it.
-
-	// Initailze the depth stencil view.
-	CD3D11_DEPTH_STENCIL_VIEW_DESC DSD(
-		// Для выключеного MSAA МОЖНО ставить D3D11_DSV_DIMENSION_TEXTURE2D
-		// Для ВКЛ MSAA нужно D3D11_DSV_DIMENSION_TEXTURE2DMS
-		D3D11_DSV_DIMENSION_TEXTURE2DMS,
-		//D3D11_DSV_DIMENSION_TEXTURE2D,
-		DXGI_FORMAT_D32_FLOAT_S8X24_UINT,
-		0,
-		0,
-		1);
-	// Create the depth stencil view.
-	// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	// 2-й параметр  поставил NULL вместо &depthStencilViewDesc и заработало сглаживание
-	result = D3DGC->DX_device->CreateDepthStencilView(D3DGC->m_depthStencilBuffer, &DSD, &D3DGC->m_depthStencilView);
-	if (FAILED(result))
 	{
-		MessageBox(hwnd, L"Direct3D CreateDepthStencilView.", 0, 0);
-		Shutdown();
-		return false;
+		// Initailze the depth stencil view.
+		CD3D11_DEPTH_STENCIL_VIEW_DESC DSD (
+			// Для выключеного MSAA МОЖНО ставить D3D11_DSV_DIMENSION_TEXTURE2D
+			// Для ВКЛ MSAA нужно D3D11_DSV_DIMENSION_TEXTURE2DMS
+			D3D11_DSV_DIMENSION_TEXTURE2DMS,
+			//D3D11_DSV_DIMENSION_TEXTURE2D,
+			DXGI_FORMAT_D32_FLOAT_S8X24_UINT,
+			0,
+			0,
+			1 );
+		// Create the depth stencil view.
+		// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+		// 2-й параметр  поставил NULL вместо &depthStencilViewDesc и заработало сглаживание
+		result = D3DGC->DX_device->CreateDepthStencilView ( D3DGC->m_depthStencilBuffer, &DSD, &D3DGC->m_depthStencilView );
+		if ( FAILED ( result ) )
+		{
+			MessageBox ( hwnd, L"CreateDepthStencilView.", Error, 0 );
+			goto ERROR_EXIT;
+		}
 	}
-
 	// With that created we can now call OMSetRenderTargets. This will bind the render target view and the depth stencil buffer to the output render pipeline.
 	// This way the graphics that the pipeline renders will get drawn to our back buffer that we previously created. With the graphics written to the back buffer we can then swap it to the front
 	// and display our graphics on the user's screen.
@@ -660,9 +697,8 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	result = D3DGC->DX_device->CreateRasterizerState(&rasterDesc, &D3DGC->DefaultRasterizerState );
 	if (FAILED(result))
 	{
-		MessageBox(hwnd, L"Direct3D CreateRasterizerState.", 0, 0);
-		Shutdown();
-		return false;
+		MessageBox(hwnd, L"CreateRasterizerState.", Error, 0);
+		goto ERROR_EXIT;
 	}
 //	rasterDesc.FrontCounterClockwise = true;
 	rasterDesc.CullMode = D3D11_CULL_NONE;
@@ -670,9 +706,8 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	result = D3DGC->DX_device->CreateRasterizerState(&rasterDesc, &D3DGC->RasterStateCullNone );
 	if (FAILED(result))
 	{
-		MessageBox(hwnd, L"Direct3D CreateRasterizerState CULLNONE.", 0, 0);
-		Shutdown();
-		return false;
+		MessageBox(hwnd, L"CreateRasterizerState CULLNONE.", Error, 0);
+		goto ERROR_EXIT;
 	}
 
 	rasterDesc.CullMode = D3D11_CULL_NONE;
@@ -681,9 +716,8 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	result = D3DGC->DX_device->CreateRasterizerState ( &rasterDesc, &D3DGC->WireFrameRasterizerState );
 	if ( FAILED ( result ) )
 	{
-		MessageBox ( hwnd, L"Direct3D CreateRasterizerState FILL_WIREFRAME.", 0, 0 );
-		Shutdown ();
-		return false;
+		MessageBox ( hwnd, L"CreateRasterizerState FILL_WIREFRAME.", Error, 0 );
+		goto ERROR_EXIT;
 	}
 
 	// Now set the rasterizer state.
@@ -727,52 +761,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	// Create an orthographic projection matrix for 2D rendering.
 	D3DGC->OrthoMatrix = XMMatrixOrthographicLH((float)screenWidth, (float)screenHeight, screenNear, screenDepth);
 
-	// Here we setup the description of the depth stencil. Notice the only difference between this new depth stencil and the old one is the DepthEnable is set to false here for 2D drawing.
-
-	// Clear the second depth stencil state before setting the parameters.
-	ZeroMemory(&depthDisabledStencilDesc, sizeof(depthDisabledStencilDesc));
-
-	// Now create a second depth stencil state which turns off the Z buffer for 2D rendering.  The only difference is
-	// that DepthEnable is set to false, all other parameters are the same as the other depth stencil state.
-	depthDisabledStencilDesc.DepthEnable = true;
-	depthDisabledStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;//D3D11_DEPTH_WRITE_MASK_ALL;
-	depthDisabledStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
-	depthDisabledStencilDesc.StencilEnable = false;
-	depthDisabledStencilDesc.StencilReadMask = 0xFF;
-	depthDisabledStencilDesc.StencilWriteMask = 0xFF;
-	depthDisabledStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	depthDisabledStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
-	depthDisabledStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	depthDisabledStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-	depthDisabledStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	depthDisabledStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
-	depthDisabledStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	depthDisabledStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-
-	// Now create the new depth stencil.
-
-	// Create the state using the device.
-	result = D3DGC->DX_device->CreateDepthStencilState(&depthDisabledStencilDesc, &m_depthDisabledStencilState);
-	if (FAILED(result))
-	{
-		MessageBox(hwnd, L"Direct3D CreateDepthStencilState.", 0, 0);
-		Shutdown();
-		return false;
-	}
-
-	// ShadowMap
-	{
-		CD3D11_DEPTH_STENCIL_DESC desc ( D3D11_DEFAULT );
-		// NOTE: Complementary Z => GREATER test
-		desc.DepthEnable = true;
-		desc.StencilEnable = false;
-		desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;//D3D11_COMPARISON_GREATER;//D3D11_COMPARISON_LESS;
-		desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-		D3DGC->DX_device->CreateDepthStencilState ( &desc, &D3DGC->LightRender_DS );
-	}
-
 	// First initialize the blend state description.
-
 	// Clear the blend state description.
 	ZeroMemory(&blendStateDescription, sizeof(D3D11_BLEND_DESC));
 	// https://msdn.microsoft.com/en-us/library/ff476086(v=vs.85).aspx
@@ -795,9 +784,8 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	result = D3DGC->DX_device->CreateBlendState(&blendStateDescription, &D3DGC->m_alphaEnableBlendingState);
 	if (FAILED(result))
 	{
-		MessageBox(hwnd, L"Direct3D CreateBlendState.", 0, 0);
-		Shutdown();
-		return false;
+		MessageBox(hwnd, L"CreateBlendState.", Error, 0);
+		goto ERROR_EXIT;
 	}
 
 	blendStateDescription.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
@@ -805,9 +793,8 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	result = D3DGC->DX_device->CreateBlendState(&blendStateDescription, &D3DGC->m_alphaParticleBlendingState);
 	if (FAILED(result))
 	{
-		MessageBox(hwnd, L"Direct3D Create m_alphaParticleBlendingState.", 0, 0);
-		Shutdown();
-		return false;
+		MessageBox(hwnd, L"Create m_alphaParticleBlendingState.", Error, 0);
+		goto ERROR_EXIT;
 	}	// Now to create an alpha disabled state we change the description we just made to set BlendEnable to FALSE. The rest of the settings can be left as they are.
 
 
@@ -821,9 +808,8 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	result = D3DGC->DX_device->CreateBlendState( &blendStateDescription, &D3DGC->m_alpha_TOnT_BlendingState);
 	if ( FAILED( result ) )
 	{
-		MessageBox( hwnd, L"Direct3D Create m_alpha_TOnT_BlendingState.", 0, 0 );
-		Shutdown();
-		return false;
+		MessageBox( hwnd, L"Create m_alpha_TOnT_BlendingState.", Error, 0 );
+		goto ERROR_EXIT;
 	}	// Now to create an alpha disabled state we change the description we just made to set BlendEnable to FALSE. The rest of the settings can be left as they are.
 
 
@@ -837,67 +823,57 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	result = D3DGC->DX_device->CreateBlendState(&blendStateDescription, &D3DGC->m_alphaDisableBlendingState);
 	if (FAILED(result))
 	{
-		MessageBox(hwnd, L"Direct3D CreateBlendState for Particles.", 0, 0);
-		Shutdown();
-		return false;
-	}
-// Для кластеринга
-	CD3D11_BLEND_DESC desc(D3D11_DEFAULT);
-	result = D3DGC->DX_device->CreateBlendState(&desc, &D3DGC->mGeometryBlendState);
-	if (FAILED(result))
-	{
-		MessageBox(hwnd, L"Direct3D CreateBlendState for Clustering Shading.", 0, 0);
-		Shutdown();
-		return false;
+		MessageBox(hwnd, L"CreateBlendState for Particles.", Error, 0);
+		goto ERROR_EXIT;
 	}
 
+	{
+		// Для кластеринга
+		CD3D11_BLEND_DESC desc ( D3D11_DEFAULT );
+		result = D3DGC->DX_device->CreateBlendState ( &desc, &D3DGC->mGeometryBlendState );
+		if ( FAILED ( result ) )
+		{
+			MessageBox ( hwnd, L"CreateBlendState for Clustering Shading.", Error, 0 );
+			goto ERROR_EXIT;
+		}
+	}
 	// DirectWrite
 	result = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory),
 		reinterpret_cast<IUnknown**>(&D3DGC->DWriteFactory));
 	if (FAILED(result))
 	{
-		MessageBox(hwnd, L"Could not initialize DWrite CreateFactory.", 0, MB_OK);
-		Shutdown();
-		return false;
+		MessageBox(hwnd, L"Could not initialize DWrite CreateFactory.", Error, MB_OK);
+		goto ERROR_EXIT;
 	}
-
-	// +++++++++++++++++++++++++++     FXAA     ++++++++++++++++++++++++++++++++++
-	D3DGC->g_pcbFXAA = new ConstantBuffer<CB_FXAA> ( D3DGC->DX_device, D3DGC->DX_deviceContext, D3D11_USAGE_DEFAULT );
-//  D3D11_USAGE_DYNAMIC & MAP
-//	CB_FXAA *pFXAA = D3DGC->g_pcbFXAA->MapDiscard ( D3DGC->DX_deviceContext );
-//	pFXAA->m_fxaa = XMVECTOR{ 1.0f / D3DGC->ScreenWidth, 1.0f / D3DGC->ScreenHeight, 0.0f, 0.0f };
-//	D3DGC->g_pcbFXAA->Unmap ( D3DGC->DX_deviceContext );
-//	D3D11_USAGE_DYNAMIC & MAP
-//  D3D11_USAGE_DEFAULT & UpdateSubresource
-	CB_FXAA pFXAA = { 1.0f / D3DGC->ScreenWidth, 1.0f / D3DGC->ScreenHeight, 0.0f, 0.0f };
-	D3DGC->g_pcbFXAA->Update ( &pFXAA );
-//  UpdateSubresource
-
-	DXGI_SAMPLE_DESC SDesc;
-	ZeroMemory(&SDesc, sizeof(DXGI_SAMPLE_DESC));
-	SDesc.Count = swapChainDesc.SampleDesc.Count;
-	SDesc.Quality = swapChainDesc.SampleDesc.Quality;
-
-	DXGI_SURFACE_DESC pBackBufferSurfaceDesc;
-	ZeroMemory(&pBackBufferSurfaceDesc, sizeof(DXGI_SURFACE_DESC));
-
-	pBackBufferSurfaceDesc.Format = swapChainDesc.BufferDesc.Format;
-	pBackBufferSurfaceDesc.Width = swapChainDesc.BufferDesc.Width;
-	pBackBufferSurfaceDesc.Height = swapChainDesc.BufferDesc.Height;
-	pBackBufferSurfaceDesc.SampleDesc = SDesc;
-
-	if ( !FxaaIntegrateResource(D3DGC->DX_device, &pBackBufferSurfaceDesc ) )
 	{
-		MessageBox( hwnd, L"Could not initialize FXAA.", 0, MB_OK );
-		Shutdown();
-		return false;
+		// +++++++++++++++++++++++++++     FXAA     ++++++++++++++++++++++++++++++++++
+		D3DGC->g_pcbFXAA = new ConstantBuffer<CB_FXAA> ( D3DGC->DX_device, D3DGC->DX_deviceContext, D3D11_USAGE_DEFAULT );
+		CB_FXAA pFXAA = { 1.0f / D3DGC->ScreenWidth, 1.0f / D3DGC->ScreenHeight, 0.0f, 0.0f };
+		D3DGC->g_pcbFXAA->Update ( &pFXAA );
+
+		DXGI_SAMPLE_DESC SDesc;
+		ZeroMemory ( &SDesc, sizeof ( DXGI_SAMPLE_DESC ) );
+		SDesc.Count = swapChainDesc.SampleDesc.Count;
+		SDesc.Quality = swapChainDesc.SampleDesc.Quality;
+
+		DXGI_SURFACE_DESC pBackBufferSurfaceDesc;
+		ZeroMemory ( &pBackBufferSurfaceDesc, sizeof ( DXGI_SURFACE_DESC ) );
+
+		pBackBufferSurfaceDesc.Format = swapChainDesc.BufferDesc.Format;
+		pBackBufferSurfaceDesc.Width = swapChainDesc.BufferDesc.Width;
+		pBackBufferSurfaceDesc.Height = swapChainDesc.BufferDesc.Height;
+		pBackBufferSurfaceDesc.SampleDesc = SDesc;
+
+		if ( !FxaaIntegrateResource ( D3DGC->DX_device, &pBackBufferSurfaceDesc ) )
+		{
+			MessageBox ( hwnd, L"Could not initialize FXAA.", Error, MB_OK );
+			goto ERROR_EXIT;
+		}
 	}
-	
 	if ( !InitD2D_D3D101_DWrite() )
 	{
-		MessageBox( hwnd, L"Could not initialize DWrite.", 0, MB_OK );
-		Shutdown();
-		return false;
+		MessageBox( hwnd, L"Could not initialize DWrite.", Error, MB_OK );
+		goto ERROR_EXIT;
 	}
 	// ---------------------------     FXAA     ----------------------------------
 
@@ -915,8 +891,8 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 		result = D3DGC->DX_device->CreateSamplerState ( &desc, &D3DGC->Wrap_Model_Texture );
 		if (FAILED ( result ))
 		{
-			MessageBox ( hwnd, L"Could not initialize Wrap_Model_Texture sampler.", 0, MB_OK );
-			return false;
+			MessageBox ( hwnd, L"Could not initialize Wrap_Model_Texture sampler.", Error, MB_OK );
+			goto ERROR_EXIT;
 		}
 	}
 	{
@@ -930,7 +906,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 		result = D3DGC->DX_device->CreateSamplerState(&desc, &D3DGC->CLight_ShadowMap_Sampler );
 		if (FAILED ( result ))
 		{
-			MessageBox ( hwnd, L"Could not initialize CLight_ShadowMap_Sampler sampler.", 0, MB_OK );
+			MessageBox ( hwnd, L"Could not initialize CLight_ShadowMap_Sampler sampler.", Error, MB_OK );
 			return false;
 		}
 	}
@@ -945,7 +921,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 		result = D3DGC->DX_device->CreateSamplerState(&desc, &D3DGC->CLight_SM_PCF_Sampler );
 		if (FAILED ( result ))
 		{
-			MessageBox ( hwnd, L"Could not Initialize CLight_SM_PCF_Sampler.", 0, MB_OK );
+			MessageBox ( hwnd, L"Could not Initialize CLight_SM_PCF_Sampler.", Error, MB_OK );
 			return false;
 		}
 	}
@@ -960,20 +936,19 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 		result = D3DGC->DX_device->CreateSamplerState ( &desc, &D3DGC->FlatObject_Sampler );
 		if (FAILED ( result ))
 		{
-			MessageBox ( hwnd, L"Could not initialize FlatObject_Sampler sampler.", 0, MB_OK );
+			MessageBox ( hwnd, L"Could not initialize FlatObject_Sampler sampler.", Error, MB_OK );
 			return false;
 		}
 	}
 	//  ------------------   Для Shadows   -------------------------
 
 
-
 	Frustum = frustum;
 
 	// Размер окна при отресовке теней
 	ZeroMemory ( &LightViewPort, sizeof ( D3D11_VIEWPORT ) );
-	LightViewPort.Width = static_cast<float>(3192);//D3DGC->ScreenWidth ); // 512;//
-	LightViewPort.Height = static_cast<float>(3192);//D3DGC->ScreenHeight ); // 512;//
+	LightViewPort.Width = static_cast<float>(SMWidth);
+	LightViewPort.Height = static_cast<float>( SMHeight );
 	LightViewPort.MinDepth = 0.0f;
 	LightViewPort.MaxDepth = 1.0f;
 	LightViewPort.TopLeftX = 0.0f;
@@ -993,7 +968,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	Light->mFramebufferDimensionsW = 0;     // Unused
 
 	Light->mUI.lightingOnly = false;
-	Light->mUI.clusteredGridScale = 16;
+	Light->mUI.clusteredGridScale = D3DGC->ClustersAmount;
 	Light->mUI.shadowsOn = D3DGC->ShadowsOn;
 	Light->mUI.softshadowsOn = D3DGC->SoftShadowsOn;
 	Light->mUI.PCF_Amount = D3DGC->PCF_Amount;
@@ -1002,14 +977,6 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	Light->mUI.Shadow_Divider = 1024.0f;
 	// Create constant buffers
 	PerFrameConstants_Debug = new ConstantBuffer<PerFrameConstants> ( D3DGC->DX_device, D3DGC->DX_deviceContext, D3D11_USAGE_DEFAULT );
-
-	// Set up macros
-	D3D10_SHADER_MACRO defines[] = {
-		{ "MSAA_SAMPLES", "1" }, //msaaSamplesStr.c_str()
-		{ 0, 0 }
-	};
-	// https://msdn.microsoft.com/en-us/library/windows/desktop/bb172416%28v=vs.85%29.aspx
-	UINT shaderFlags = D3D10_SHADER_ENABLE_STRICTNESS | D3D10_SHADER_PACK_MATRIX_ROW_MAJOR;// | D3D10_SHADER_OPTIMIZATION_LEVEL3;
 
 	SetAllLightDefault ();
 
@@ -1021,49 +988,11 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	D3DGC->ShadowMapLightView = new  ConstantBuffer<CB_ShadowMap> ( D3DGC->DX_device, D3DGC->DX_deviceContext, D3D11_USAGE_DEFAULT );
 	// - Создаём константные буфер
 
-/*
-// + Shadow Works
-	DrawShadowsObjects = Objects;
-	g_Frustum = Frustum;
-//	g_Light = Light;
-//	myManeger = Maneger;
-//	Local_D3DGC = D3DGC;
-	D3D11_BUFFER_DESC cbbd;
-	ZeroMemory ( &cbbd, sizeof ( D3D11_BUFFER_DESC ) );
-
-	cbbd.Usage = D3D11_USAGE_DEFAULT;
-	cbbd.ByteWidth = sizeof ( cbShadowObject );
-	cbbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	cbbd.CPUAccessFlags = 0;
-	cbbd.MiscFlags = 0;
-
-	HRESULT hr = Local_D3DGC->DX_device->CreateBuffer ( &cbbd, NULL, &cbShadowBuffer );
-
-	// ДЛЯ ТЕНИ
-	// Для отладки вынес в отдельную функцию
-	InitRasterizerState ( 1, 1.0f );
-
-
-
-	ZeroMemory ( &DSD2, sizeof ( DSD2 ) );
-	DSD2.Flags = 0;
-	DSD2.Format = DXGI_FORMAT_D32_FLOAT;
-	if (Local_D3DGC->MSAAQualityCount > 1)
-	{
-		DSD2.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMSARRAY;
-		DSD2.Texture2DMSArray.ArraySize = 1;
-		DSD2.Texture2DMSArray.FirstArraySlice = 0;
-	}
-	else
-	{
-		DSD2.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
-		DSD2.Texture2DArray.MipSlice = 0;
-		DSD2.Texture2DArray.ArraySize = 1;
-		DSD2.Texture2DArray.FirstArraySlice = 0;
-	}
-// - Shadow Works
-*/
 	return true;
+
+ERROR_EXIT:
+	Shutdown ();
+	return false;
 }
 
 // The Shutdown function will release and clean up all the pointers used in the Initialize function, its pretty straight forward. However before doing that I put in a call to force the swap
@@ -1136,14 +1065,15 @@ void D3DClass::Shutdown()
 	RCUBE_RELEASE( D3DGC->m_alphaParticleBlendingState );
 	RCUBE_RELEASE( D3DGC->m_alpha_TOnT_BlendingState );
 	RCUBE_RELEASE( D3DGC->m_alphaEnableBlendingState );
-	RCUBE_RELEASE( m_depthDisabledStencilState );
+	RCUBE_RELEASE( D3DGC->depthStencil_Disabled_State );
+	RCUBE_RELEASE ( D3DGC->depthStencil_NoWrite_Particles );
 	RCUBE_RELEASE( D3DGC->DefaultRasterizerState );
 	RCUBE_RELEASE ( D3DGC->DefaultRasterizerState );
 	RCUBE_RELEASE ( D3DGC->WireFrameRasterizerState );
 	RCUBE_RELEASE( D3DGC->RasterStateCullNone );
 	RCUBE_RELEASE( D3DGC->m_depthStencilView );
-	RCUBE_RELEASE( D3DGC->m_depthStencilState );
-	RCUBE_RELEASE( D3DGC->CubeMap_DepthStencilState );
+	RCUBE_RELEASE( D3DGC->depthStencil_State );
+	RCUBE_RELEASE( D3DGC->CubeMap_DepthStencil_State );
 	RCUBE_RELEASE( D3DGC->mGeometryBlendState );
 	RCUBE_RELEASE( D3DGC->m_depthStencilBuffer );
 	RCUBE_RELEASE( D3DGC->BackBuffer_RTV );
@@ -1175,8 +1105,6 @@ void D3DClass::Shutdown()
 	//    if (D3DGC->Adapter)                        D3DGC->Adapter->Release();
 
 	RCUBE_ARR_DELETE ( m_videoCardDescription );
-
-	return;
 }
 
 // In the D3DClass I have a couple helper functions. The first two are BeginScene and EndScene. BeginScene will be called whenever we are going to draw a new 3D scene at the beginning of each frame.
@@ -1198,8 +1126,6 @@ void D3DClass::BeginScene(XMFLOAT4& Colour)
 
 	// Clear the depth buffer.
 	D3DGC->DX_deviceContext->ClearDepthStencilView(D3DGC->m_depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
-
-	return;
 }
 
 
@@ -1216,8 +1142,6 @@ void D3DClass::EndScene()
 		// Present as fast as possible.
 		D3DGC->DX_swapChain->Present(0, 0);
 	}
-
-	return;
 }
 
 // The next three helper functions give copies of the projection, world, and orthographic matrices to calling functions. Most shaders will need these matrices for rendering so there needed
@@ -1226,21 +1150,18 @@ void D3DClass::EndScene()
 void D3DClass::GetProjectionMatrix(XMMATRIX &projectionMatrix)
 {
 	projectionMatrix = D3DGC->ProjectionMatrix;
-	return;
 }
 
 
 void D3DClass::GetWorldMatrix(XMMATRIX &worldMatrix)
 {
 	worldMatrix = D3DGC->WorldMatrix;
-	return;
 }
 
 
 void D3DClass::GetOrthoMatrix(XMMATRIX &orthoMatrix)
 {
 	orthoMatrix = D3DGC->OrthoMatrix;
-	return;
 }
 
 
@@ -1249,15 +1170,18 @@ void D3DClass::GetOrthoMatrix(XMMATRIX &orthoMatrix)
 
 void D3DClass::TurnZBufferOn()
 {
-	D3DGC->DX_deviceContext->OMSetDepthStencilState(D3DGC->m_depthStencilState, 1);
-	return;
+	D3DGC->DX_deviceContext->OMSetDepthStencilState(D3DGC->depthStencil_State, 1);
 }
 
 
 void D3DClass::TurnZBufferOff()
 {
-	D3DGC->DX_deviceContext->OMSetDepthStencilState(m_depthDisabledStencilState, 1);
-	return;
+	D3DGC->DX_deviceContext->OMSetDepthStencilState( D3DGC->depthStencil_Disabled_State, 1);
+}
+
+void D3DClass::ZBufferNoWrite ()
+{
+	D3DGC->DX_deviceContext->OMSetDepthStencilState ( D3DGC->depthStencil_NoWrite_Particles, 1 );
 }
 
 // The first new function TurnOnAlphaBlending allows us to turn on alpha blending by using the OMSetBlendState function with our m_alphaEnableBlendingState blending state.
@@ -1404,7 +1328,7 @@ bool D3DClass::FxaaIntegrateResource(ID3D11Device* pd3dDevice, const DXGI_SURFAC
 	result = pd3dDevice->CreateTexture2D(&desc, 0, &D3DGC->BackBuffer_CopyResolveTexture);
 	if ( FAILED( result ) )
 	{
-		MessageBox( NULL , L"FXAA can't create g_pCopyResolveTexture", 0, 0 );
+		MessageBox( NULL , L"FXAA can't create g_pCopyResolveTexture", Error, 0 );
 		return false;
 	}
 
@@ -1415,32 +1339,32 @@ bool D3DClass::FxaaIntegrateResource(ID3D11Device* pd3dDevice, const DXGI_SURFAC
 	result = pd3dDevice->CreateTexture2D(&desc, 0, &D3DGC->BackBuffer_ProxyTexture );
 	if ( FAILED( result ) )
 	{
-		MessageBox( NULL , L"FXAA can't create g_pProxyTexture", 0, 0 );
+		MessageBox( NULL , L"FXAA can't create g_pProxyTexture", Error, 0 );
 		return false;
 	}
 	result = pd3dDevice->CreateShaderResourceView(D3DGC->BackBuffer_ProxyTexture, NULL, &D3DGC->BackBuffer_ProxyTextureSRV);
 	if ( FAILED( result ) )
 	{
-		MessageBox( NULL , L"FXAA can't create BackBuffer_ProxyTextureSRV", 0, 0 );
+		MessageBox( NULL , L"FXAA can't create BackBuffer_ProxyTextureSRV", Error, 0 );
 		return false;
 	}
 	result = pd3dDevice->CreateRenderTargetView(D3DGC->BackBuffer_ProxyTexture, 0, &D3DGC->BackBuffer_ProxyTextureRTV );
 	if ( FAILED( result ) )
 	{
-		MessageBox( NULL , L"FXAA can't create BackBuffer_ProxyTextureRTV", 0, 0 );
+		MessageBox( NULL , L"FXAA can't create BackBuffer_ProxyTextureRTV", Error, 0 );
 		return false;
 	}
 	result = pd3dDevice->CreateShaderResourceView(D3DGC->BackBuffer_CopyResolveTexture, NULL, &D3DGC->BackBuffer_CopyResolveTextureSRV);
 	if ( FAILED( result ) )
 	{
-		MessageBox( NULL , L"FXAA can't create BackBuffer_CopyResolveTextureSRV", 0, 0 );
+		MessageBox( NULL , L"FXAA can't create BackBuffer_CopyResolveTextureSRV", Error, 0 );
 		return false;
 	}
 
 	result = pd3dDevice->CreateUnorderedAccessView( D3DGC->BackBuffer_CopyResolveTexture, NULL, &D3DGC->BackBuffer_CopyResolveTextureUAV );
 	if ( FAILED( result ) )
 	{
-		MessageBox( NULL , L"Error CreateUnorderedAccessView BackBuffer_CopyResolveTextureUAV.", 0, 0 );
+		MessageBox( NULL , L"Error CreateUnorderedAccessView BackBuffer_CopyResolveTextureUAV.", Error, 0 );
 		Shutdown();
 		return false;
 	}
@@ -1558,7 +1482,7 @@ bool D3DClass::SaveTextureToPNG( ID3D11ShaderResourceView* Texture)
 	hr = D3DGC->DX_device->CreateTexture2D( desc, 0, &D3DGC->ScreenShootTexture );
 	if ( FAILED( hr ) )
 	{
-		MessageBox( NULL, L"Can't create ScreenShotTexture", 0, 0 );
+		MessageBox( NULL, L"Can't create ScreenShotTexture", Error, 0 );
 		Result = false;
 		goto END;
 	}
@@ -1629,7 +1553,7 @@ bool D3DClass::InitD2D_D3D101_DWrite()
 	hr = D3D10CreateDevice1( D3DGC->Adapter, D3D10_DRIVER_TYPE_HARDWARE, NULL, D3D10_CREATE_DEVICE_BGRA_SUPPORT, D3D10_FEATURE_LEVEL_10_1, D3D10_1_SDK_VERSION, &D3DGC->D10_device );
 	if ( FAILED( hr ) )
 	{
-		MessageBox( NULL, L"Could not initialize D3D10CreateDevice1.", 0, MB_OK );
+		MessageBox( NULL, L"Could not initialize D3D10CreateDevice1.", Error, MB_OK );
 		return false;
 	}
 
@@ -1651,14 +1575,14 @@ bool D3DClass::InitD2D_D3D101_DWrite()
 	hr = D3DGC->DX_device->CreateTexture2D( &sharedTexDesc, NULL, &D3DGC->sharedTex11 );
 	if ( FAILED( hr ) )
 	{
-		MessageBox( NULL, L"Could not initialize sharedTex11.", 0, MB_OK );
+		MessageBox( NULL, L"Could not initialize sharedTex11.", Error, MB_OK );
 		return false;
 	}
 
 	hr = D3DGC->DX_device->CreateShaderResourceView( D3DGC->sharedTex11, NULL, &D3DGC->sharedTex11_SRV );
 	if ( FAILED( hr ) )
 	{
-		MessageBox( NULL, L"Could not initialize ShaderResourceView sharedTex11.", 0, MB_OK );
+		MessageBox( NULL, L"Could not initialize ShaderResourceView sharedTex11.", Error, MB_OK );
 		return false;
 	}
 
@@ -1670,7 +1594,7 @@ bool D3DClass::InitD2D_D3D101_DWrite()
 	hr = D3DGC->DX_device->CreateTexture2D( &sharedTexDesc, NULL, &D3DGC->sharedTex11_MAPED );
 	if ( FAILED( hr ) )
 	{
-		MessageBox( NULL, L"Could not initialize sharedTex11_MAPED.", 0, MB_OK );
+		MessageBox( NULL, L"Could not initialize sharedTex11_MAPED.", Error, MB_OK );
 		return false;
 	}
 
@@ -1678,7 +1602,7 @@ bool D3DClass::InitD2D_D3D101_DWrite()
 	hr = D3DGC->sharedTex11->QueryInterface( __uuidof( IDXGIKeyedMutex ), ( void** ) &D3DGC->keyedMutex11 );
 	if ( FAILED( hr ) )
 	{
-		MessageBox( NULL, L"Could not initialize sharedTex11->QueryInterfac.", 0, MB_OK );
+		MessageBox( NULL, L"Could not initialize sharedTex11->QueryInterfac.", Error, MB_OK );
 		return false;
 	}
 
@@ -1689,14 +1613,14 @@ bool D3DClass::InitD2D_D3D101_DWrite()
 	hr = D3DGC->sharedTex11->QueryInterface( __uuidof( IDXGIResource ), ( void** ) &sharedResource10 );
 	if ( FAILED( hr ) )
 	{
-		MessageBox( NULL, L"Could not initialize sharedTex11->QueryInterface.", 0, MB_OK );
+		MessageBox( NULL, L"Could not initialize sharedTex11->QueryInterface.", Error, MB_OK );
 		return false;
 	}
 
 	hr = sharedResource10->GetSharedHandle( &sharedHandle10 );
 	if ( FAILED( hr ) )
 	{
-		MessageBox( NULL, L"Could not initialize sharedResource10->GetSharedHandle.", 0, MB_OK );
+		MessageBox( NULL, L"Could not initialize sharedResource10->GetSharedHandle.", Error, MB_OK );
 		return false;
 	}
 	sharedResource10->Release();
@@ -1707,14 +1631,14 @@ bool D3DClass::InitD2D_D3D101_DWrite()
 	hr = D3DGC->D10_device->OpenSharedResource( sharedHandle10, __uuidof( IDXGISurface1 ), ( void** ) ( &sharedSurface10 ) );
 	if ( FAILED( hr ) )
 	{
-		MessageBox( NULL, L"Could not initialize d3d101Device->OpenSharedResource.", 0, MB_OK );
+		MessageBox( NULL, L"Could not initialize d3d101Device->OpenSharedResource.", Error, MB_OK );
 		return false;
 	}
 
 	hr = sharedSurface10->QueryInterface( __uuidof( IDXGIKeyedMutex ), ( void** ) &D3DGC->keyedMutex10 );
 	if ( FAILED( hr ) )
 	{
-		MessageBox( NULL, L"Could not initialize sharedSurface10->QueryInterface.", 0, MB_OK );
+		MessageBox( NULL, L"Could not initialize sharedSurface10->QueryInterface.", Error, MB_OK );
 		return false;
 	}
 
@@ -1722,7 +1646,7 @@ bool D3DClass::InitD2D_D3D101_DWrite()
 	hr = D2D1CreateFactory( D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof( ID2D1Factory ), ( void** ) &D3DGC->D2DFactory );
 	if ( FAILED( hr ) )
 	{
-		MessageBox( NULL, L"Could not initialize D2D1CreateFactory.", 0, MB_OK );
+		MessageBox( NULL, L"Could not initialize D2D1CreateFactory.", Error, MB_OK );
 		return false;
 	}
 
@@ -1736,7 +1660,7 @@ bool D3DClass::InitD2D_D3D101_DWrite()
 	hr = D3DGC->D2DFactory->CreateDxgiSurfaceRenderTarget( sharedSurface10, &renderTargetProperties, &D3DGC->D2DRenderTarget );
 	if ( FAILED( hr ) )
 	{
-		MessageBox( NULL, L"Could not Create DxgiSurfaceRenderTarget.", 0, MB_OK );
+		MessageBox( NULL, L"Could not Create DxgiSurfaceRenderTarget.", Error, MB_OK );
 		return false;
 	}
 
@@ -1801,7 +1725,7 @@ int D3DClass::CreateCustomRasterizerState ( D3D11_RASTERIZER_DESC& Desc )
 	hr = D3DGC->DX_device->CreateRasterizerState ( &Desc, &RS );
 	if (FAILED ( hr ))
 	{
-		MessageBox ( NULL, L"Could not Create CustomRasterizerState.", 0, MB_OK );
+		MessageBox ( NULL, L"Could not Create CustomRasterizerState.", Error, MB_OK );
 		return -1;
 	}
 
@@ -1831,7 +1755,7 @@ bool D3DClass::ChangeCustomRasterizerState( int Number, D3D11_RASTERIZER_DESC& D
 	hr = D3DGC->DX_device->CreateRasterizerState ( &Desc, &RS );
 	if (FAILED ( hr ))
 	{
-		MessageBox ( NULL, L"Could not Update CustomRasterizerState.", 0, MB_OK );
+		MessageBox ( NULL, L"Could not Update CustomRasterizerState.", Error, MB_OK );
 		return false;
 	}
 
@@ -1955,14 +1879,14 @@ inline void D3DClass::GenerateLightFragments (
 {
 
 	LightGridDimensions dim = builder->dimensions ();
-	RCube_VecFloat34 mCameraNearFar;
+	RCube_VecFloat234 mCameraNearFar;
 	RCubeMatrix MyMatrix;
 	//	XMFLOAT4X4 mCameraProj;
 
 	//	XMStoreFloat4x4(&mCameraProj, ProjMatrix);
 	MyMatrix.XMM = ProjMatrix;
 
-	RCube_VecFloat34 clipRegion1, clipRegion, position, direction;
+	RCube_VecFloat234 clipRegion1, clipRegion, position, direction;
 
 	mCameraNearFar.Vec = Light->mCameraNearFar;
 
@@ -2223,9 +2147,8 @@ void D3DClass::Frame ()
 
 	lightBufferSRV = FrameLights ( D3DGC->DX_deviceContext, &Light->mUI );
 
-	PerFrameConstants_Debug->Update ( Light );
+	PerFrameConstants_Debug->Update (Light);
 	D3DGC->DX_deviceContext->PSSetConstantBuffers ( 1, 1, &PerFrameConstants_Debug->Buffer );
-
 }
 
 

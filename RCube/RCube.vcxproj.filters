@@ -111,22 +111,13 @@
     <ClInclude Include="RCubeNetwork.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="KF_PXControler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Emiters.h">
-      <Filter>Particles</Filter>
-    </ClInclude>
-    <ClInclude Include="ParticleSystemDefinitions.h">
       <Filter>Particles</Filter>
     </ClInclude>
     <ClInclude Include="EffectsManager.h">
       <Filter>EffectsManager</Filter>
     </ClInclude>
     <ClInclude Include="FireParticleSystem.h">
-      <Filter>Particles</Filter>
-    </ClInclude>
-    <ClInclude Include="ParticleSystemsManager.h">
       <Filter>Particles</Filter>
     </ClInclude>
     <ClInclude Include="BillBord.h">
@@ -225,6 +216,21 @@
     <ClInclude Include="Terrain_def.h">
       <Filter>Render\Terrain</Filter>
     </ClInclude>
+    <ClInclude Include="DX11_Render.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="ParticleSystem.h">
+      <Filter>Particles</Filter>
+    </ClInclude>
+    <ClInclude Include="PhysXControler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ParticleSystem_def.h">
+      <Filter>Particles</Filter>
+    </ClInclude>
+    <ClInclude Include="ParticleSystemController.h">
+      <Filter>Particles</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -275,9 +281,6 @@
     <ClCompile Include="RCubeNetwork.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="KF_PXControler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Emiters.cpp">
       <Filter>Particles</Filter>
     </ClCompile>
@@ -285,9 +288,6 @@
       <Filter>EffectsManager</Filter>
     </ClCompile>
     <ClCompile Include="FireParticleSystem.cpp">
-      <Filter>Particles</Filter>
-    </ClCompile>
-    <ClCompile Include="ParticleSystemsManager.cpp">
       <Filter>Particles</Filter>
     </ClCompile>
     <ClCompile Include="IndexesArray.cpp">
@@ -361,6 +361,15 @@
     </ClCompile>
     <ClCompile Include="TerrainCluster.cpp">
       <Filter>Render\Terrain</Filter>
+    </ClCompile>
+    <ClCompile Include="ParticleSystem.cpp">
+      <Filter>Particles</Filter>
+    </ClCompile>
+    <ClCompile Include="PhysXControler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ParticleSystemController.cpp">
+      <Filter>Particles</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

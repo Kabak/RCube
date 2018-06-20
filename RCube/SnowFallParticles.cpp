@@ -7,8 +7,8 @@ SnowFallParticles::SnowFallParticles()
 {
 	FireTexture = nullptr;
 	m_particleList = nullptr;
-	FireInstIndNumber = nullptr;
-	FireInstDistance = nullptr;
+//	FireInstIndNumber = nullptr;
+//	FireInstDistance = nullptr;
 	m_vertices = nullptr;
 	m_vertexBuffer = nullptr;
 	m_indexBuffer = nullptr;
@@ -22,6 +22,8 @@ SnowFallParticles::SnowFallParticles()
 	CurentFrame = 0;
 	PlayFPS = 30.0f;
 	TimePassed = 0.0f;
+
+	CreatedParticlesCount = 0;
 
 	Camera.Vec = { 0.0f, 0.0f, 0.0f, 1.0f };
 	Object.Vec = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -39,8 +41,8 @@ bool SnowFallParticles::Initialize( HWND hwnd,
 									 D3DGlobalContext *D3DGC,
 									 ID3D11ShaderResourceView* _FireTexture,
 									 int _UX_Amount,							// Количество строк в текстуре анимации
-									 int _VY_Amount,							// Количестко столбцов в текстуре анимации
-									 int FramesAmount						// Реальное количество анимаций в текстуре с верха , слева направо
+									 int _VY_Amount							// Количестко столбцов в текстуре анимации
+//									 int FramesAmount						// Реальное количество анимаций в текстуре с верха , слева направо
 									 )
 {
 	bool result;
@@ -60,8 +62,8 @@ bool SnowFallParticles::Initialize( HWND hwnd,
 	TextcordTop = new float[VY_Amount];
 	TextcordLeft = new float[UX_Amount];
 
-	if ( FramesAmount != 0 )
-		NumOfAnimeFrams = FramesAmount;
+//	if ( FramesAmount != 0 )
+//		NumOfAnimeFrams = FramesAmount;
 
 	// Уменьшаем количество кадров, потому что их индексы начинаются с НУЛЯ 0 - 63
 	--NumOfAnimeFrams;
@@ -138,7 +140,7 @@ void SnowFallParticles::Frame( FPSTimers& Timers )
 
 	Sortedinstance = ( ParticleShaderInstance_FIRE * ) mapResource.pData;
 
-	for ( int i = 0; i < m_currentParticleCount; ++i )
+	for ( int i = 0; i < CreatedParticlesCount; ++i )
 	{
 		*Sortedinstance = instances[FireInstIndNumber[i]];
 		++Sortedinstance;
@@ -158,7 +160,7 @@ void SnowFallParticles::Render()
 
 	// Set vertex buffer stride and offset.
 	strides[0] = sizeof( Vertex_FlatObject );
-	strides[1] = sizeof( ParticleShaderInstance_FIRE );
+	strides[1] = sizeof( BB_Particle_Instance );
 
 	// Set the buffer offsets.
 	offsets[0] = 0;
@@ -181,52 +183,53 @@ void SnowFallParticles::Render()
 	D3DGC_Local->DX_deviceContext->PSSetShaderResources( 0, 1, &FireTexture );
 
 	// Render the triangle.
-	D3DGC_Local->DX_deviceContext->DrawIndexedInstanced( 6, m_currentParticleCount/*m_instanceCount*/, 0, 0, 0 );
+	D3DGC_Local->DX_deviceContext->DrawIndexedInstanced( 6, CreatedParticlesCount/*m_instanceCount*/, 0, 0, 0 );
 }
 
 
 void SnowFallParticles::InitializeParticleSystem()
 {
 	// Set the random deviation of where the particles can be located when emitted.
-	m_particleDeviationX = 30.5f;
-	m_particleDeviationY = 0.1f;
-	m_particleDeviationZ = 30.0f;
+	ParticlesPositionDeviationX = 30.5f;
+	ParticlesPositionDeviationY = 0.1f;
+	ParticlesPositionDeviationZ = 30.0f;
 
 	// Set the speed and speed variation of particles.
-	m_particleVelocity = 0.95f;
-	m_particleVelocityVariation = 0.9f;
+	ParticleVelocity = 0.95f;
+	ParticleVelocityVariation = 0.9f;
 
 	// Set the physical size of the particles.
-	m_particleSize = 0.05f;
+	ParticleSize = 0.05f;
 
 	// Set the number of particles to emit per second.
-	m_particlesPerSecond = 500.0f;
+	ParticlesPerSecond = 500.0f;
 
 	// Set the maximum number of particles allowed in the particle system.
-	m_maxParticles = 5000;
+	MaxParticles = 5000;
 
+	maxActiveParticles = 5000;
 	// Create the particle list.
-	m_particleList = new FireType1[m_maxParticles];
+	m_particleList = new Particles_Data[MaxParticles];
 
 	// Создаём массив индексов элементо в массивах для сортировки по удалению
 	// от камеры. Для отрисовки по мере приближения к камере.
-	FireInstIndNumber = new int[m_maxParticles];
-	//	memset( FireInstIndNumber , 0xffffffff, sizeof( int ) * m_maxParticles );
+//	FireInstIndNumber = new int[MaxParticles];
+	//	memset( FireInstIndNumber , 0xffffffff, sizeof( int ) * MaxParticles );
 	// Массив растояний до камеры
-	FireInstDistance = new float[m_maxParticles];
-	//	memset( FireInstDistance, 0, sizeof( float ) * m_maxParticles );
+//	FireInstDistance = new float[MaxParticles];
+	//	memset( FireInstDistance, 0, sizeof( float ) * MaxParticles );
 
 	// Initialize the particle list.
-	for ( int i = 0; i<m_maxParticles; ++i )
+	for ( int i = 0; i<MaxParticles; ++i )
 	{
-		m_particleList[i].active = false;
+		m_particleList[i].Active = false;
 	}
 
 	// Initialize the current particle count to zero since none are emitted yet.
-	m_currentParticleCount = 0;
+	CreatedParticlesCount = 0;
 
 	// Clear the initial accumulated time for the particle per second emission rate.
-	m_accumulatedTime = 0.0f;
+	AccumulatedTime = 0.0f;
 
 }
 
@@ -235,8 +238,8 @@ void SnowFallParticles::ShutdownParticleSystem()
 {
 
 	RCUBE_ARR_DELETE( m_particleList );
-	RCUBE_ARR_DELETE( FireInstIndNumber );
-	RCUBE_ARR_DELETE( FireInstDistance );
+//	RCUBE_ARR_DELETE( FireInstIndNumber );
+//	RCUBE_ARR_DELETE( FireInstDistance );
 
 	return;
 }
@@ -251,7 +254,7 @@ bool SnowFallParticles::InitializeBuffers( ID3D11Device* device )
 	// +++++++++++++++++   Instancing   ++++++++++++++++++++++++++++++++
 	D3D11_BUFFER_DESC instanceBufferDesc;
 	D3D11_SUBRESOURCE_DATA instanceData;
-	m_instanceCount = m_maxParticles;
+	m_instanceCount = MaxParticles;
 	// -----------------   Instancing   --------------------------------
 
 	// Create the vertex array for the particles that will be rendered.
@@ -269,7 +272,7 @@ bool SnowFallParticles::InitializeBuffers( ID3D11Device* device )
 	BillBordVertexesIndBufferDesc.StructureByteStride = 0;
 
 	// Give the subresource structure a pointer to the index data.
-	indexData.pSysMem = &FlatObjectIndices[0];
+	indexData.pSysMem = FlatObjectIndices;
 	indexData.SysMemPitch = 0;
 	indexData.SysMemSlicePitch = 0;
 
@@ -283,13 +286,13 @@ bool SnowFallParticles::InitializeBuffers( ID3D11Device* device )
 	//	delete[] indices;
 
 	// +++++++++++++++++   Instancing   ++++++++++++++++++++++++++++++++
-	instances = new ParticleShaderInstance_FIRE[m_instanceCount];
+	instances = new BB_Particle_Instance[m_instanceCount];
 
-	memset( instances, 0, ( sizeof( ParticleShaderInstance_FIRE ) * m_instanceCount ) );
+	memset( instances, 0, ( sizeof( BB_Particle_Instance ) * m_instanceCount ) );
 
 	// Set up the description of the instance buffer.
 	instanceBufferDesc.Usage = D3D11_USAGE_DEFAULT; //D3D11_USAGE_DYNAMIC;
-	instanceBufferDesc.ByteWidth = sizeof( ParticleShaderInstance_FIRE ) * m_instanceCount;
+	instanceBufferDesc.ByteWidth = sizeof( BB_Particle_Instance ) * m_instanceCount;
 	instanceBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	instanceBufferDesc.CPUAccessFlags = 0;//D3D11_CPU_ACCESS_WRITE;
 	instanceBufferDesc.MiscFlags = 0;
@@ -312,19 +315,19 @@ bool SnowFallParticles::InitializeBuffers( ID3D11Device* device )
 	memset( m_vertices, 0, ( sizeof( Vertex_FlatObject ) * 4 ) );
 
 	// Top left.
-	m_vertices[0].Position = XMFLOAT3( -1.0f * m_particleSize, 1.0f * m_particleSize, 0.0f );  // Top left
+	m_vertices[0].Position = XMFLOAT3( -1.0f * ParticleSize, 1.0f * ParticleSize, 0.0f );  // Top left
 	m_vertices[0].TexCoord = XMFLOAT2( 0.0f, 0.0f );
 
 	// Bottom right.
-	m_vertices[1].Position = XMFLOAT3( 1.0f * m_particleSize, -1.0f * m_particleSize, 0.0f );  // Bottom right
+	m_vertices[1].Position = XMFLOAT3( 1.0f * ParticleSize, -1.0f * ParticleSize, 0.0f );  // Bottom right
 	m_vertices[1].TexCoord = XMFLOAT2( 1.0f, 1.0f );
 
 	// Bottom left.
-	m_vertices[2].Position = XMFLOAT3( -1.0f * m_particleSize, -1.0f * m_particleSize, 0.0f );  // Bottom left.
+	m_vertices[2].Position = XMFLOAT3( -1.0f * ParticleSize, -1.0f * ParticleSize, 0.0f );  // Bottom left.
 	m_vertices[2].TexCoord = XMFLOAT2( 0.0f, 1.0f );
 
 	// Top right.
-	m_vertices[3].Position = XMFLOAT3( 1.0f * m_particleSize, 1.0f * m_particleSize, 0.0f );  // Top right.
+	m_vertices[3].Position = XMFLOAT3( 1.0f * ParticleSize, 1.0f * ParticleSize, 0.0f );  // Top right.
 	m_vertices[3].TexCoord = XMFLOAT2( 1.0f, 0.0f );
 
 
@@ -372,7 +375,7 @@ void SnowFallParticles::ShutdownBuffers()
 
 int SnowFallParticles::GetActiveParticleAmmount()
 {
-	return ( m_currentParticleCount );
+	return ( CreatedParticlesCount );
 }
 
 
@@ -380,9 +383,9 @@ void SnowFallParticles::EmitParticles( FPSTimers& Timers )
 {
 	bool emitParticle, found;
 	//  Обновление данные системы частиц 
-	FireType1	Data;
+	Particles_Data	Data;
 	// Позиция и цвет частицы обновляется в массиве который отправляется в шейдер
-	ParticleShaderInstance_FIRE Data1;
+	BB_Particle_Instance Data1;
 
 	//	float positionX, positionY, positionZ, velocity, red, green, blue;
 	int index;//, i, j;
@@ -392,31 +395,31 @@ void SnowFallParticles::EmitParticles( FPSTimers& Timers )
 
 	// Increment the frame time.
 	if ( Timers.FrameTime < 1.0f )
-		m_accumulatedTime += Timers.FrameTime ;
+		AccumulatedTime += Timers.FrameTime ;
 
 	// Set emit particle to false for now.
 	emitParticle = false;
 
 	// Check if it is time to emit a new particle or not.
-	if ( m_accumulatedTime >( 1.0f / m_particlesPerSecond ) )
+	if ( AccumulatedTime >( 1.0f / ParticlesPerSecond ) )
 	{
-		m_accumulatedTime = 0.0f;
+		AccumulatedTime = 0.0f;
 		emitParticle = true;
 	}
 
 	// If there are particles to emit then emit one per frame.
-	if ( ( emitParticle == true ) && ( m_currentParticleCount < ( m_maxParticles ) ) )
+	if ( ( emitParticle == true ) && ( CreatedParticlesCount < ( MaxParticles ) ) )
 	{
-		++m_currentParticleCount;
+		++CreatedParticlesCount;
 
 		// Now generate the randomized particle properties.
-		X = ( ( ( float ) rand() - ( float ) rand() ) / RAND_MAX ) * m_particleDeviationX;// + 5;
-		Y = ( ( ( float ) rand() - ( float ) rand() ) / RAND_MAX ) * m_particleDeviationY + 15;
-		Z = ( ( ( float ) rand() - ( float ) rand() ) / RAND_MAX ) * m_particleDeviationZ;
+		X = ( ( ( float ) rand() - ( float ) rand() ) / RAND_MAX ) * ParticlesPositionDeviationX;// + 5;
+		Y = ( ( ( float ) rand() - ( float ) rand() ) / RAND_MAX ) * ParticlesPositionDeviationY + 15;
+		Z = ( ( ( float ) rand() - ( float ) rand() ) / RAND_MAX ) * ParticlesPositionDeviationZ;
 
 		Data1.position = { X,Y,Z };
 
-		Data.Velocity = m_particleVelocity + ( ( ( float ) rand() - ( float ) rand() ) / RAND_MAX ) * m_particleVelocityVariation;
+		Data.Velocity = ParticleVelocity + ( ( ( float ) rand() - ( float ) rand() ) / RAND_MAX ) * ParticleVelocityVariation;
 
 		R = ( ( ( float ) rand() - ( float ) rand() ) / RAND_MAX ) + 0.5f;
 		G = ( ( ( float ) rand() - ( float ) rand() ) / RAND_MAX ) + 0.5f;
@@ -424,19 +427,21 @@ void SnowFallParticles::EmitParticles( FPSTimers& Timers )
 
 		Data1.color = { R,G,B,0.0f };
 
+		Data1.Dummy = 1.0f;
+
 		int FrameNumber = int( ( ( float ) rand() / RAND_MAX ) * NumOfAnimeFrams );
 		Data.CurentFrame = FrameNumber;
 		SetInstanceStartFrame( FrameNumber, Data1.NewTexCord );
 
 
-		Data.active = true;
+		Data.Active = true;
 		// Now since the particles need to be rendered from back to front for blending we have to sort the particle array.
 		// We will sort using Z depth so we need to find where in the list the particle should be inserted.
 		index = 0;
 		found = false;
 		while ( !found )
 		{
-			if ( ( m_particleList[index].active == false ) )//|| ( instances[index].position.z < Data1.position.z )
+			if ( ( m_particleList[index].Active == false ) )//|| ( instances[index].position.z < Data1.position.z )
 			{
 				found = true;
 			}
@@ -459,7 +464,6 @@ void SnowFallParticles::EmitParticles( FPSTimers& Timers )
 
 void SnowFallParticles::UpdateParticles( FPSTimers& Timers )
 {
-	int i;
 	float j = 0;
 	bool UpdateFrame = false;
 
@@ -473,12 +477,12 @@ void SnowFallParticles::UpdateParticles( FPSTimers& Timers )
 	}
 
 	// Each frame we update all the particles by making them move downwards using their position, velocity, and the frame time.
-	for ( i = 0; i < m_currentParticleCount; ++i )
+	for (int i = 0; i < CreatedParticlesCount; ++i )
 	{
 		if ( j > XM_2PI )
 			j = 0;
-		FireType1 *Part = &m_particleList[i];
-		ParticleShaderInstance_FIRE *Part2 = &instances[i];
+		Particles_Data *Part = &m_particleList[i];
+		BB_Particle_Instance *Part2 = &instances[i];
 		Part2->position.y = Part2->position.y - Part->Velocity * ( Timers.FrameTime );
 		Part2->position.x = float( Part2->position.x + cos( j ) * 0.006 );
 		//		m_particleList[i].positionZ = m_particleList[i].positionZ + sin(j) * m_particleList[i].velocity * 0.05;
@@ -505,9 +509,9 @@ void SnowFallParticles::UpdateParticles( FPSTimers& Timers )
 		// Сохраняем индексы Instance в массиве индексов
 //		FireInstIndNumber[i] = i;
 	}
-//	if ( m_currentParticleCount > 1 )
+//	if ( CreatedParticlesCount > 1 )
 	{
-//		QuickDepthSortDescending( FireInstIndNumber, FireInstDistance, 0, m_currentParticleCount - 1 );
+//		QuickDepthSortDescending( FireInstIndNumber, FireInstDistance, 0, CreatedParticlesCount - 1 );
 
 	}
 
@@ -521,14 +525,15 @@ void SnowFallParticles::KillParticles()
 
 
 	// Kill all the particles that have gone below a certain height range.
-	for ( int i = 0; i < m_maxParticles; ++i )
+	for ( int i = 0; i < MaxParticles; ++i )
 	{
-		FireType1* Part = &m_particleList[i];
-		ParticleShaderInstance_FIRE* Part2 = &instances[i];
-		if ( ( Part->active == true ) && ( Part2->position.y < -3.0f ) )
+		Particles_Data* Part = &m_particleList[i];
+		BB_Particle_Instance* Part2 = &instances[i];
+		if ( ( Part->Active == true ) && ( Part2->position.y < -3.0f ) )
 		{
-			Part->active = false;
-			--m_currentParticleCount;
+			Part->Active = false;
+			Part2->Dummy = 0.0f;
+			--CreatedParticlesCount;
 
 			// Вставляем свет
 //			EngineLight->FreeLightSource( Part->LightIndex );
@@ -537,12 +542,6 @@ void SnowFallParticles::KillParticles()
 	}
 
 	return;
-}
-
-
-int SnowFallParticles::GetInstanceCount()
-{
-	return m_currentParticleCount;//m_instanceCount;
 }
 
 
@@ -573,7 +572,7 @@ void SnowFallParticles::DistanceCalk( XMFLOAT3 &ObjPos, XMFLOAT3 &Camerapos, flo
 {
 	// http://stackoverflow.com/questions/10291862/what-is-the-best-way-to-get-distance-between-2-points-with-directxmath
 
-	RCube_VecFloat34 Result;
+	RCube_VecFloat234 Result;
 
 	Camera.Fl3 = Camerapos;
 	Object.Fl3 = ObjPos;

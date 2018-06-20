@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Filename: particle.vs
 ////////////////////////////////////////////////////////////////////////////////
-
+#pragma pack_matrix( row_major )
 
 /////////////
 // GLOBALS //
@@ -25,18 +25,19 @@ cbuffer MatrixBuffer : register(b0)
 //////////////
 struct VertexInputType
 {
-    float3 position : POSITION0;
-    float2 tex : TEXCOORD0;
-	float3 instancePosition : POSITION1;
-	float4 color : COLOR;
-	float4 NewTexCord : InsTEXCOORD;
+    float4 position				: POSITION0;
+    float4 tex					: TEXCOORD0;
+
+	float4 instancePosition		: POSITION1;
+	float4 color				: COLOR;
+	float4 NewTexCord			: InsTEXCOORD;
 };
 
 struct PixelInputType
 {
-    float4 position : SV_POSITION;
-    float2 tex : TEXCOORD0;
-	float4 color : COLOR;
+    float4 position				: SV_POSITION;
+    float2 tex					: TEXCOORD0;
+	float4 color				: COLOR;
 };
 
 
@@ -81,10 +82,9 @@ PixelInputType ParticleVertexShader(VertexInputType input , uint VertexNumber : 
 
 	float4 RotQuat = mulQuat(RotQuatZ, ViewTransQuat);
 
-	output.position = float4( qtransform( RotQuat, NewSize ), 1.0f );
+	output.position = 1.0f;
 
-	output.position.xyz += input.instancePosition.xyz;
-	
+	output.position.xyz = qtransform( RotQuat, NewSize ) + input.instancePosition.xyz;
 
 	output.position = mul( output.position, viewprojection );
 	// https://msdn.microsoft.com/en-us/library/windows/desktop/bb509669(v=vs.85).aspx

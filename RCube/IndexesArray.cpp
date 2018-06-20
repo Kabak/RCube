@@ -32,7 +32,7 @@ bool IndexseArray::InitArray( int Amount, bool FartoCamFirst )
 
 	if ( Array )
 	{
-//		memset( FireInstIndNumber, 0xffffffff, sizeof( UINT ) * m_maxParticles );
+//		memset( FireInstIndNumber, 0xffffffff, sizeof( UINT ) * MaxParticles );
 		return true;
 	}
 
@@ -108,7 +108,7 @@ void IndexseArray::DistanceCalk( XMFLOAT3 &ObjPos, XMFLOAT3 &Camerapos, float &D
 {
 	// http://stackoverflow.com/questions/10291862/what-is-the-best-way-to-get-distance-between-2-points-with-directxmath
 
-	RCube_VecFloat34 Result;
+	RCube_VecFloat234 Result;
 
 	Camera.Fl3 = Camerapos;
 	Object.Fl3 = ObjPos;

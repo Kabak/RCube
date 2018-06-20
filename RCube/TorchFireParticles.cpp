@@ -78,7 +78,7 @@ TorchFireParticles::TorchFireParticles()
 	IndexBuffer = nullptr;
 	
 	// Размер текстур FLAMES
-	m_particleSize = 1.0f;
+	ParticleSize = 1.0f;
 
 // SMOKE
 //	SmokeInstIndNumber = nullptr;
@@ -263,13 +263,13 @@ void TorchFireParticles::Frame( FPSTimers& Timers )
 		MessageBox( 0, L"Ошибка доступа к буферу частиц TorchFireParticles.", L"Can't ->Map", 0 );
 	}
 
-	ParticleShaderInstance_TORCH_FIRE *Sortedinstance;
-	Sortedinstance = ( ParticleShaderInstance_TORCH_FIRE * ) mapResource.pData;
+	BB_Particle_Instance *Sortedinstance;
+	Sortedinstance = ( BB_Particle_Instance * ) mapResource.pData;
 
 	// FLAMES
 	for ( int i = 0; i < FlameInstancesAmount; ++i )
 	{
-//		Torch_FireSmoke1 *PointerFlamesAddData = &TorchFireFlamesAddData[i];
+//		Particles_Data *PointerFlamesAddData = &TorchFireFlamesAddData[i];
 
 		if( TorchFireFlamesAddData[i].Active )
 		{
@@ -281,7 +281,7 @@ void TorchFireParticles::Frame( FPSTimers& Timers )
 	// SMOKE
 	for ( int i = 0; i < SmokeInstancesAmount; ++i )
 	{
-		//		Torch_FireSmoke1 *PointerFlamesAddData = &TorchFireFlamesAddData[i];
+		//		Particles_Data *PointerFlamesAddData = &TorchFireFlamesAddData[i];
 
 		if ( TorchFireSmokeAddData[i].Active )
 		{
@@ -293,7 +293,7 @@ void TorchFireParticles::Frame( FPSTimers& Timers )
 	// FIREFLY
 	for ( int i = 0; i < FireFlyInstancesAmount; ++i )
 	{
-		//		Torch_FireSmoke1 *PointerFlamesAddData = &TorchFireFlamesAddData[i];
+		//		Particles_Data *PointerFlamesAddData = &TorchFireFlamesAddData[i];
 
 		if ( TorchFireFlyAddData[i].Active )
 		{
@@ -316,7 +316,7 @@ void TorchFireParticles::Render()
 
 	// Set vertex buffer stride and offset.
 	strides[0] = sizeof( Vertex_FlatObject );
-	strides[1] = sizeof( ParticleShaderInstance_TORCH_FIRE );
+	strides[1] = sizeof( BB_Particle_Instance );
 
 	// Set the buffer offsets.
 	offsets[0] = 0;
@@ -348,7 +348,7 @@ bool TorchFireParticles::InitializeParticleSystem()
 {
 
 // FLAMES
-	TorchFireFlamesAddData = new Torch_FireSmoke1[FlameInstancesAmount];
+	TorchFireFlamesAddData = new Particles_Data[FlameInstancesAmount];
 	// Создаём массив индексов элементо в массивах для сортировки по удалению
 	// от камеры. Для отрисовки по мере приближения к камере.
 //	FlameInstIndNumber = new int[FlameInstancesAmount];
@@ -358,12 +358,12 @@ bool TorchFireParticles::InitializeParticleSystem()
 // FLAMES --------------------------------------------------------------------------------
 
 // SMOKE
-	TorchFireSmokeAddData = new Torch_FireSmoke1[SmokeInstancesAmount];
+	TorchFireSmokeAddData = new Particles_Data[SmokeInstancesAmount];
 //	SmokeInstIndNumber = new int[SmokeInstancesAmount];
 //	SmokeInstDistance = new float[SmokeInstancesAmount];
 // SMOKE ---------------------------------------------------
 // FIREFLY
-	TorchFireFlyAddData = new Torch_FireSmoke1[FireFlyInstancesAmount];
+	TorchFireFlyAddData = new Particles_Data[FireFlyInstancesAmount];
 // FIREFLY -------------------------------------------------
 	// Генерим произвольный начальный кадр анимации для всех FLAMES
 /*	for ( int i = 0; i < FlameInstancesAmount; ++i )
@@ -371,9 +371,9 @@ bool TorchFireParticles::InitializeParticleSystem()
 		TorchFireFlamesAddData[i].Active = false;
 	}
 */
-	memset ( TorchFireFlamesAddData,  0, sizeof( Torch_FireSmoke1 ) * FlameInstancesAmount );
-	memset ( TorchFireSmokeAddData,   0, sizeof( Torch_FireSmoke1 ) * SmokeInstancesAmount );
-	memset ( TorchFireFlyAddData, 0, sizeof( Torch_FireSmoke1 ) * FireFlyInstancesAmount );
+	memset ( TorchFireFlamesAddData,  0, sizeof( Particles_Data ) * FlameInstancesAmount );
+	memset ( TorchFireSmokeAddData,   0, sizeof( Particles_Data ) * SmokeInstancesAmount );
+	memset ( TorchFireFlyAddData, 0, sizeof( Particles_Data ) * FireFlyInstancesAmount );
 	return true;
 }
 
@@ -419,18 +419,18 @@ bool TorchFireParticles::InitializeBuffers( ID3D11Device* device )
 
 
 	// +++++++++++++++++   Instancing   ++++++++++++++++++++++++++++++++
-	FlameInstances = new ParticleShaderInstance_TORCH_FIRE[FlameInstancesAmount];
-	SmokeInstances = new ParticleShaderInstance_TORCH_FIRE[SmokeInstancesAmount];
-	FireFlyInstances = new ParticleShaderInstance_TORCH_FIRE[FireFlyInstancesAmount];
+	FlameInstances = new BB_Particle_Instance[FlameInstancesAmount];
+	SmokeInstances = new BB_Particle_Instance[SmokeInstancesAmount];
+	FireFlyInstances = new BB_Particle_Instance[FireFlyInstancesAmount];
 
-	ShaderInstanceAll = new ParticleShaderInstance_TORCH_FIRE[All_Instances_Amount];
+	ShaderInstanceAll = new BB_Particle_Instance[All_Instances_Amount];
 
-	memset( ShaderInstanceAll, 0, ( sizeof( ParticleShaderInstance_TORCH_FIRE ) * All_Instances_Amount ) );
+	memset( ShaderInstanceAll, 0, ( sizeof( BB_Particle_Instance ) * All_Instances_Amount ) );
 //	memset( SmokeInstances, 0, ( sizeof( ParticleShaderInstance_SMOKE ) * MaxSmokeInstanse ) );
 
 	// Set up the description of the instance buffer.
 	instanceBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	instanceBufferDesc.ByteWidth = sizeof( ParticleShaderInstance_TORCH_FIRE ) * All_Instances_Amount;
+	instanceBufferDesc.ByteWidth = sizeof( BB_Particle_Instance ) * All_Instances_Amount;
 	instanceBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	instanceBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	instanceBufferDesc.MiscFlags = 0;
@@ -463,37 +463,37 @@ bool TorchFireParticles::InitializeBuffers( ID3D11Device* device )
 	memset( FlameVertices, 0, ( sizeof( Vertex_FlatObject ) * 4 ) );
 
 	// Top left.
-	FlameVertices[0].Position = XMFLOAT3( -1.0f * m_particleSize, 1.0f * m_particleSize, 0.0f );  // Top left
+	FlameVertices[0].Position = XMFLOAT3( -1.0f * ParticleSize, 1.0f * ParticleSize, 0.0f );  // Top left
 	FlameVertices[0].TexCoord = XMFLOAT2( 0.0f, 0.0f );
 
 	// Bottom right.
-	FlameVertices[1].Position = XMFLOAT3( 1.0f * m_particleSize, -1.0f * m_particleSize, 0.0f );  // Bottom right
+	FlameVertices[1].Position = XMFLOAT3( 1.0f * ParticleSize, -1.0f * ParticleSize, 0.0f );  // Bottom right
 	FlameVertices[1].TexCoord = XMFLOAT2( 1.0f, 1.0f );
 
 	// Bottom left.
-	FlameVertices[2].Position = XMFLOAT3( -1.0f * m_particleSize, -1.0f * m_particleSize, 0.0f );  // Bottom left.
+	FlameVertices[2].Position = XMFLOAT3( -1.0f * ParticleSize, -1.0f * ParticleSize, 0.0f );  // Bottom left.
 	FlameVertices[2].TexCoord = XMFLOAT2( 0.0f, 1.0f );
 
 	// Top right.
-	FlameVertices[3].Position = XMFLOAT3( 1.0f * m_particleSize, 1.0f * m_particleSize, 0.0f );  // Top right.
+	FlameVertices[3].Position = XMFLOAT3( 1.0f * ParticleSize, 1.0f * ParticleSize, 0.0f );  // Top right.
 	FlameVertices[3].TexCoord = XMFLOAT2( 1.0f, 0.0f );
 /*
 	memset( SmokeVertices, 0, ( sizeof( BillBordVertexes ) * 4 ) );
 
 	// Top left.
-	SmokeVertices[0].position = XMFLOAT3( -1.0f * m_particleSize, 1.0f * m_particleSize, 0.0f );  // Top left
+	SmokeVertices[0].position = XMFLOAT3( -1.0f * ParticleSize, 1.0f * ParticleSize, 0.0f );  // Top left
 	SmokeVertices[0].texture = XMFLOAT2( 0.0f, 0.0f );
 
 	// Bottom right.
-	SmokeVertices[1].position = XMFLOAT3( 1.0f * m_particleSize, -1.0f * m_particleSize, 0.0f );  // Bottom right
+	SmokeVertices[1].position = XMFLOAT3( 1.0f * ParticleSize, -1.0f * ParticleSize, 0.0f );  // Bottom right
 	SmokeVertices[1].texture = XMFLOAT2( 1.0f, 1.0f );
 
 	// Bottom left.
-	SmokeVertices[2].position = XMFLOAT3( -1.0f * m_particleSize, -1.0f * m_particleSize, 0.0f );  // Bottom left.
+	SmokeVertices[2].position = XMFLOAT3( -1.0f * ParticleSize, -1.0f * ParticleSize, 0.0f );  // Bottom left.
 	SmokeVertices[2].texture = XMFLOAT2( 0.0f, 1.0f );
 
 	// Top right.
-	SmokeVertices[3].position = XMFLOAT3( 1.0f * m_particleSize, 1.0f * m_particleSize, 0.0f );  // Top right.
+	SmokeVertices[3].position = XMFLOAT3( 1.0f * ParticleSize, 1.0f * ParticleSize, 0.0f );  // Top right.
 	SmokeVertices[3].texture = XMFLOAT2( 1.0f, 0.0f );
 */
 	// Set up the description of the dynamic vertex buffer.
@@ -563,8 +563,8 @@ int TorchFireParticles::GetActiveParticleAmmount()
 // SMOKE ---------------------------------------------------------------------------
 void TorchFireParticles::EmitSmokeParticles( FPSTimers& Timers )
 {
-	RCube_VecFloat34 StartPos;
-	RCube_VecFloat34 GenPos;
+	RCube_VecFloat234 StartPos;
+	RCube_VecFloat234 GenPos;
 
 	StartPos.Fl3 = TorchPosition;
 	//	StartPos.Fl4.w = 0.0f;
@@ -573,9 +573,9 @@ void TorchFireParticles::EmitSmokeParticles( FPSTimers& Timers )
 	bool emitSmoke = false;
 
 	//  Обновление данные системы частиц 
-	Torch_FireSmoke1 *InstanceAddData = &TorchFireSmokeAddData[0];
+	Particles_Data *InstanceAddData = &TorchFireSmokeAddData[0];
 	// Позиция и цвет частицы обновляется в массиве который отправляется в шейдер
-	ParticleShaderInstance_TORCH_FIRE *ShaderInstance;
+	BB_Particle_Instance *ShaderInstance;
 
 
 	if ( Timers.FrameTime < 1.0f )
@@ -631,22 +631,22 @@ void TorchFireParticles::EmitSmokeParticles( FPSTimers& Timers )
 
 //		InstanceAddData->Smoke = true;
 
-		ShaderInstance->Alpha = InitAlpha;
+		ShaderInstance->color = InitAlpha;
 	}
 }
 
 
 void TorchFireParticles::EmitFireFlyParticles( FPSTimers& Timers )
 {
-	RCube_VecFloat34 StartPos;
-	RCube_VecFloat34 GenPos;
+	RCube_VecFloat234 StartPos;
+	RCube_VecFloat234 GenPos;
 
 	StartPos.Fl3 = TorchPosition;
 	
 	bool emitFireFly = false;
 
-	Torch_FireSmoke1 *FireFlyInstanceAddData = &TorchFireFlyAddData[0];
-	ParticleShaderInstance_TORCH_FIRE *FireFlyShaderInstance;
+	Particles_Data *FireFlyInstanceAddData = &TorchFireFlyAddData[0];
+	BB_Particle_Instance *FireFlyShaderInstance;
 
 	if ( Timers.FrameTime < 1.0f )
 	{
@@ -703,9 +703,9 @@ void TorchFireParticles::EmitFireFlyParticles( FPSTimers& Timers )
 		// Время начала жизни частицы
 		//		InstanceAddData->TimePased = 0.0f;
 
-		FireFlyShaderInstance->Alpha = InitAlpha;
-		FireFlyShaderInstance->Alpha.x *= 0.02f;
-		FireFlyShaderInstance->Alpha.w = 0.9f;
+		FireFlyShaderInstance->color = InitAlpha;
+		FireFlyShaderInstance->color.x *= 0.02f;
+		FireFlyShaderInstance->color.w = 0.9f;
 	}
 }
 
@@ -729,8 +729,8 @@ void TorchFireParticles::UpdateFireFlyParticles( FPSTimers& Timers )
 
 	for ( int i = 0; i < FireFlyInstancesAmount; ++i )
 	{
-		Torch_FireSmoke1 *PointerFireFlyAddData = &TorchFireFlyAddData[i];
-		ParticleShaderInstance_TORCH_FIRE *ShaderInstance = &FireFlyInstances[i];
+		Particles_Data *PointerFireFlyAddData = &TorchFireFlyAddData[i];
+		BB_Particle_Instance *ShaderInstance = &FireFlyInstances[i];
 
 		if ( PointerFireFlyAddData->Active == true )
 		{
@@ -750,7 +750,7 @@ void TorchFireParticles::UpdateFireFlyParticles( FPSTimers& Timers )
 				--PointerFireFlyAddData->LifeTime -= 4.5;
 
 				if ( PointerFireFlyAddData->LifeTime < 60.0f )
-					ShaderInstance->Alpha.w -= 0.05;
+					ShaderInstance->color.w -= 0.05;
 			}
 		}
 	}
@@ -761,8 +761,8 @@ void TorchFireParticles::KillFireFlyParticles()
 {
 	for ( int i = 0; i < FireFlyInstancesAmount; ++i )
 	{
-		Torch_FireSmoke1 *InstanceAddData = &TorchFireFlyAddData[i];
-		ParticleShaderInstance_TORCH_FIRE *ShaderInstance = &FireFlyInstances[i];
+		Particles_Data *InstanceAddData = &TorchFireFlyAddData[i];
+		BB_Particle_Instance *ShaderInstance = &FireFlyInstances[i];
 
 		if ( ( InstanceAddData->Active == true ) && ( InstanceAddData->LifeTime < 0.0f ) )
 		{
@@ -822,8 +822,8 @@ void TorchFireParticles::SetFireFlyInstanceStartFrame( int FrameNumber, XMFLOAT4
 
 void TorchFireParticles::EmitFlameParticles( FPSTimers& Timers )
 {
-	RCube_VecFloat34 StartPos;
-	RCube_VecFloat34 GenPos;
+	RCube_VecFloat234 StartPos;
+	RCube_VecFloat234 GenPos;
 
 	StartPos.Fl3 = TorchPosition;
 //	StartPos.Fl4.w = 0.0f;
@@ -832,9 +832,9 @@ void TorchFireParticles::EmitFlameParticles( FPSTimers& Timers )
 	bool emitFlame = false;
 
 	//  Обновление данные системы частиц 
-	Torch_FireSmoke1 *InstanceAddData = &TorchFireFlamesAddData[0];
+	Particles_Data *InstanceAddData = &TorchFireFlamesAddData[0];
 	// Позиция и цвет частицы обновляется в массиве который отправляется в шейдер
-	ParticleShaderInstance_TORCH_FIRE *ShaderInstance;
+	BB_Particle_Instance *ShaderInstance;
 
 	if ( Timers.FrameTime < 1.0f )
 	{
@@ -888,7 +888,7 @@ void TorchFireParticles::EmitFlameParticles( FPSTimers& Timers )
 		// Время начала жизни частицы
 //		InstanceAddData->TimePased = 0.0f;
 		
-		ShaderInstance->Alpha = InitAlpha;
+		ShaderInstance->color = InitAlpha;
 	}
 }
 
@@ -925,8 +925,8 @@ void TorchFireParticles::UpdateSmokeParticles( FPSTimers& Timers )
 
 	for (int i = 0; i < SmokeInstancesAmount; ++i )
 	{
-		Torch_FireSmoke1 *PointerSmokeAddData = &TorchFireSmokeAddData[i];
-		ParticleShaderInstance_TORCH_FIRE *ShaderInstance = &SmokeInstances[i];
+		Particles_Data *PointerSmokeAddData = &TorchFireSmokeAddData[i];
+		BB_Particle_Instance *ShaderInstance = &SmokeInstances[i];
 
 		if ( PointerSmokeAddData->Active == true )
 		{
@@ -941,25 +941,25 @@ void TorchFireParticles::UpdateSmokeParticles( FPSTimers& Timers )
 				if ( PointerSmokeAddData->LifeTime > 240.0f )
 				{
 					// Alpha W
-					ShaderInstance->Alpha.w += 0.005;
+					ShaderInstance->color.w += 0.005;
 				}
 
 				if ( PointerSmokeAddData->LifeTime < 240.0f )
 				{
 					// Size X
-					ShaderInstance->Alpha.x += 0.01;
+					ShaderInstance->color.x += 0.01;
 				}
 
 
 				if ( PointerSmokeAddData->LifeTime < 40.0f )
-					ShaderInstance->Alpha.w -= 0.005;
+					ShaderInstance->color.w -= 0.005;
 
 
 				//	if ( PointerSmokeAddData->CurentFrame > 32 && PointerSmokeAddData->CurentFrame < 36 )
 				{
 					ShaderInstance->position.y += 0.03;
 					// Rotate Y
-					ShaderInstance->Alpha.z += -0.017453292;
+					ShaderInstance->color.z += -0.017453292;
 				}
 
 
@@ -970,7 +970,7 @@ void TorchFireParticles::UpdateSmokeParticles( FPSTimers& Timers )
 					// РАЗМЕР
 					//				ShaderInstance->Alpha.x += 0.05;
 					// ПОВОРОТ
-					ShaderInstance->Alpha.z += 0.017453292 / 2;
+					ShaderInstance->color.z += 0.017453292 / 2;
 				}
 			}
 			// Заполняем массив расстояний частиц от камеры
@@ -1015,8 +1015,8 @@ void TorchFireParticles::UpdateFlameParticles( FPSTimers& Timers )
 
 	for (int i = 0; i < FlameInstancesAmount; ++i )
 	{
-		Torch_FireSmoke1 *PointerFlamesAddData = &TorchFireFlamesAddData[i];
-		ParticleShaderInstance_TORCH_FIRE *ShaderInstance = &FlameInstances[i];
+		Particles_Data *PointerFlamesAddData = &TorchFireFlamesAddData[i];
+		BB_Particle_Instance *ShaderInstance = &FlameInstances[i];
 
 		if ( PointerFlamesAddData->Active == true )
 		{
@@ -1030,17 +1030,17 @@ void TorchFireParticles::UpdateFlameParticles( FPSTimers& Timers )
 				if ( PointerFlamesAddData->CurentFrame > 2 )
 				{
 					// Alpha 
-					ShaderInstance->Alpha.w += 0.05;
+					ShaderInstance->color.w += 0.05;
 				}
 				// РАЗМЕР
-				ShaderInstance->Alpha.x += 0.01;
+				ShaderInstance->color.x += 0.01;
 
 
 
 				if ( PointerFlamesAddData->CurentFrame > 3 && PointerFlamesAddData->CurentFrame < 21 )
 				{
 					ShaderInstance->position.y += 0.01;
-					ShaderInstance->Alpha.z += -0.017453292 / 2;	//  1
+					ShaderInstance->color.z += -0.017453292 / 2;	//  1
 				}
 
 
@@ -1051,7 +1051,7 @@ void TorchFireParticles::UpdateFlameParticles( FPSTimers& Timers )
 					// РАЗМЕР
 					//				ShaderInstance->Alpha.x += 0.05;
 					// ПОВОРОТ
-					ShaderInstance->Alpha.z += 0.017453292 / 2;
+					ShaderInstance->color.z += 0.017453292 / 2;
 				}
 			}
 			// Время обновлять кадры пришло ? - Обновляем кадры для всех Inctance.
@@ -1132,8 +1132,8 @@ void TorchFireParticles::KillSmokeParticles()
 {
 	for ( int i = 0; i < SmokeInstancesAmount; ++i )
 	{
-		Torch_FireSmoke1 *InstanceAddData = &TorchFireSmokeAddData[i];
-		ParticleShaderInstance_TORCH_FIRE *ShaderInstance = &SmokeInstances[i];
+		Particles_Data *InstanceAddData = &TorchFireSmokeAddData[i];
+		BB_Particle_Instance *ShaderInstance = &SmokeInstances[i];
 
 		if ( ( InstanceAddData->Active == true ) && ( InstanceAddData->LifeTime < 0.0f ) )
 		{
@@ -1146,7 +1146,7 @@ void TorchFireParticles::KillSmokeParticles()
 
 int TorchFireParticles::GetInstanceCount()
 {
-	return FlameInstanceActive;//m_currentParticleCount;//m_instanceCount;
+	return FlameInstanceActive;//CreatedParticlesCount;//m_instanceCount;
 }
 
 
@@ -1154,7 +1154,7 @@ void TorchFireParticles::DistanceCalk( XMFLOAT3 &ObjPos, XMFLOAT3 &Camerapos, fl
 {
 	// http://stackoverflow.com/questions/10291862/what-is-the-best-way-to-get-distance-between-2-points-with-directxmath
 
-	RCube_VecFloat34 Result;
+	RCube_VecFloat234 Result;
 
 	Camera.Fl3 = Camerapos;
 	Object.Fl3 = ObjPos;
@@ -1275,10 +1275,10 @@ void TorchFireParticles::UpdateTorchPos( XMFLOAT3& TorchPosition )
 {
 //	float X, Y, Z;
 
-	ParticleShaderInstance_TORCH_FIRE* Instanse = &FlameInstances[0];
+	BB_Particle_Instance* Instanse = &FlameInstances[0];
 
-	RCube_VecFloat34 StartPos;
-	RCube_VecFloat34 GenPos;
+	RCube_VecFloat234 StartPos;
+	RCube_VecFloat234 GenPos;
 
 	StartPos.Fl3 = TorchPosition;
 	StartPos.Fl4.w = 0.0f;

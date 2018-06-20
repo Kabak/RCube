@@ -5,9 +5,9 @@
 FireParticleSystem::FireParticleSystem()
 {
 		 FireTexture = nullptr;
-		SmokeTexture = nullptr;
-		HeartTexture = nullptr;
-	ParticlesTexture = nullptr;
+//		SmokeTexture = nullptr;
+//		HeartTexture = nullptr;
+//	ParticlesTexture = nullptr;
 	  m_particleList = nullptr;
    FireInstIndNumber = nullptr;
     FireInstDistance = nullptr;
@@ -25,6 +25,7 @@ FireParticleSystem::FireParticleSystem()
 			 PlayFPS = 30.0f;
 		  TimePassed = 0.0f;
 
+		  CreatedParticlesCount = 0;
 		  Camera.Vec = { 0.0f, 0.0f, 0.0f, 1.0f };
 		  Object.Vec = { 0.0f, 0.0f, 0.0f, 1.0f };
 		  
@@ -42,7 +43,7 @@ bool FireParticleSystem::Initialize( HWND hwnd,
 		ID3D11ShaderResourceView* _FireTexture, 
 								 int _UX_Amount,							// Количество строк в текстуре анимации
 								 int _VY_Amount,							// Количестко столбцов в текстуре анимации
-								 int FramesAmount,						// Реальное количество анимаций в текстуре с верха , слева направо
+//								 int FramesAmount,						// Реальное количество анимаций в текстуре с верха , слева направо
 
 						D3DClass *_EngineLight
 									)
@@ -64,8 +65,8 @@ bool FireParticleSystem::Initialize( HWND hwnd,
 	TextcordTop = new float[ VY_Amount ];
 	TextcordLeft = new float[ UX_Amount ];
 
-	if ( FramesAmount != 0 )
-		NumOfAnimeFrams = FramesAmount;
+//	if ( FramesAmount != 0 )
+//		NumOfAnimeFrams = FramesAmount;
 	
 	// Уменьшаем количество кадров, потому что их индексы начинаются с НУЛЯ 0 - 63
 	--NumOfAnimeFrams;
@@ -150,7 +151,7 @@ void FireParticleSystem::Frame( FPSTimers& Timers )
 	KillParticles();
 
 	// Emit new particles.
-	if ( m_currentParticleCount < maxActiveParticles )
+	if ( ActiveParticlesCount < maxActiveParticles )
 		EmitParticles( Timers );
 
 	// Update the position of the particles.
@@ -164,11 +165,11 @@ void FireParticleSystem::Frame( FPSTimers& Timers )
 		MessageBox(0, L"Ошибка доступа к буферу частиц FireParticles.", L"Can't ->Map", 0);
 	}
 
-	ParticleShaderInstance_FIRE * Sortedinstance;
+	BB_Particle_Instance * Sortedinstance;
 
-	Sortedinstance = ( ParticleShaderInstance_FIRE *) mapResource.pData;
+	Sortedinstance = ( BB_Particle_Instance *) mapResource.pData;
 
-	for ( int i = 0; i < m_currentParticleCount; ++i )
+	for ( int i = 0; i < CreatedParticlesCount; ++i )
 	{
 		*Sortedinstance = instances[FireInstIndNumber[i]];
 	   ++Sortedinstance;
@@ -188,7 +189,7 @@ void FireParticleSystem::Render()
 
 	// Set vertex buffer stride and offset.
 	strides[0] = sizeof( Vertex_FlatObject );
-	strides[1] = sizeof( ParticleShaderInstance_FIRE );
+	strides[1] = sizeof( BB_Particle_Instance );
 
 	// Set the buffer offsets.
 	offsets[0] = 0;
@@ -210,53 +211,53 @@ void FireParticleSystem::Render()
 	// Set shader texture resource in the pixel shader.
 	D3DGC_Local->DX_deviceContext->PSSetShaderResources( 0, 1, &FireTexture );
 
-	D3DGC_Local->DX_deviceContext->DrawIndexedInstanced( 6, m_instanceCount/*m_currentParticleCount/*m_instanceCount*/, 0, 0, 0 );
+	D3DGC_Local->DX_deviceContext->DrawIndexedInstanced( 6, CreatedParticlesCount/*CreatedParticlesCount/*m_instanceCount*/, 0, 0, 0 );
 }
 
 
 bool FireParticleSystem::InitializeParticleSystem()
 {
 	// Set the random deviation of where the particles can be located when emitted.
-	m_particleDeviationX = 250.5f;
-	m_particleDeviationY = 0.1f;
-	m_particleDeviationZ = 250.0f;
+	ParticlesPositionDeviationX = 250.5f;
+	ParticlesPositionDeviationY = 0.1f;
+	ParticlesPositionDeviationZ = 250.0f;
 
 	// Set the speed and speed variation of particles.
-	m_particleVelocity = 1.0f;
-	m_particleVelocityVariation = 0.9f;
+	ParticleVelocity = 1.0f;
+	ParticleVelocityVariation = 0.9f;
 
 	// Set the physical size of the particles.
-	m_particleSize = 1.0f;
+	ParticleSize = 1.0f;
 
 	// Set the number of particles to emit per second.
-	m_particlesPerSecond = 50;
+	ParticlesPerSecond = 50;
 
 	// Set the maximum number of particles allowed in the particle system.
-	m_maxParticles = 3000;
+	MaxParticles = 3000;
 
 	maxActiveParticles = 150;
 	// Create the particle list.
-	m_particleList = new FireType1[m_maxParticles];
+	m_particleList = new Particles_Data[MaxParticles];
 
 	// Создаём массив индексов элементо в массивах для сортировки по удалению
 	// от камеры. Для отрисовки по мере приближения к камере.
-	FireInstIndNumber = new int[m_maxParticles];
-//	memset( FireInstIndNumber , 0xffffffff, sizeof( int ) * m_maxParticles );
+	FireInstIndNumber = new int[MaxParticles];
+//	memset( FireInstIndNumber , 0xffffffff, sizeof( int ) * MaxParticles );
 	// Массив растояний до камеры
-	FireInstDistance = new float[m_maxParticles];
-//	memset( FireInstDistance, 0, sizeof( float ) * m_maxParticles );
+	FireInstDistance = new float[MaxParticles];
+//	memset( FireInstDistance, 0, sizeof( float ) * MaxParticles );
 
 	// Initialize the particle list.
-	for ( int i = 0; i<m_maxParticles; ++i )
+	for ( int i = 0; i<MaxParticles; ++i )
 	{
-		m_particleList[i].active = false;
+		m_particleList[i].Active = false;
 	}
 
 	// Initialize the current particle count to zero since none are emitted yet.
-	m_currentParticleCount = 0;
+	CreatedParticlesCount = 0;
 
 	// Clear the initial accumulated time for the particle per second emission rate.
-	m_accumulatedTime = 0.0f;
+	AccumulatedTime = 0.0f;
 
 	return true;
 }
@@ -282,7 +283,7 @@ bool FireParticleSystem::InitializeBuffers( ID3D11Device* device )
 	// +++++++++++++++++   Instancing   ++++++++++++++++++++++++++++++++
 	D3D11_BUFFER_DESC instanceBufferDesc;
 	D3D11_SUBRESOURCE_DATA instanceData;
-	m_instanceCount = m_maxParticles;
+	m_instanceCount = MaxParticles;
 	// -----------------   Instancing   --------------------------------
 
 	// Create the vertex array for the particles that will be rendered.
@@ -314,13 +315,13 @@ bool FireParticleSystem::InitializeBuffers( ID3D11Device* device )
 	//	delete[] indices;
 
 	// +++++++++++++++++   Instancing   ++++++++++++++++++++++++++++++++
-	instances = new ParticleShaderInstance_FIRE[m_instanceCount];
+	instances = new BB_Particle_Instance [m_instanceCount];
 
-	memset( instances, 0, ( sizeof( ParticleShaderInstance_FIRE ) * m_instanceCount ) );
+	memset( instances, 0, ( sizeof( BB_Particle_Instance ) * m_instanceCount ) );
 
 	// Set up the description of the instance buffer.
 	instanceBufferDesc.Usage = D3D11_USAGE_DEFAULT; //D3D11_USAGE_DYNAMIC;
-	instanceBufferDesc.ByteWidth = sizeof( ParticleShaderInstance_FIRE ) * m_instanceCount;
+	instanceBufferDesc.ByteWidth = sizeof( BB_Particle_Instance ) * m_instanceCount;
 	instanceBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	instanceBufferDesc.CPUAccessFlags = 0;//D3D11_CPU_ACCESS_WRITE;
 	instanceBufferDesc.MiscFlags = 0;
@@ -343,19 +344,19 @@ bool FireParticleSystem::InitializeBuffers( ID3D11Device* device )
 	memset( m_vertices, 0, ( sizeof( Vertex_FlatObject ) * 4 ) );
 
 	// Top left.
-	m_vertices[0].Position = XMFLOAT3( -1.0f * m_particleSize, 1.0f * m_particleSize, 0.0f );  // Top left
+	m_vertices[0].Position = XMFLOAT3( -1.0f * ParticleSize, 1.0f * ParticleSize, 0.0f );  // Top left
 	m_vertices[0].TexCoord = XMFLOAT2( 0.0f, 0.0f );
 
 	// Bottom right.
-	m_vertices[1].Position = XMFLOAT3( 1.0f * m_particleSize, -1.0f * m_particleSize, 0.0f );  // Bottom right
+	m_vertices[1].Position = XMFLOAT3( 1.0f * ParticleSize, -1.0f * ParticleSize, 0.0f );  // Bottom right
 	m_vertices[1].TexCoord = XMFLOAT2( 1.0f, 1.0f );
 
 	// Bottom left.
-	m_vertices[2].Position = XMFLOAT3( -1.0f * m_particleSize, -1.0f * m_particleSize, 0.0f );  // Bottom left.
+	m_vertices[2].Position = XMFLOAT3( -1.0f * ParticleSize, -1.0f * ParticleSize, 0.0f );  // Bottom left.
 	m_vertices[2].TexCoord = XMFLOAT2( 0.0f, 1.0f );
 
 	// Top right.
-	m_vertices[3].Position = XMFLOAT3( 1.0f * m_particleSize, 1.0f * m_particleSize, 0.0f );  // Top right.
+	m_vertices[3].Position = XMFLOAT3( 1.0f * ParticleSize, 1.0f * ParticleSize, 0.0f );  // Top right.
 	m_vertices[3].TexCoord = XMFLOAT2( 1.0f, 0.0f );
 
 
@@ -403,7 +404,7 @@ void FireParticleSystem::ShutdownBuffers()
 
 int FireParticleSystem::GetActiveParticleAmmount()
 {
-	return ( m_currentParticleCount );
+	return ( CreatedParticlesCount );
 }
 
 
@@ -411,9 +412,9 @@ void FireParticleSystem::EmitParticles( FPSTimers& Timers )
 {
 	bool emitParticle, found;
 	//  Обновление данные системы частиц 
-	FireType1	Data;
+	Particles_Data	Data;
 	// Позиция и цвет частицы обновляется в массиве который отправляется в шейдер
-	ParticleShaderInstance_FIRE Data1;
+	BB_Particle_Instance Data1;
 
 	//	float positionX, positionY, positionZ, velocity, red, green, blue;
 	int index;//, i, j;
@@ -423,32 +424,35 @@ void FireParticleSystem::EmitParticles( FPSTimers& Timers )
 
 	// Increment the frame time.
 	if ( Timers.FrameTime < 1.0f )
-		m_accumulatedTime += Timers.FrameTime;
+		AccumulatedTime += Timers.FrameTime;
 
 	// Set emit particle to false for now.
 	emitParticle = false;
 
 	// Check if it is time to emit a new particle or not.
-	if ( m_accumulatedTime >( 1.0f / m_particlesPerSecond ) )
+	if ( AccumulatedTime >( 1.0f / ParticlesPerSecond ) )
 	{
-		m_accumulatedTime = 0.0f;
+		AccumulatedTime = 0.0f;
 		emitParticle = true;
 	}
 
 	// If there are particles to emit then emit one per frame.
-	if ( ( emitParticle == true ) && ( m_currentParticleCount < ( m_maxParticles ) ) )
+	if ( ( emitParticle == true ) && ( ActiveParticlesCount < MaxParticles ) )
 	{
-		++m_currentParticleCount;
+		++ActiveParticlesCount;
+
+		if ( CreatedParticlesCount < maxActiveParticles )
+			++CreatedParticlesCount;
 
 		// Now generate the randomized particle properties.
-		X = ( ( ( float ) rand() - ( float ) rand() ) / RAND_MAX ) * m_particleDeviationX;// + 5;
-		Y = ( ( ( float ) rand() - ( float ) rand() ) / RAND_MAX ) * m_particleDeviationY + 15;
-		Z = ( ( ( float ) rand() - ( float ) rand() ) / RAND_MAX ) * m_particleDeviationZ;
+		X = ( ( ( float ) rand() - ( float ) rand() ) / RAND_MAX ) * ParticlesPositionDeviationX;// + 5;
+		Y = ( ( ( float ) rand() - ( float ) rand() ) / RAND_MAX ) * ParticlesPositionDeviationY + 15;
+		Z = ( ( ( float ) rand() - ( float ) rand() ) / RAND_MAX ) * ParticlesPositionDeviationZ;
 
 		Data1.position = { X,Y,Z };
 		Data1.Dummy = 1.0f; // Устанавливаем для шейдера - рисовать частицу
 
-		Data.Velocity = m_particleVelocity + ( ( ( float ) rand() - ( float ) rand() ) / RAND_MAX ) * m_particleVelocityVariation;
+		Data.Velocity = ParticleVelocity + ( ( ( float ) rand() - ( float ) rand() ) / RAND_MAX ) * ParticleVelocityVariation;
 
 		R = ( ( ( float ) rand() - ( float ) rand() ) / RAND_MAX ) + 0.5f;
 		G = ( ( ( float ) rand() - ( float ) rand() ) / RAND_MAX ) + 0.5f;
@@ -461,35 +465,34 @@ void FireParticleSystem::EmitParticles( FPSTimers& Timers )
 		SetInstanceStartFrame( FrameNumber, Data1.NewTexCord );
 
 
-		Data.active = true;
+		Data.Active = true;
 		// Now since the particles need to be rendered from back to front for blending we have to sort the particle array.
 		// We will sort using Z depth so we need to find where in the list the particle should be inserted.
-		index = 0;
+
 		found = false;
-		while ( !found )
+		for ( index = 0; index < CreatedParticlesCount; ++index )
 		{
-			if ( ( m_particleList[index].active == false )  )//|| ( instances[index].position.z < Data1.position.z )
+			if ( ( m_particleList[index].Active == false )  )//|| ( instances[index].position.z < Data1.position.z )
 			{
 				found = true;
-			}
-			else
-			{
-				++index;
+				break;
 			}
 		}
 
-		// Now insert it into the particle array in the correct depth order.
-		m_particleList[index] = Data;
+		if ( !found )
+			return;
 
 		// Вставляем свет
 		TempLight->position = Data1.position;
-		RCube_VecFloat34 TempColor;
+		RCube_VecFloat234 TempColor;
 		TempColor.Fl4 = Data1.color;
 		TempLight->color = TempColor.Fl3;
 
-		m_particleList[index].LightIndex = EngineLight->AddLightSource( *TempLight );
+		Data.LightIndex = EngineLight->AddLightSource( *TempLight );
 		// -- Вставляем свет ---------------------------------------------------------------------------------------------------------------------
 
+		// Now insert it into the particle array in the correct depth order.
+		m_particleList[index] = Data;
 		instances[ index ] = Data1;
 
 	}
@@ -514,14 +517,14 @@ void FireParticleSystem::UpdateParticles( FPSTimers& Timers )
 	}
 
 	// Each frame we update all the particles by making them move downwards using their position, velocity, and the frame time.
-	for ( i = 0; i < m_maxParticles; ++i )
+	for ( i = 0; i < CreatedParticlesCount; ++i )
 	{
 		if ( j > XM_2PI )
 			j = 0;
-		FireType1 *Part = &m_particleList[i];
-		if (Part->active)
+		Particles_Data *Part = &m_particleList[i];
+		if (Part->Active)
 		{
-			ParticleShaderInstance_FIRE *Part2 = &instances[i];
+			BB_Particle_Instance *Part2 = &instances[i];
 			Part2->position.y = Part2->position.y - Part->Velocity * (Timers.FrameTime );
 			Part2->position.x = float(Part2->position.x + cos(j) * 0.006);
 			//		m_particleList[i].positionZ = m_particleList[i].positionZ + sin(j) * m_particleList[i].velocity * 0.05;
@@ -549,9 +552,9 @@ void FireParticleSystem::UpdateParticles( FPSTimers& Timers )
 			//		FireInstIndNumber[i] = i;
 		}
 	}
-	//	if ( m_currentParticleCount > 1 )
+	//	if ( CreatedParticlesCount > 1 )
 	{
-		//		QuickDepthSortDescending( FireInstIndNumber, FireInstDistance, 0, m_currentParticleCount-1 );
+		//		QuickDepthSortDescending( FireInstIndNumber, FireInstDistance, 0, CreatedParticlesCount-1 );
 	}
 
 	return;
@@ -561,38 +564,31 @@ void FireParticleSystem::UpdateParticles( FPSTimers& Timers )
 void FireParticleSystem::KillParticles()
 {
 //	int i, j;
-
+	int Temp = CreatedParticlesCount - 1;
 
 	// Kill all the particles that have gone below a certain height range.
-	for (int i = 0; i < m_maxParticles; ++i )
+	for (int i = 0; i < CreatedParticlesCount; ++i )
 	{
-		FireType1* Part = &m_particleList[i];
-		ParticleShaderInstance_FIRE* Part2 = &instances[i];
-		if ( ( Part->active == true ) && ( Part2->position.y < -3.0f ) )
+		Particles_Data* Part = &m_particleList[i];
+		BB_Particle_Instance* Part2 = &instances[i];
+		if ( ( Part->Active == true ) && ( Part2->position.y < -3.0f ) )
 		{
-			Part->active = false;
+			Part->Active = false;
 			Part2->Dummy = 0.0f; // Устанавливаем для шейдера - НЕ рисовать частицу
-			--m_currentParticleCount;
+			--ActiveParticlesCount;
 
 			// Вставляем свет
 			EngineLight->FreeLightSource( Part->LightIndex );
 			// -- Вставляем свет ---------------------------------------------------------------------------------------------------------------------
+
+			if ( i == Temp )
+			{
+				--CreatedParticlesCount;	// CreatedParticlesCount
+			}
 		}
 	}
 
 	return;
-}
-
-
-int FireParticleSystem::GetInstanceCount()
-{
-	return m_currentParticleCount;//m_instanceCount;
-}
-
-
-int FireParticleSystem::GetMaxParticles()
-{
-	return m_maxParticles;
 }
 
 
@@ -623,7 +619,7 @@ void FireParticleSystem::DistanceCalk( XMFLOAT3 &ObjPos, XMFLOAT3 &Camerapos, fl
 {
 	// http://stackoverflow.com/questions/10291862/what-is-the-best-way-to-get-distance-between-2-points-with-directxmath
 
-	RCube_VecFloat34 Result;
+	RCube_VecFloat234 Result;
 
 	Camera.Fl3 = Camerapos;
 	Object.Fl3 = ObjPos;

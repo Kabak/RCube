@@ -6,11 +6,9 @@
 
 #ifdef RCube_DX11
 #include <d3d11.h>
+#include "DX11_Render.h"
 #include "Buffers_def.h"
 //#include <vector>
-
-typedef ID3D11Buffer DXBuffer;
-typedef ID3D11ShaderResourceView DXTextureSRV;
 
 static const wchar_t* DX11BuffersError = L"ResourceManager Error" ;
 
@@ -27,7 +25,7 @@ template <typename T>
 class ConstantBuffer
 {
 public:
-	ConstantBuffer ( ID3D11Device* d3dDevice, ID3D11DeviceContext* D3DContext, bool _CPUAccess );
+	ConstantBuffer (Device* d3dDevice, DeviceContext* D3DContext, bool _CPUAccess );
    ~ConstantBuffer ();
 
    DXBuffer* GetBuffer () { return Buffer; }
@@ -37,7 +35,7 @@ public:
 	void Update ( T* Var );
 
 	DXBuffer* Buffer;
-	ID3D11DeviceContext* DX11Context;
+	DeviceContext* DX11Context;
 
 private:
 
@@ -47,7 +45,7 @@ private:
 
 
 template <typename T>
-ConstantBuffer<T>::ConstantBuffer ( ID3D11Device* d3dDevice, ID3D11DeviceContext* D3DContext, bool _CPUAccess)
+ConstantBuffer<T>::ConstantBuffer (Device* d3dDevice, DeviceContext* D3DContext, bool _CPUAccess)
 {
 #ifdef RCube_DX11
 
@@ -122,10 +120,12 @@ template <typename T>
 class VertexBuffer
 {
 public:
-	VertexBuffer ( ID3D11Device* d3dDevice, ID3D11DeviceContext* D3DContext, int CPUAccess, UINT InstanceAmount, T* InitRes);
+	VertexBuffer ( Device* d3dDevice, DeviceContext* D3DContext, int CPUAccess, UINT InstanceAmount, T* InitRes);
 	~VertexBuffer ();
 
 	DXBuffer* GetBuffer () { return Buffer; }
+
+	int GetCPU_Access () { return CPU_Access; }
 
 	inline T* MapDiscard ();
 	void Unmap ();
@@ -133,7 +133,7 @@ public:
 
 	//private:
 	DXBuffer* Buffer;
-	ID3D11DeviceContext* DX11Context;
+	DeviceContext* DX11Context;
 	UINT InstanceAmount;
 
 private:
@@ -145,7 +145,7 @@ private:
 
 
 template <typename T>
-VertexBuffer<T>::VertexBuffer ( ID3D11Device* d3dDevice, ID3D11DeviceContext* D3DContext, int _CPUAccess, UINT _InstanceAmount, T* InitRes)
+VertexBuffer<T>::VertexBuffer (Device* d3dDevice, DeviceContext* D3DContext, int _CPUAccess, UINT _InstanceAmount, T* InitRes)
 {
 	HRESULT hr;
 
@@ -235,10 +235,12 @@ template <typename T>
 class IndexBuffer
 {
 public:
-	IndexBuffer ( ID3D11Device* d3dDevice, ID3D11DeviceContext* D3DContext, int _CPUAccess, UINT Amount, T* InitRes);
+	IndexBuffer (Device* d3dDevice, DeviceContext* D3DContext, int _CPUAccess, UINT Amount, T* InitRes);
 	~IndexBuffer ();
 
 	DXBuffer* GetBuffer () { return Buffer; }
+
+	int GetCPU_Access () { return CPU_Access; }
 
 	inline T* MapDiscard ();
 	void Unmap ();
@@ -246,7 +248,7 @@ public:
 
 	//private:
 	DXBuffer* Buffer;
-	ID3D11DeviceContext* DX11Context;
+	DeviceContext* DX11Context;
 
 private:
 
@@ -256,7 +258,7 @@ private:
 
 
 template <typename T>
-IndexBuffer<T>::IndexBuffer ( ID3D11Device* d3dDevice, ID3D11DeviceContext* D3DContext, int _CPUAccess, UINT Amount, T* InitRes)
+IndexBuffer<T>::IndexBuffer (Device* d3dDevice, DeviceContext* D3DContext, int _CPUAccess, UINT Amount, T* InitRes)
 {
 	HRESULT hr;
 
@@ -346,7 +348,7 @@ class StructuredBuffer
 {
 public:
 	// Construct a structured buffer
-	StructuredBuffer ( ID3D11Device* d3dDevice, int elements,
+	StructuredBuffer (Device* d3dDevice, int elements,
 		UINT bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
 		bool dynamic = false );
 
@@ -358,8 +360,8 @@ public:
 
 	// Only valid for dynamic buffers
 	// TODO: Support NOOVERWRITE ring buffer?
-	inline T* MapDiscard ( ID3D11DeviceContext* d3dDeviceContext );
-	void Unmap ( ID3D11DeviceContext* d3dDeviceContext );
+	inline T* MapDiscard (DeviceContext* d3dDeviceContext );
+	void Unmap ( DeviceContext* d3dDeviceContext );
 
 private:
 	// Not implemented
@@ -374,7 +376,7 @@ private:
 
 
 template <typename T>
-StructuredBuffer<T>::StructuredBuffer ( ID3D11Device* d3dDevice, int elements,
+StructuredBuffer<T>::StructuredBuffer (Device* d3dDevice, int elements,
 	UINT bindFlags, bool dynamic )
 	: mElements ( elements ), mShaderResource ( 0 ), mUnorderedAccess ( 0 )
 {
@@ -408,7 +410,7 @@ StructuredBuffer<T>::~StructuredBuffer ()
 
 
 template <typename T>
-T* StructuredBuffer<T>::MapDiscard ( ID3D11DeviceContext* d3dDeviceContext )
+T* StructuredBuffer<T>::MapDiscard (DeviceContext* d3dDeviceContext )
 {
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	d3dDeviceContext->Map ( mBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource );
@@ -417,7 +419,7 @@ T* StructuredBuffer<T>::MapDiscard ( ID3D11DeviceContext* d3dDeviceContext )
 
 
 template <typename T>
-void StructuredBuffer<T>::Unmap ( ID3D11DeviceContext* d3dDeviceContext )
+void StructuredBuffer<T>::Unmap (DeviceContext* d3dDeviceContext )
 {
 	d3dDeviceContext->Unmap ( mBuffer, 0 );
 }
@@ -427,10 +429,12 @@ void StructuredBuffer<T>::Unmap ( ID3D11DeviceContext* d3dDeviceContext )
 class Flat_Obj_Buffers
 {
 public:
-	Flat_Obj_Buffers () : FlatObjectVB ( 0 ), InstanceVBs ( 0 ), IndexBs ( 0 ), RenderTexture (0)
+	Flat_Obj_Buffers () : FlatObjectVB ( 0 ),
+//		InstanceVBs ( 0 ), 
+		IndexBs ( 0 ), RenderTexture (0)
 	 {
 		FlatObjectVB = nullptr;
-		InstanceVBs  = nullptr;
+//		InstanceVBs  = nullptr;
 		IndexBs = nullptr;
 		RenderTexture = nullptr;
 		ThisBufferIndex = -1;
@@ -439,7 +443,7 @@ public:
 	~Flat_Obj_Buffers ()
 	{
 		RCUBE_DELETE ( FlatObjectVB )
-		RCUBE_DELETE ( InstanceVBs )
+//		RCUBE_DELETE ( InstanceVBs )
 		RCUBE_DELETE ( IndexBs )
 	}
 
@@ -449,7 +453,7 @@ public:
 
 	}
 	VertexBuffer <Vertex_FlatObject>* FlatObjectVB;
-	VertexBuffer <PositionType>* InstanceVBs;							// Instance buffer 
+//	VertexBuffer <PositionType>* InstanceVBs;							// Instance buffer 
 	IndexBuffer < Index_Type >* IndexBs;
 	DXTextureSRV* RenderTexture;
 	int ThisBufferIndex;
@@ -480,6 +484,39 @@ public:
 	}
 	VertexBuffer <Vertex_Model3D>* Vertexes;
 	IndexBuffer < Index_Type >* Indexes;
+	int ThisBufferIndex;
+
+};
+
+
+class BB_Particles_Buffers : public Flat_Obj_Buffers
+{
+public:
+	BB_Particles_Buffers () : FlatObjectVB ( 0 ), InstanceVBs ( 0 ), IndexBs ( 0 ), RenderTexture ( 0 )
+	{
+		FlatObjectVB = nullptr;
+		InstanceVBs = nullptr;
+		IndexBs = nullptr;
+		RenderTexture = nullptr;
+		ThisBufferIndex = -1;
+};
+
+	~BB_Particles_Buffers ()
+	{
+			RCUBE_DELETE ( FlatObjectVB )
+			RCUBE_DELETE ( InstanceVBs )
+			RCUBE_DELETE ( IndexBs )
+	}
+
+	void SetVertexBuffer ()
+	{
+		//		FlatObjectVB.
+
+	}
+	VertexBuffer <Vertex_FlatObject>* FlatObjectVB;
+	VertexBuffer <BB_Particle_Instance>* InstanceVBs;							// Instance buffer 
+	IndexBuffer < Index_Type >* IndexBs;
+	DXTextureSRV* RenderTexture;
 	int ThisBufferIndex;
 
 };

@@ -16,8 +16,8 @@ public:
 	 IndexseArray();
 	~IndexseArray();
 
-	RCube_VecFloat34 Camera;
-	RCube_VecFloat34 Object;
+	RCube_VecFloat234 Camera;
+	RCube_VecFloat234 Object;
 
 	// Массив индексов
 	int *Array;

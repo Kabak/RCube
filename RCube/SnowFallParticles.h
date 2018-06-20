@@ -3,7 +3,7 @@
 #include <d3d11.h>
 #include "DirectXMath.h"
 #include "D3DGlobalContext.h"
-#include "ParticleSystemDefinitions.h"
+#include "ParticleSystem_def.h"
 #include "FPSTimers.h"
 #include "D3DClass.h"
 #include "Light_def.h"
@@ -28,8 +28,8 @@ public:
 					 D3DGlobalContext *D3DGC_Local,
 					 ID3D11ShaderResourceView* texture,
 					 int _UX_Amount,							// Количество строк в текстуре анимации
-					 int _VY_Amount,							// Количестко столбцов в текстуре анимации
-					 int FramesAmount					// Реальное количество анимаций в текстуре с верха , слева направо
+					 int _VY_Amount							// Количестко столбцов в текстуре анимации
+//					 int FramesAmount					// Реальное количество анимаций в текстуре с верха , слева направо
 					 );
 
 
@@ -46,8 +46,6 @@ public:
 
 	int GetActiveParticleAmmount();
 
-	int GetInstanceCount();
-
 	int ShaderForDraw = -1;
 
 private:
@@ -63,15 +61,18 @@ private:
 	int UX_Amount;			// Ширина текстуры Width X U
 	int VY_Amount;			// Высота текстуры Height Y V
 
-	float m_particleDeviationX, m_particleDeviationY, m_particleDeviationZ;
-	float m_particleVelocity, m_particleVelocityVariation;
-	float m_particleSize, m_particlesPerSecond;
-	int m_maxParticles;
+	float ParticlesPositionDeviationX, ParticlesPositionDeviationY, ParticlesPositionDeviationZ;
+	float ParticleVelocity, ParticleVelocityVariation;
+	float ParticleSize, ParticlesPerSecond;
+	int MaxParticles;
 
-	int m_currentParticleCount;
-	float m_accumulatedTime;
+	//  int Amount_Active;
+	int CreatedParticlesCount;
+	int ActiveParticlesCount;
+	int maxActiveParticles;
+	float AccumulatedTime;
 
-	FireType1* m_particleList;
+	Particles_Data* m_particleList;
 
 	void SetInstanceStartFrame( int FrameNumber, XMFLOAT4& Data2 );
 
@@ -80,14 +81,11 @@ private:
 	ID3D11Buffer *m_vertexBuffer;
 	ID3D11Buffer *m_indexBuffer;
 	// +++++++++++++++++   Instancing   ++++++++++++++++++++++++++++++++
-	ParticleShaderInstance_FIRE* instances;
+	BB_Particle_Instance* instances;
 	ID3D11Buffer* m_instanceBuffer;
 	int m_instanceCount;
 	// -----------------   Instancing   --------------------------------
 
-
-	// Анимация
-	int RealFramesAmount;
 	// ШИрина одного кадра в текстурных координатах 0 - 1
 	float OneFrameWidth;
 	// Высота одного кадра в текстурных координатах 0 - 1
@@ -106,18 +104,15 @@ private:
 	float *TextcordTop;
 	float *TextcordLeft;
 
-	// Количество инстансе огня 
-	int FlameInstances;
-
 	// Массив индексов для сортировки по расстоянию от камеры
-	int *FireInstIndNumber;
+//	int *FireInstIndNumber;
 	// Массив растояний Instance от камеры
-	float *FireInstDistance;
+//	float *FireInstDistance;
 
 	//	ParticleShaderInstance_FIRE* Unsortedinstance;
 
-	RCube_VecFloat34 Camera;
-	RCube_VecFloat34 Object;
+	RCube_VecFloat234 Camera;
+	RCube_VecFloat234 Object;
 
 	// Находим расстояние от объекта до камеры
 	void DistanceCalk( XMFLOAT3 &ObjPos, XMFLOAT3 &Camerapos, float &DistanceStore );

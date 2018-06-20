@@ -1,3 +1,4 @@
+#pragma pack_matrix( row_major )
 /*
 cbuffer PerFrameConstants : register(b0)
 {
@@ -26,18 +27,19 @@ cbuffer ShadowBuffer : register(b1)
 
 struct GeometryVSIn
 {
-	float3 position : POSITION;
-	float2 texCoord : TEXCOORD;
-	float3 normal : NORMAL;
-	float3 tangent : TANGENT;
+	float4 position			: POSITION;
+	float2 texCoord			: TEXCOORD;
+	float3 normal			: NORMAL;
+	float3 tangent			: TANGENT;
+
 	float4 instancePosition : ObjPOSITION;
 	float4 instanceRotation : ObjROTATION;
 };
 
 struct GeometryVSOut
 {
-	float4 position     : SV_Position;
-//	float4 depthPosition : TEXTURE0;
+	float4 position			: SV_Position;
+//	float4 depthPosition	: TEXTURE0;
 };
 
 // Функция умножения позиции объекта на кватернион  без преобразования в матрицу
@@ -50,8 +52,11 @@ GeometryVSOut LightRender_VS(GeometryVSIn IN)
 {
 	GeometryVSOut OUT;
 
-	OUT.position = float4(qtransform(IN.instanceRotation, IN.position.xyz) + IN.instancePosition.xyz, 1.0f);
-	OUT.position = mul(OUT.position, viewprojectionSM);
+	float4 Temp = 1.0f;
+
+	Temp.xyz = qtransform(IN.instanceRotation, IN.position.xyz) + IN.instancePosition.xyz;
+
+	OUT.position = mul( Temp, viewprojectionSM);
 //	OUT.depthPosition = normalize(OUT.position);
 	return OUT;
 }

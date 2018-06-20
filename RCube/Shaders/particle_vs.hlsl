@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Filename: particle.vs
 ////////////////////////////////////////////////////////////////////////////////
-
+#pragma pack_matrix( row_major )
 
 /////////////
 // GLOBALS //
@@ -25,18 +25,19 @@ cbuffer MatrixBuffer : register( b0 )
 //////////////
 struct VertexInputType
 {
-	float3 position : POSITION0;
-	float2 tex : TEXCOORD0;
-	float3 instancePosition : POSITION1;
-	float4 color : COLOR;
+	float4 position			: POSITION0;
+	float4 tex				: TEXCOORD0;
 
+	float4 instancePosition : POSITION1;
+	float4 color			: COLOR;
+	float4 NewTexCord		: InsTEXCOORD;
 };
 
 struct PixelInputType
 {
-	float4 position : SV_POSITION;
-	float2 tex : TEXCOORD0;
-	float4 color : COLOR;
+	float4 position			: SV_POSITION;
+	float2 tex				: TEXCOORD0;
+	float4 color			: COLOR;
 };
 
 
@@ -53,14 +54,15 @@ PixelInputType ParticleVertexShader( VertexInputType input )
 {
 	PixelInputType output;
 
+	output.position.w = input.instancePosition.w;
 
-	output.position = float4( qtransform( ViewTransQuat, input.position.xyz ), 1.0f );
-	output.position.xyz += input.instancePosition.xyz;
+	output.position.xyz = qtransform( ViewTransQuat, input.position.xyz ) + input.instancePosition.xyz;
+
 	// Calculate the position of the vertex against the world, view, and projection matrices.
 	output.position = mul( output.position, viewprojection );
 
 	// Store the texture coordinates for the pixel shader.
-	output.tex = input.tex;
+	output.tex = input.tex.xy;
 
 	// Store the particle color for the pixel shader. 
 	output.color = input.color;
