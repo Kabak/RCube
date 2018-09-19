@@ -31,7 +31,7 @@ struct Light
 	matrix qtwvp;
 //	float4 RotQuat;
 	uint haveShadow;
-	int ShadowMapSliceNumber;
+	float ShadowMapSliceNumber;
 	int LightID;
 	int Dummy;
 };
@@ -377,10 +377,11 @@ void AccumulateBRDF(SurfaceData surface, Light light, inout float3 lit)
 			float2 a = {2.0f,-2.0f};
 			projectTexCoord.xy = surface.lightViewPosition.xy / a.xy + 0.5f;
 
-			projectTexCoord.z = float(light.ShadowMapSliceNumber);
+			projectTexCoord.z = light.ShadowMapSliceNumber;
 
+//			float2 SatXY = saturate ( projectTexCoord.xy );
 			// Check if the projected coordinates are in the view of the light, if not then the pixel gets just an ambient value. 
-			if ((saturate(projectTexCoord.x) == projectTexCoord.x) && (saturate(projectTexCoord.y) == projectTexCoord.y))
+//			if ( SatXY.x == projectTexCoord.x && SatXY.y == projectTexCoord.y )
 			{
 				// Смотрим текстуру теней
 				float shadowMapDepth = ShadowMap3D.SampleGrad( ShadowMap_Sampler, projectTexCoord.xyz, 0.0f, 0.0f).r;

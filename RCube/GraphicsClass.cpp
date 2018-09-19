@@ -700,7 +700,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	}
 
 
-	m_Bitmap->ShaderIndex = MyManager->GetShaderIndexByName(L"KF2DObj");
+	m_Bitmap->ShaderIndex = MyManager->FontOnTextureShaderIndex = MyManager->GetShaderIndexByName(L"KF2DObj");
 
 	if (FAILED( hr ))
 	{
@@ -860,7 +860,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Data->PosX = 100;
 	Data->PosY = 90;
 	Data->ShowType = SHOW;
-	Data->Colour = { 0.0f, 1.0f, 0.0f, 1.0f };
+	Data->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
 	Data->Render = true;
 	Data->FontType = 1;
 	Data->Level = INGAME_TEXT;
@@ -870,7 +870,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Data->PosX = 100;
 	Data->PosY = 90;
 	Data->ShowType = SHOW;
-	Data->Colour = { 0.0f, 1.0f, 0.0f, 1.0f };
+	Data->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
 	Data->Render = true;
 	Data->FontType = 5;
 	Data->Level = INGAME_TEXT;
@@ -881,7 +881,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Data->PosX = 100;
 	Data->PosY = 90;
 	Data->ShowType = SHOW;
-	Data->Colour = { 0.0f, 1.0f, 0.0f, 1.0f };
+	Data->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
 	Data->Render = true;
 	Data->FontType = 2;
 	Data->Level = INGAME_TEXT;
@@ -890,7 +890,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Data->MaxLength = 128;
 	Data->PosY = 130;
 	Data->ShowType = SHOW;
-	Data->Colour = { 0.0f, 1.0f, 0.0f, 1.0f };
+	Data->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
 	Data->Render = true;
 	Data->FontType = 2;
 	Number = MyManager->AddSentence(Data, "R - Вверх, F - вниз");
@@ -898,7 +898,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Data->MaxLength = 128;
 	Data->PosY = 160;
 	Data->ShowType = SHOW;
-	Data->Colour = { 1.0f, 1.0f, 0.0f, 1.0f };
+	Data->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
 	Data->Render = true;
 	Data->FontType = 4;
 	Number = MyManager->AddSentence(Data, "A - Влево, D - вправо");
@@ -906,7 +906,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Data->MaxLength = 128;
 	Data->PosY = 190;
 	Data->ShowType = SHOW;
-	Data->Colour = { 0.0f, 1.0f, 0.0f, 1.0f };
+	Data->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
 	Data->Render = true;
 //	Data->Level = 0;
 	Number = MyManager->AddSentence(Data, "Это тест Scrolling строки.");
@@ -914,7 +914,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Data->MaxLength = 128;
 	Data->PosY = 190;
 	Data->ShowType = SHOW;
-	Data->Colour = { 0.0f, 1.0f, 0.0f, 1.0f };
+	Data->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
 	Data->Render = true;
 	Data->FontType = 0;
 //	Data->Level = 0;
@@ -923,7 +923,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Data->MaxLength = 128;
 	Data->PosY = 190;
 	Data->ShowType = SHOW;
-	Data->Colour = { 0.0f, 1.0f, 0.0f, 1.0f };
+	Data->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
 	Data->Render = true;
 	Data->FontType = 0;
 	//	Data->Level = 0;
@@ -932,7 +932,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Data->MaxLength = 128;
 	Data->PosY = 190;
 	Data->ShowType = SHOW;
-	Data->Colour = { 0.0f, 1.0f, 0.0f, 1.0f };
+	Data->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
 	Data->Render = true;
 	Data->FontType = 0;
 	//	Data->Level = 0;
@@ -972,8 +972,8 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	// 15 Текст о Видеоплате
 	Data->MaxLength = 128;
 	Data->PosY = 310;
-	Data->ShowType = SHOW_SCROLLING;
-	Data->Colour = { 0.0f, 1.0f, 0.0f, 1.0f };
+	Data->ShowType = SHOW_SCROLLING;// | SHOW_GLOWING;
+	Data->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
 	Data->Render = true;
 	Data->FontType = 2;
 	//	Data->Level = 0;
@@ -1558,22 +1558,25 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	ParticleSysInitData* _InitData = new ParticleSysInitData;
 
 	_InitData->ReserveEmittersCount = 1;
-	_InitData->ParticleSystemType = ONEBUFFER;
+	_InitData->ParticleSystemType = PS_BASIC;
 	_InitData->Position.Fl3 = XMFLOAT3 ( 0.0f, 35.0f, 0.0f );
 
 	Snow = new ParticleSystemController ( &fpstimers, m_D3D, PhysX, MyManager, _InitData );
 
 	Emitter_Init_Data* Emitter_Data = new Emitter_Init_Data;
-	
-	Emitter_Data->InitPosition.Fl3 = _InitData->Position.Fl3;	// Set Particle System Position Offset in 3D World
-	Emitter_Data->EmitterType = EM_BILLBOARD;
-	Emitter_Data->InitParticleSize = 0.05f;
-	Emitter_Data->InitParticleVelocity = 1.95f;
-	Emitter_Data->InitParticleVelocityVariation = -1.0f;
+	memset ( Emitter_Data, 0, sizeof ( Emitter_Init_Data ) );
 
-	Emitter_Data->XPosition = false;
-	Emitter_Data->YPosition = true;
-	Emitter_Data->ZPosition = false;
+	Emitter_Data->InitPosition.Fl3 = _InitData->Position.Fl3;	// Set Particle System Position Offset in 3D World
+	Emitter_Data->Animated = EM_NO_ANIMATION_RANDOM;
+	Emitter_Data->EmittFunction  = E_SNOWFALL;
+	Emitter_Data->UpdateFunction = U_SNOWFALL;
+	Emitter_Data->InitSize = 0.05f;
+	Emitter_Data->InitVelocity = 1.95f;
+	Emitter_Data->InitVelocityVariation = -1.0f;
+
+	Emitter_Data->KillXPosition = NO_KILL;
+	Emitter_Data->KillYPosition = KILL_UNDER;
+	Emitter_Data->KillZPosition = NO_KILL;
 	Emitter_Data->KillPosition.Fl3 = XMFLOAT3 ( 0.0f, 0.0f, 0.0f );
 	
 	Emitter_Data->KillBySize = 0;
@@ -1589,22 +1592,23 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Emitter_Data->ParticlesPerSecond = 500.0f;
 	Emitter_Data->Init3DParticleVelocity.Fl3 = XMFLOAT3 ( 10.95f, 0.95f, 0.95f );
 	Emitter_Data->PlayFPS = 30;
-	Emitter_Data->InitPositionDeviation.Fl3 = XMFLOAT3 ( 30.5f, 0.0f, 30.0f );
-	Emitter_Data->ShaderForDraw = MyManager->GetShaderIndexByName ( L"particle" );
+	Emitter_Data->InitPositionDeviation.Fl3 = XMFLOAT3 ( 0.5f, 0.0f, 0.0f );
 
-	Emitter_Data->TextureIndex = 20; // Star Texture
-	Emitter_Data->UpdateType = U_SNOWFALL;
-	Emitter_Data->UX_Amount = 1;
-	Emitter_Data->VY_Amount = 1;
+	Emitter_Data->TextureIndex = 23;// Snow texture 20; // Star Texture
+	Emitter_Data->UX_Amount = 16;
+	Emitter_Data->VY_Amount = 16;
 
 	// Snow
 	Snow->AddEmitter ( Emitter_Data );
 	Snow->Render = true;
 
-	Emitter_Data->InitParticleVelocity = 5.95f;
-	Emitter_Data->InitParticleVelocityVariation = -5.0f;
+	Emitter_Data->TextureIndex = 20;
+	Emitter_Data->Animated = EM_NO_ANIMATION;
+	Emitter_Data->InitVelocity = 5.95f;
+	Emitter_Data->InitVelocityVariation = -5.0f;
 	Emitter_Data->InitPosition.Fl3 = XMFLOAT3 ( 100.0f, 50.0f, 10.0f );
-	Emitter_Data->InitParticleSize = 0.5f;
+	Emitter_Data->InitPositionDeviation.Fl3 = XMFLOAT3 ( 30.5f, 0.0f, 30.0f );
+	Emitter_Data->InitSize = 0.5f;
 	Emitter_Data->KillPosition.Fl3 = XMFLOAT3 ( 0.0f, 35.0f, 0.0f );
 	Emitter_Data->MaxParticles = 500;
 	Emitter_Data->MaxActiveParticles = 500;
@@ -1613,40 +1617,42 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Snow->AddEmitter ( Emitter_Data );
 
 
-
+	Emitter_Data->Animated = EM_NO_ANIMATION_RANDOM;
 	Emitter_Data->InitPositionDeviation.Fl3 = XMFLOAT3 ( 10.5f, 0.0f, 10.0f );
-	Emitter_Data->InitParticleVelocity = 15.9f;
-	Emitter_Data->InitParticleVelocityVariation = -15.0f;
+	Emitter_Data->InitVelocity = 15.9f;
+	Emitter_Data->InitVelocityVariation = -15.0f;
 	Emitter_Data->KillPosition.Fl3 = XMFLOAT3 ( 0.0f, 0.0f, 0.0f );
 	Emitter_Data->InitPosition.Fl3 = XMFLOAT3 ( 100.0f, 30.0f, -100.0f );
-	Emitter_Data->ApplyLightSourceToParticlses = true;
-	Emitter_Data->InitParticleSize = 1.0f;
-	Emitter_Data->TextureIndex = 8;
-	Emitter_Data->UX_Amount = 8;
-	Emitter_Data->VY_Amount = 8;
-	Emitter_Data->MaxParticles = 500;
+	Emitter_Data->ApplyLightSourceToParticlses = false;
+	Emitter_Data->InitSize = 1.0f;
+	Emitter_Data->TextureIndex = 23;
+	Emitter_Data->UX_Amount = 16;
+	Emitter_Data->VY_Amount = 16;
+	Emitter_Data->MaxParticles = 50;
 	Emitter_Data->MaxActiveParticles = 50;
 	Emitter_Data->ParticlesPerSecond = 50.0f;
-	Emitter_Data->ShaderForDraw = MyManager->GetShaderIndexByName ( L"FireParticle3D" );
 
 	Snow->AddEmitter ( Emitter_Data );
 
 
 	// All over map
+	Emitter_Data->Animated = EM_ANIMATED_RANDOM;
 	Emitter_Data->InitPositionDeviation.Fl3 = XMFLOAT3 ( 250.0f, 0.1f, 250.0f );
-	Emitter_Data->InitParticleVelocity = 1.0f;
-	Emitter_Data->InitParticleVelocityVariation = 0.9f;
+	Emitter_Data->InitVelocity = 1.0f;
+	Emitter_Data->InitVelocityVariation = -0.9f;
 	Emitter_Data->KillPosition.Fl3 = XMFLOAT3 ( 0.0f, 0.0f, 0.0f );
-	Emitter_Data->InitPosition.Fl3 = XMFLOAT3 ( 0.0f, 30.0f, 0.0f );
+	Emitter_Data->InitPosition.Fl3 = XMFLOAT3 ( 1.0f, 30.0f, 1.0f );
+	Emitter_Data->LightAttenuationBegin = 0.1f;
+	Emitter_Data->LightAttenuationEnd = 10.5f;
+	Emitter_Data->LightColour.Fl4 = XMFLOAT4 ( 1.0f, 1.0f, 1.0f, 1.0f );
 	Emitter_Data->ApplyLightSourceToParticlses = true;
-	Emitter_Data->InitParticleSize = 1.0f;
+	Emitter_Data->InitSize = 1.0f;
 	Emitter_Data->TextureIndex = 8;	//MyManager->TexturesArr[8]->SRV
 	Emitter_Data->UX_Amount = 8;
 	Emitter_Data->VY_Amount = 8;
 	Emitter_Data->MaxParticles = 3000;
 	Emitter_Data->MaxActiveParticles = 150;
 	Emitter_Data->ParticlesPerSecond = 50.0f;
-	Emitter_Data->ShaderForDraw = MyManager->GetShaderIndexByName ( L"FireParticle3D" );
 
 	Snow->AddEmitter ( Emitter_Data );
 
@@ -2036,7 +2042,7 @@ bool GraphicsClass::Frame( FPSTimers &Counters, DXINPUTSTRUCT& InputStruct1)
 // ------------------------------------------------------------
 
 
-	strcpy_s(Str1, STRMAXLENGTH, "Terrain Frame : ");
+	strcpy_s(Str1, STRMAXLENGTH, "Particles Frame : ");
 	strcat_s(Str1, STRMAXLENGTH, Str);
 	MyManager->UpdateSentence(13, Str1, MyManager->GetPosX( 13 ), MyManager->GetPosY( 13 ) );
 // Измеряем быстродействие

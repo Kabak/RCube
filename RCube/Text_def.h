@@ -19,7 +19,7 @@ typedef enum SHOW_TEXT {
 	SHOW = 0, // просто отображение без эфектов
 	SHOW_FPS = 1, // NOT IMPLEMENTED YET
 	SHOW_GLOWING = 2, // моргающая строка
-	SHOW_SCROLLING = 3, // движущаяся строка 
+	SHOW_SCROLLING = 4, // движущаяся строка 
 } ShowMethod;
 
 // Перечисление разных типов убирания предложений с экрана
@@ -31,7 +31,7 @@ typedef enum HIDE_TEXT {
 struct SentenceType
 {
 	int	VertexBufferIndex;	// Индекс вертексного буферы предложения
-	XMVECTOR	Colour;		// цвет и alpha
+	XMFLOAT4	Colour;		// цвет и alpha
 	XMFLOAT4	ColourTemp; // Временное хранение цвета
 	XMFLOAT4	ColourAction;// переменная для работы с цветом
 	float	TempValShow;// Временная переменная для работы Show
@@ -115,4 +115,5 @@ struct FontOnTextureData
 							//			XMFLOAT4 GradientPos;	// x,y - start point  z,w - end point 
 
 };
+
 #endif

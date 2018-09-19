@@ -75,7 +75,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(ProjectDir)\DirectXTex-master\DDSTextureLoader;$(ProjectDir)\DirectXTex-master\WICTextureLoader;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\PhysX-3.4-master\PxShared\lib\vc14win64;C:\PhysX-3.4-master\PhysX_3.4\Lib\vc14win64;$(LibraryPath)</LibraryPath>
+    <LibraryPath>C:\PhysX-3.4-master\PxShared\lib\vc15win64;C:\PhysX-3.4-master\PhysX_3.4\Lib\vc15win64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -85,7 +85,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(ProjectDir)\DirectXTex-master\DDSTextureLoader;$(ProjectDir)\DirectXTex-master\WICTextureLoader;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\PhysX-3.4-master\PxShared\lib\vc14win64;C:\PhysX-3.4-master\PhysX_3.4\Lib\vc14win64;$(LibraryPath)</LibraryPath>
+    <LibraryPath>C:\PhysX-3.4-master\PxShared\lib\vc15win64;C:\PhysX-3.4-master\PhysX_3.4\Lib\vc15win64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -264,7 +264,6 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClInclude Include="DxInputStruct.h" />
     <ClInclude Include="EffectsManager.h" />
     <ClInclude Include="Emiters.h" />
-    <ClInclude Include="FireParticleSystem.h" />
     <ClInclude Include="FontClass.h" />
     <ClInclude Include="FPSTimers.h" />
     <ClInclude Include="IndexesArray.h" />
@@ -277,7 +276,6 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClInclude Include="ParticleSystemController.h" />
     <ClInclude Include="RenderClass.h" />
     <ClInclude Include="ResourceManager.h" />
-    <ClInclude Include="SceneObject.h" />
     <ClInclude Include="PhysXControler.h" />
     <ClInclude Include="LightGrid.h" />
     <ClInclude Include="Material.h" />
@@ -285,7 +283,6 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClInclude Include="ParticleSystem_def.h" />
     <ClInclude Include="RCubeNetwork.h" />
     <ClInclude Include="RCubeProfiling.h" />
-    <ClInclude Include="SnowFallParticles.h" />
     <ClInclude Include="FlatObjectClass.h" />
     <ClInclude Include="CameraClass.h" />
     <ClInclude Include="CpuClass.h" />
@@ -321,7 +318,6 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClCompile Include="CubeMap.cpp" />
     <ClCompile Include="EffectsManager.cpp" />
     <ClCompile Include="Emiters.cpp" />
-    <ClCompile Include="FireParticleSystem.cpp" />
     <ClCompile Include="FontClass.cpp" />
     <ClCompile Include="IndexesArray.cpp" />
     <ClCompile Include="KF2DTextureAnimation.cpp" />
@@ -338,7 +334,6 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClCompile Include="NetworkClass.cpp" />
     <ClCompile Include="RCubeNetwork.cpp" />
     <ClCompile Include="RCubeProfiling.cpp" />
-    <ClCompile Include="SnowFallParticles.cpp" />
     <ClCompile Include="FlatObjectClass.cpp" />
     <ClCompile Include="CameraClass.cpp" />
     <ClCompile Include="CpuClass.cpp" />
@@ -429,7 +424,7 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TextureVertexShader</EntryPointName>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
-    <FxCompile Include="Shaders\FireParticle3D_ps.hlsl">
+    <FxCompile Include="Shaders\ParticleAnimated_ps.hlsl">
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ParticlePixelShader</EntryPointName>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ParticlePixelShader</EntryPointName>
@@ -439,7 +434,7 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
       <DisableOptimizations Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DisableOptimizations>
       <EnableDebuggingInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</EnableDebuggingInformation>
     </FxCompile>
-    <FxCompile Include="Shaders\FireParticle3D_vs.hlsl">
+    <FxCompile Include="Shaders\ParticleAnimated_vs.hlsl">
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ParticleVertexShader</EntryPointName>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ParticleVertexShader</EntryPointName>

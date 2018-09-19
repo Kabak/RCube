@@ -1,6 +1,26 @@
 ========================================================================
     WIN32 APPLICATION : RCube Project Overview
 ========================================================================
+// Кватернионы
+// https://gamedev.ru/code/articles/?id=4215
+
+// Templates
+//	https://ru.stackoverflow.com/questions/437553/%d0%a8%d0%b0%d0%b1%d0%bb%d0%be%d0%bd-%d0%b2-%d0%ba%d0%b0%d1%87%d0%b5%d1%81%d1%82%d0%b2%d0%b5-%d0%bf%d0%b0%d1%80%d0%b0%d0%bc%d0%b5%d1%82%d1%80%d0%b0-%d1%88%d0%b0%d0%b1%d0%bb%d0%be%d0%bd%d0%b0
+
+// Lighting  OGL  but good to know
+// https://learnopengl.com/Advanced-Lighting/Shadows/Point-Shadows
+
+// GOOD BLOG
+// Easy Transparent Shadow Maps
+// Optimizing tile-based light culling
+// https://turanszkij.wordpress.com/
+
+// From DX11 to DX12 Migration
+// https://software.intel.com/en-us/articles/tutorial-migrating-your-apps-to-directx-12-part-3
+
+// D2D with D3D
+// https://docs.microsoft.com/en-us/windows/desktop/direct2d/direct2d-and-direct3d-interoperation-overview
+
 // Фиксированное время в Игре
 // http://www.gamedev.ru/code/forum/?id=221794
 // Рендер сцен Irrlicht в отдельном потоке
@@ -55,6 +75,8 @@ https://msdn.microsoft.com/en-us/library/windows/desktop/ff476340(v=vs.85).aspx
 http://www.rastertek.com/dx11tut38.html
 http://richardssoftware.net/Home/Post/28
 https://www.gamedev.net/articles/programming/graphics/d3d11-tessellation-in-depth-r3059/
+http://gpuexperiments.blogspot.com/
+https://docs.microsoft.com/en-us/windows/desktop/direct3d11/direct3d-11-advanced-stages-tessellation
 
 // Dynamic Resolution Rendering Article
 https://software.intel.com/en-us/articles/dynamic-resolution-rendering-article
@@ -114,6 +136,9 @@ https://github.com/Microsoft/DirectX-Graphics-Samples
 https://msdn.microsoft.com/en-us/library/windows/desktop/mt186624(v=vs.85).aspx
 Привязка ресурсов в Microsoft DirectX 12
 https://habrahabr.ru/company/intel/blog/265525/
+DX12 memory allocation
+http://3dgep.blogspot.com/2016/02/a-journey-through-directx-12-dynamic.html
+https://www.3dgep.com/learning-directx12-1/
 
 Проблема с мультисемплированием и шейдером Texture2DMS
 http://www.gamedev.ru/code/forum/?id=211108

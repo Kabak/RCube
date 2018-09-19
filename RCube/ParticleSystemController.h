@@ -41,6 +41,7 @@ public:
 	void UpdateParticles ( Emitter* TempEmitter );
 	void KillParticles ( Emitter* TempEmitter );
 
+	void DiactivateParticle ( Emitter* _Emitter, Particles_Data* Part, BB_Particle_Instance* Part2 );
 	// Находим расстояние от объекта до камеры
 	void DistanceCalk ( Emitter* _Emitter, XMFLOAT3 &ObjPos, XMFLOAT3 &Camerapos, float &DistanceStore );
 
@@ -64,6 +65,9 @@ public:
 	void SnowFallUpdate ( bool UpdateFrame, Emitter* _Emitter );
 	void SnowFallEmitt ( Emitter* _Emitter );
 
+private:
+
+	void CheckParticleSystemInitData ( ParticleSysInitData* _InitData );
 };
 
 #endif

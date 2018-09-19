@@ -12,7 +12,12 @@ struct MaterialOtherData
 {
 public:
 	std::wstring* Name;
-	ID3D11ShaderResourceView * Texture;
+	ID3D11ShaderResourceView * BaseColourTexture;
+	ID3D11ShaderResourceView * RoughnessTexture;
+	ID3D11ShaderResourceView * MetalicTexture;
+	ID3D11ShaderResourceView * SpecularTexture;
+
+
 };
 
 

@@ -509,7 +509,8 @@ bool RenderClass::RenderFontOnTexture ( ID3D11ShaderResourceView* textureForDraw
 	int Res1 = ResManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 4, 6, nullptr );
 	int Res2 = ResManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 4, 6, nullptr );
 
-	ResManager->SetActiveShadersInProgramm ( ResManager->TextShaderIndex );
+	ResManager->SetActiveShadersInProgramm ( ResManager->FontOnTextureShaderIndex );
+
 	// Ќаносим текстуру с текстом на нужною нам текстуру
 	CopyTextTextureOnTexture ( textureForDraw, 
 		ResManager->Get_Flat_ObjectBuffers_ByIndex ( Res1 ),
@@ -1454,52 +1455,26 @@ void RenderClass::ShowGlowing ( int i )
 	SentenceType* Source = ResManager->RCube_Sentences[i];
 	if (Source->ShowGoOn == false)
 	{
-		TextV34.Vec = Source->Colour;
-		Source->ColourTemp = TextV34.Fl4;
-		//		XMStoreFloat4(&Source->ColourTemp, Source->Colour);
-		Source->TempValShow = 2.0f;
+		Source->TempValShow = 0.0f;
 		Source->ShowGoOn = true;
 	}
 	else
 	{
-		if (fpstimers.ComputerSpeed > 0)
-			Source->TempValShow -= fpstimers.FrameTime;
-		if (Source->TempValShow < 0) {
+		if ( fpstimers.FrameTime < 1.0f )
+			Source->TempValShow += fpstimers.FrameTime;
+
+		if (Source->TempValShow > ( 1.0f / 1.0f ) ) // How fast to glow
+		{
 			Source->ShowGoOn = false;
-			TextV34.Fl4 = Source->ColourTemp;
-			Source->Colour = TextV34.Vec;
 		}
 
-		if (Source->TempValShow < 1.3f && Source->ShowGoOn == true)
+		if (Source->ShowGoOn == true)
 		{
-			TextV34.Vec = Source->Colour;
-			Source->ColourAction = TextV34.Fl4;
-			if (Source->ColourAction.x > 0.0f)
-				Source->ColourAction.x -= fpstimers.FrameTime;
+			if (Source->Colour.w > 0.0f)
+				Source->Colour.w -= fpstimers.FrameTime * 1.0f; // How fast to glow
 			else
-				Source->ColourAction.x = 0.0f;
-			if (Source->ColourAction.y > 0.0f)
-				Source->ColourAction.y -= fpstimers.FrameTime;
-			else
-				Source->ColourAction.y = 0.0f;
-			if (Source->ColourAction.z > 0.0f)
-				Source->ColourAction.z -= fpstimers.FrameTime;
-			else
-				Source->ColourAction.z = 0.0f;
-			if (Source->ColourAction.w > 0.0f)
-				Source->ColourAction.w -= fpstimers.FrameTime;
-			else
-				Source->ColourAction.w = 0.0f;
-
-			TextV34.Fl4 = Source->ColourAction;
-			Source->Colour = TextV34.Vec;
+				Source->Colour.w = 1.0f;
 		}
-		else
-		{
-			TextV34.Fl4 = Source->ColourTemp;
-			Source->Colour = TextV34.Vec;
-		}
-
 	}
 }
 
@@ -1510,8 +1485,6 @@ void RenderClass::ShowScrolling ( int i )
 
 	if (Source->ScrollGoOn == false)
 	{
-		//		Sentences[i]->PosX = (m_screenWidth - ( Sentences[i]->MaxLength *
-		//			(int)m_Font[Sentences[i]->FontType]->FontSize / 2)) / 2 ;
 		Source->PosY = Local_D3DGC->ScreenHeight - (int)ResManager->RCube_Font[Source->FontType]->FontSize;
 
 		Source->TempValScroll = 0.0f;
@@ -1537,6 +1510,8 @@ void RenderClass::ShowScrolling ( int i )
 
 void RenderClass::RenderText ( int Level )
 {
+	bool GLOW = false;
+	bool SCROLL = false;
 
 //	Local_D3DGC->DX_deviceContext->IASetPrimitiveTopology ( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
 
@@ -1545,25 +1520,15 @@ void RenderClass::RenderText ( int Level )
 		SentenceType* Sentence = ResManager->RCube_Sentences[i];
 		if (Sentence->Render == true && Sentence->Level == Level)
 		{
-			switch (Sentence->ShowType)
-			{
-			case 0:
-				break;
+			Sentence->ShowType & SHOW_GLOWING ? GLOW = true : GLOW = false;
+			Sentence->ShowType & SHOW_SCROLLING ? SCROLL = true : SCROLL = false;
 
-			case 1:
-				break;
-
-			case 2:
+			if ( GLOW )
 				ShowGlowing ( i );
-				break;
 
-			case 3:
+			if ( SCROLL )
 				ShowScrolling ( i );
-				break;
-
-			default:;
-			}
-			
+	
 			RenderSentence ( ResManager->RCube_Sentences[i] );
 		}
 	}
@@ -1849,7 +1814,7 @@ void RenderClass::RenderSpotLightsSadowMaps ( std::vector <int>* SpotLightsWithS
 		DrawObjectUsingShadows ( LightPosition.Vec );
 
 		// —охран€ем в световом массиве индекс куска Shadow Map
-		Point1->ShadowMapSliceNumber = i;
+		Point1->ShadowMapSliceNumber = float(i);
 		Point1->LightID = i;
 //		Local_D3DGC->DSV_ShadowMap3D->Release ();
 		RCUBE_RELEASE ( Local_D3DGC->DSV_ShadowMap3D );
@@ -1888,9 +1853,9 @@ void RenderClass::RenderParticleSystem ( int Index )
 				{
 					ResManager->SetActiveShadersInProgramm ( TempEmitter->Init_Data.ShaderForDraw );
 					
-					switch ( TempSystem->SystemType )
+					switch ( TempEmitter->Type )
 					{
-						case ONEBUFFER:
+						case EM_BILLBOARD:
 						{
 							// Set vertex buffer stride and offset.
 							strides[0] = sizeof ( Vertex_FlatObject );

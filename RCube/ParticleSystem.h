@@ -17,7 +17,7 @@ public:
 
    bool FrustumPassed;	// Set if in Frustum
    bool Render;			// Set if System need to be rendered
-    int SystemType;		// Type of Particle system
+//    int SystemType;		// Type of Particle system
 
 	int ParticleSystem_Object_Index; // Particle System Index in massive
 

@@ -1113,16 +1113,21 @@ void D3DClass::Shutdown()
 
 void D3DClass::BeginScene(XMFLOAT4& Colour)
 {
-	float color[4];
+	union
+	{
+		float color[4];
+		XMFLOAT4 Colour4;
+	} color;
 
+	color.Colour4 = Colour;
 	// Setup the color to clear the buffer to.
-	color[0] = Colour.x;
-	color[1] = Colour.y;
-	color[2] = Colour.z;
-	color[3] = Colour.w;
+//	color[0] = Colour.x;
+//	color[1] = Colour.y;
+//	color[2] = Colour.z;
+//	color[3] = Colour.w;
 
 	// Clear the back buffer.
-	D3DGC->DX_deviceContext->ClearRenderTargetView(D3DGC->BackBuffer_RTV, color);
+	D3DGC->DX_deviceContext->ClearRenderTargetView(D3DGC->BackBuffer_RTV, color.color);
 
 	// Clear the depth buffer.
 	D3DGC->DX_deviceContext->ClearDepthStencilView(D3DGC->m_depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);

@@ -135,10 +135,7 @@ public:
 			   
 			   FontClass* TempFont;
 
-//	   ParticleSystemClass* m_ParticleSystem;
-//	   FireParticleSystem  *FireParticles;
 	   TorchFireParticles  *TorchFire;
-//	   SnowFallParticles   *SnowParticles;
 
 	   ParticleSystemController *Snow;
 

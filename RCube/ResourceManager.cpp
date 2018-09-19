@@ -38,7 +38,7 @@ void ResourceManager::ShutDown()
 	i = ParticleSystems.size ();
 	while ( c < i )
 	{
-		Delete_Particle_System ( c );
+		DeleteParticleSystem ( c );
 		++c;
 	}
 	ParticleSystems.clear ();
@@ -601,7 +601,7 @@ bool ResourceManager::CreateLayouts ()
 
 	numElements = _ARRAYSIZE ( BB_Particle_Instance_Layout );
 
-	TempBlob = GetShaderBlobByName ( L"FireParticle3D" );
+	TempBlob = GetShaderBlobByName ( L"ParticleAnimated" );
 
 	hr = Local_D3DGC->DX_device->CreateInputLayout ( BB_Particle_Instance_Layout, numElements, TempBlob->GetBufferPointer (),
 		TempBlob->GetBufferSize (), &TempLayout );
@@ -1459,13 +1459,17 @@ bool ResourceManager::SaveTextureToFile ( int Index, WCHAR* Name )
 	return true;
 }
 
-
-void ResourceManager::BuildSentanceVertexArray ( FontClass* Font, Vertex_FlatObject* vertices, char* sentence, float& drawX, float& drawY, float& RenderFontSize )
+void  ResourceManager::BuildSentanceVertexArray ( BuildSentanceData* BuildData)
+//void ResourceManager::BuildSentanceVertexArray ( FontClass* Font, Vertex_FlatObject* vertices, char* sentence, float& drawX, float& drawY, float& RenderFontSize, XMVECTOR& Colour )
 {
 	int numLetters, letter;
 
+//	RCube_VecFloat234 colour;
+	
+//	colour.Vec = BuildData->Colour;
+
 	// Get the number of letters in the sentence.
-	numLetters = (int)strlen ( sentence );
+	numLetters = (int)strlen ( BuildData->text );
 
 	// The following loop will now build the vertex and index arrays. It takes each character from the sentence and creates two triangles for it. It then maps the character from the font texture onto 
 	// those two triangles using the m_Font array which has the TU texture coordinates and pixel size. Once the polygon for that character has been created it then updates the X coordinate on the 
@@ -1475,7 +1479,7 @@ void ResourceManager::BuildSentanceVertexArray ( FontClass* Font, Vertex_FlatObj
 	for (int i = 0; i < numLetters; ++i)
 	{
 		//  +++++++++   Добавлена поддержка ASCII символов после 127   +++++++++++
-		char *Source = &sentence[i];
+		char *Source = &BuildData->text[i];
 
 		if (*Source < 0)
 			letter = ((int)*Source) + 159; // 191 - 32
@@ -1493,41 +1497,47 @@ void ResourceManager::BuildSentanceVertexArray ( FontClass* Font, Vertex_FlatObj
 		if (letter == 0)
 		{
 			// Ширина пробела
-			drawX += Font->FontSize / 2;
+			BuildData->drawX += BuildData->Font->FontSize / 2;
 		}
 		else
 		{
-			_Symbol_Dim *Source = &Font->Symbols[letter - 1];
-			float DYRFS = drawY - RenderFontSize;
-			float DXSS = drawX + Source->Symbol_Width;
+			_Symbol_Dim *Source = &BuildData->Font->Symbols[letter - 1];
+			float DYRFS = BuildData->drawY - BuildData->RenderFontSize;
+			float DXSS = BuildData->drawX + Source->Symbol_Width;
 			// First triangle in quad.
-			vertices->Position = XMFLOAT3 ( drawX, drawY, 0.0f );  // Top left.
-			vertices->TexCoord = XMFLOAT2 ( Source->Start, 0.0f );
-			++vertices;
+			BuildData->vertexes->Position = XMFLOAT3 ( BuildData->drawX, BuildData->drawY, 0.0f );  // Top left.
+			BuildData->vertexes->TexCoord = XMFLOAT2 ( Source->Start, 0.0f );
+			BuildData->vertexes->padding1.y = BuildData->Colour.w;
+			++BuildData->vertexes;
 
-			vertices->Position = XMFLOAT3 ( (drawX + Source->Symbol_Width), DYRFS, 0.0f );  // Bottom right.
-			vertices->TexCoord = XMFLOAT2 ( Source->End, 1.0f );
-			++vertices;
+			BuildData->vertexes->Position = XMFLOAT3 ( ( BuildData->drawX + Source->Symbol_Width), DYRFS, 0.0f );  // Bottom right.
+			BuildData->vertexes->TexCoord = XMFLOAT2 ( Source->End, 1.0f );
+			BuildData->vertexes->padding1.y = BuildData->Colour.w;
+			++BuildData->vertexes;
 
-			vertices->Position = XMFLOAT3 ( drawX, DYRFS, 0.0f );  // Bottom left.
-			vertices->TexCoord = XMFLOAT2 ( Source->Start, 1.0f );
-			++vertices;
+			BuildData->vertexes->Position = XMFLOAT3 ( BuildData->drawX, DYRFS, 0.0f );  // Bottom left.
+			BuildData->vertexes->TexCoord = XMFLOAT2 ( Source->Start, 1.0f );
+			BuildData->vertexes->padding1.y = BuildData->Colour.w;
+			++BuildData->vertexes;
 
 			// Second triangle in quad.
-			vertices->Position = XMFLOAT3 ( drawX, drawY, 0.0f );  // Top left.
-			vertices->TexCoord = XMFLOAT2 ( Source->Start, 0.0f );
-			++vertices;
+			BuildData->vertexes->Position = XMFLOAT3 ( BuildData->drawX, BuildData->drawY, 0.0f );  // Top left.
+			BuildData->vertexes->TexCoord = XMFLOAT2 ( Source->Start, 0.0f );
+			BuildData->vertexes->padding1.y = BuildData->Colour.w;
+			++BuildData->vertexes;
 
-			vertices->Position = XMFLOAT3 ( DXSS, drawY, 0.0f );  // Top right.
-			vertices->TexCoord = XMFLOAT2 ( Source->End, 0.0f );
-			++vertices;
+			BuildData->vertexes->Position = XMFLOAT3 ( DXSS, BuildData->drawY, 0.0f );  // Top right.
+			BuildData->vertexes->TexCoord = XMFLOAT2 ( Source->End, 0.0f );
+			BuildData->vertexes->padding1.y = BuildData->Colour.w;
+			++BuildData->vertexes;
 
-			vertices->Position = XMFLOAT3 ( DXSS, DYRFS, 0.0f );  // Bottom right.
-			vertices->TexCoord = XMFLOAT2 ( Source->End, 1.0f );
-			++vertices;
+			BuildData->vertexes->Position = XMFLOAT3 ( DXSS, DYRFS, 0.0f );  // Bottom right.
+			BuildData->vertexes->TexCoord = XMFLOAT2 ( Source->End, 1.0f );
+			BuildData->vertexes->padding1.y = BuildData->Colour.w;
+			++BuildData->vertexes;
 
 			// Update the x location for drawing by the size of the letter and one pixel.
-			drawX = drawX + Source->Symbol_Width + 1.0f;
+			BuildData->drawX = BuildData->drawX + Source->Symbol_Width + 1.0f;
 		}
 	}
 
@@ -1537,19 +1547,9 @@ void ResourceManager::BuildSentanceVertexArray ( FontClass* Font, Vertex_FlatObj
 int ResourceManager::GetNewSentenceIndex ( SentenceType* NewSentence )	// Получить свободный индекс предложения в системе
 {
 	int Index = -1;
-	if (!UnusedSentenceIndex.empty ())
-	{
-		Index = UnusedSentenceIndex.back ();
-		UnusedSentenceIndex.pop_back ();
-		RCube_Sentences[Index] = NewSentence;
-	}
-	else
-	{
-		RCube_Sentences.push_back ( NewSentence );
-		Index = (int)(RCube_Sentences.size () - 1);
-	}
 
-	return  Index;
+	return Index = GetObjectBuffer <vector<SentenceType*>, vector<UINT>, SentenceType* > ( RCube_Sentences, UnusedSentenceIndex, NewSentence );
+
 }
 
 bool ResourceManager::InitializeSentence ( SentenceType* sentence, int& maxLength )
@@ -1570,7 +1570,8 @@ void ResourceManager::UpdateSentence ( int SentenceNumber, char* text, int posit
 {
 	int numLetters;
 	Vertex_FlatObject* vertices;
-	float drawX, drawY;
+
+	BuildSentanceData* BuildData = new BuildSentanceData;
 
 	// Get the number of letters in the sentence.
 	numLetters = (int)strlen ( text );
@@ -1597,16 +1598,26 @@ void ResourceManager::UpdateSentence ( int SentenceNumber, char* text, int posit
 
 	// Calculate the starting location to draw the sentence on the screen at.
 	// Calculate the X and Y pixel position on the screen to start drawing to.
-	drawX = (float)(((Local_D3DGC->ScreenWidth / 2) * -1) + positionX);
-	drawY = (float)((Local_D3DGC->ScreenHeight / 2) - positionY);
+//	drawX = (float)(((Local_D3DGC->ScreenWidth / 2) * -1) + positionX);
+//	drawY = (float)((Local_D3DGC->ScreenHeight / 2) - positionY);
+
+	BuildData->Colour = Source->Colour;
+	BuildData->drawX = ( float ) ( ( ( Local_D3DGC->ScreenWidth / 2 ) * -1 ) + positionX );
+	BuildData->drawY = ( float ) ( ( Local_D3DGC->ScreenHeight / 2 ) - positionY );
+	BuildData->Font = RCube_Font[Source->FontType];
+	BuildData->RenderFontSize = RenderFontSize;
+	BuildData->text = text;
+	BuildData->vertexes = vertices;
 
 	// Build the vertex array using the FontClass and the sentence information.
 	// Use the font class to build the vertex array from the sentence text and sentence draw location.
-	BuildSentanceVertexArray ( RCube_Font[Source->FontType], vertices, text, drawX, drawY, RenderFontSize );
+	BuildSentanceVertexArray ( BuildData );
+//	BuildSentanceVertexArray ( RCube_Font[Source->FontType], vertices, text, drawX, drawY, RenderFontSize, Source->Colour );
 
 	// Copy the vertex array information into the sentence vertex buffer.
 	FlatObjectBuffers[Source->VertexBufferIndex]->FlatObjectVB->Update ( vertices );
 
+	RCUBE_DELETE ( BuildData );
 	// Release the vertex array as it is no longer needed.
 	RCUBE_DELETE( vertices);
 
@@ -1640,7 +1651,7 @@ int ResourceManager::AddSentence ( SENTENCE_INIT_DATA* data, char* String )
 	if (!result)
 		return -1;
 
-	Source->Colour = XMLoadFloat4 ( &data->Colour );
+	Source->Colour = data->Colour;
 	Source->FontType = data->FontType;
 	Source->Render = data->Render;
 	Source->MaxLength = data->MaxLength;
@@ -1878,17 +1889,8 @@ bool ResourceManager::LoadKFObject ( std::wstring FileName, _3DModel* New_3D_Mod
 int ResourceManager::GetNew3D_Obj_Index ( _3DModel* NewModel )
 {
 	int Index = -1;
-	if ( !Unused3DModelsIndex.empty () )
-	{
-		Index = Unused3DModelsIndex.back ();
-		Unused3DModelsIndex.pop_back ();
-		_3DModels [Index] = NewModel;
-	}
-	else
-	{
-		_3DModels.push_back ( NewModel );
-		Index = ( int ) ( _3DModels.size () - 1 );
-	}
+
+	Index = GetObjectBuffer <vector < _3DModel* >, vector<UINT>, _3DModel* > ( _3DModels, Unused3DModelsIndex, NewModel );
 
 	NewModel->_3D_Obj_Index = Index;
 
@@ -1899,17 +1901,8 @@ int ResourceManager::GetNew3D_Obj_Index ( _3DModel* NewModel )
 int ResourceManager::GetNew3D_Obj_Mesh_Buffer_Index ( _3D_Obj_Buffers* NewBuffer )
 {
 	int Index = -1;
-	if ( !Unused3DModelsMeshBuffersIndex.empty () )
-	{
-		Index = Unused3DModelsMeshBuffersIndex.back ();
-		Unused3DModelsMeshBuffersIndex.pop_back ();
-		_3DModelsMeshBuffers [Index] = NewBuffer;
-	}
-	else
-	{
-		_3DModelsMeshBuffers.push_back ( NewBuffer );
-		Index = ( int ) ( _3DModelsMeshBuffers.size () - 1 );
-	}
+
+	Index = GetObjectBuffer <vector < _3D_Obj_Buffers* >, vector<UINT>, _3D_Obj_Buffers* > ( _3DModelsMeshBuffers, Unused3DModelsMeshBuffersIndex, NewBuffer );
 
 	NewBuffer->ThisBufferIndex = Index;
 
@@ -2763,17 +2756,8 @@ int ResourceManager::Delete_Terrain ( int ObjectIndex )
 int ResourceManager::Get_New_Terrain_Index ( Terrain* TerrainObj )
 {
 	int Index = -1;
-	if ( !UnusedTerrainsIndex.empty () )
-	{
-		Index = UnusedTerrainsIndex.back ();
-		UnusedTerrainsIndex.pop_back ();
-		Terrains[Index] = TerrainObj;
-	}
-	else
-	{
-		Terrains.push_back ( TerrainObj );
-		Index = ( int ) ( Terrains.size () - 1 );
-	}
+
+	Index = GetObjectBuffer <vector < Terrain* >, vector<UINT>, Terrain* > ( Terrains, UnusedTerrainsIndex, TerrainObj );
 
 	TerrainObj->Terrain_Object_Index = Index;
 
@@ -2784,17 +2768,8 @@ int ResourceManager::Get_New_Terrain_Index ( Terrain* TerrainObj )
 int ResourceManager::Get_Terrain_VB_Index ( _3D_Obj_Buffers* NewBuffer )
 {
 	int Index = -1;
-	if ( !UnusedTerrainsBuffersIndex.empty () )
-	{
-		Index = UnusedTerrainsBuffersIndex.back ();
-		UnusedTerrainsBuffersIndex.pop_back ();
-		TerrainVertexBuffers[Index] = NewBuffer;
-	}
-	else
-	{
-		TerrainVertexBuffers.push_back ( NewBuffer );
-		Index = ( int ) ( TerrainVertexBuffers.size () - 1 );
-	}
+
+	Index = GetObjectBuffer <vector <_3D_Obj_Buffers* >, vector<UINT>, _3D_Obj_Buffers* > ( TerrainVertexBuffers, UnusedTerrainsBuffersIndex, NewBuffer );
 
 	NewBuffer->ThisBufferIndex = Index;
 
@@ -3503,17 +3478,8 @@ bool ResourceManager::Delete_Emitter_BB_Buffer ( int BufferIndex )
 int ResourceManager::GetNewEmitter_BB_Buffers_Index ( BB_Particles_Buffers* NewBuffer )
 {
 	int Index = -1;
-	if ( !Unused_BB_BuffersIndex.empty () )
-	{
-		Index = Unused_BB_BuffersIndex.back ();
-		Unused_BB_BuffersIndex.pop_back ();
-		BB_ParticleSystems_Buffers[Index] = NewBuffer;
-	}
-	else
-	{
-		BB_ParticleSystems_Buffers.push_back ( NewBuffer );
-		Index = ( int ) ( BB_ParticleSystems_Buffers.size () - 1 );
-	}
+
+	Index = GetObjectBuffer <vector < BB_Particles_Buffers* >, vector<UINT>, BB_Particles_Buffers* > ( BB_ParticleSystems_Buffers, Unused_BB_BuffersIndex, NewBuffer );
 
 	NewBuffer->ThisBufferIndex = Index;
 
@@ -3527,19 +3493,19 @@ void ResourceManager::CreateInitial_BB_VertexBuffer ( Vertex_FlatObject* Vertice
 	memset ( Vertices, 0, ( sizeof ( Vertex_FlatObject ) * 4 ) );
 
 	// Top left.
-	Vertices[0].Position = XMFLOAT3 ( -1.0f * NewEmitter->Init_Data.InitParticleSize, 1.0f *  NewEmitter->Init_Data.InitParticleSize, 0.0f );  // Top left
+	Vertices[0].Position = XMFLOAT3 ( -1.0f * NewEmitter->Init_Data.InitSize, 1.0f *  NewEmitter->Init_Data.InitSize, 0.0f );  // Top left
 	Vertices[0].TexCoord = XMFLOAT2 ( 0.0f, 0.0f );
 
 	// Bottom right.
-	Vertices[1].Position = XMFLOAT3 ( 1.0f *  NewEmitter->Init_Data.InitParticleSize, -1.0f *  NewEmitter->Init_Data.InitParticleSize, 0.0f );  // Bottom right
+	Vertices[1].Position = XMFLOAT3 ( 1.0f *  NewEmitter->Init_Data.InitSize, -1.0f *  NewEmitter->Init_Data.InitSize, 0.0f );  // Bottom right
 	Vertices[1].TexCoord = XMFLOAT2 ( 1.0f, 1.0f );
 
 	// Bottom left.
-	Vertices[2].Position = XMFLOAT3 ( -1.0f *  NewEmitter->Init_Data.InitParticleSize, -1.0f *  NewEmitter->Init_Data.InitParticleSize, 0.0f );  // Bottom left.
+	Vertices[2].Position = XMFLOAT3 ( -1.0f *  NewEmitter->Init_Data.InitSize, -1.0f *  NewEmitter->Init_Data.InitSize, 0.0f );  // Bottom left.
 	Vertices[2].TexCoord = XMFLOAT2 ( 0.0f, 1.0f );
 
 	// Top right.
-	Vertices[3].Position = XMFLOAT3 ( 1.0f *  NewEmitter->Init_Data.InitParticleSize, 1.0f *  NewEmitter->Init_Data.InitParticleSize, 0.0f );  // Top right.
+	Vertices[3].Position = XMFLOAT3 ( 1.0f *  NewEmitter->Init_Data.InitSize, 1.0f *  NewEmitter->Init_Data.InitSize, 0.0f );  // Top right.
 	Vertices[3].TexCoord = XMFLOAT2 ( 1.0f, 0.0f );
 
 }
@@ -3547,7 +3513,7 @@ void ResourceManager::CreateInitial_BB_VertexBuffer ( Vertex_FlatObject* Vertice
 
 int ResourceManager::Create_Emitter_BB_Buffers ( bool CPUAccess, UINT InstanceAmount, UINT TempTextureIndex, Emitter* NewEmitter )
 {
-	int ReturnIndex = -1;
+	int Index = -1;
 
 	BB_Particles_Buffers* _EmitterBuffers = new BB_Particles_Buffers ();
 
@@ -3562,30 +3528,17 @@ int ResourceManager::Create_Emitter_BB_Buffers ( bool CPUAccess, UINT InstanceAm
 
 	_EmitterBuffers->RenderTexture = TexturesArr[TempTextureIndex]->SRV;
 
-//	ReturnIndex = GetIndexBuf <vector < BB_Particles_Buffers* > > ( BB_ParticleSystems_Buffers );
-//	ReturnIndex = GetNewBufferIndex< vector < BB_Particles_Buffers*> , vector <UINT>, BB_Particles_Buffers > ( BB_ParticleSystems_Buffers, Unused_BB_BuffersIndex, _EmitterBuffers );
-	ReturnIndex = GetNewEmitter_BB_Buffers_Index ( _EmitterBuffers );
+	Index = GetNewEmitter_BB_Buffers_Index ( _EmitterBuffers );
 
-//	_EmitterBuffers->ThisBufferIndex = ReturnIndex;
-
-	return ReturnIndex;
+	return Index;
 }
 
 
 int ResourceManager::AddParticleSystem ( ParticleSystem* ParticleSys )
 {
 	int Index = -1;
-	if ( !UnusedParticleSystemIndex.empty () )
-	{
-		Index = UnusedParticleSystemIndex.back ();
-		UnusedParticleSystemIndex.pop_back ();
-		ParticleSystems[Index] = ParticleSys;
-	}
-	else
-	{
-		ParticleSystems.push_back ( ParticleSys );
-		Index = ( int ) ( ParticleSystems.size () - 1 );
-	}
+
+	Index = GetObjectBuffer <vector < ParticleSystem* >, vector<UINT>, ParticleSystem* > ( ParticleSystems, UnusedParticleSystemIndex, ParticleSys );
 
 	ParticleSys->ParticleSystem_Object_Index = Index;
 

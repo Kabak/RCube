@@ -19,9 +19,14 @@ public:
    bool KillOnDeactivate;	// Уничтожить
    bool KillOnCompleted;	// 
 
- //  int Amount_Active;
+ // For PS_BASIC particle system emitter
    int CreatedParticlesCount;
    int ActiveParticlesCount;
+
+// For PS_TORCH particle system emitter
+   int FlameInstanceActive;
+   int SmokeInstanceActive;
+   int FireFlyInstancesActive;
 
 //	int UpdateType;			// Choose formula for update particles by enum UpdateParticleFunctions
 //	int EmitterType;		// Choose formula for emit particles
@@ -41,17 +46,30 @@ public:
 //   RCube_VecFloat234 AABB;// Dimension of Emitter
 
 // Animations
-   float OneFrameWidth;			// One animation frame width in texture from 0 - 1
-   float OneFrameHeight;		// One animation frame Height in texture from 0 - 1
+   float OneFrameWidth;		// One animation frame width in texture from 0 - 1
+   float OneFrameHeight;	// One animation frame Height in texture from 0 - 1
+   float FireFlyWidth;		// Ширина одного элемента FireFly в единицах от 0 - 1
+   float FireFlyHeight;		// Высота одного элемента FireFly в единицах от 0 - 1
+
+
    int NumOfAnimeFrames;		// Total animation frames in texture
    int CurentFrame;				// Current animation frame
 // Precalculated TextCoords for animations frames
    float *TextcordTop;
    float *TextcordLeft;
 
-// Timers
+// Timers  For PS_BASIC 
    float AccumulatedTime;
    float TimePassed;			// Сколько времени прошло
+
+// Timers  For PS_TORCH
+   float TimeToEmitFlames;
+   float TimeToEmitSmoke;
+   float TimeToEmitFireFly;
+   float UpdateTimeFlames;	// Как часто нужно обновлять параметры частицам
+   float TimePassedFlames;
+   float UpdateTimeSmoke;
+   float UpdateTimeFireFly;
 
    // Массив индексов для сортировки по расстоянию от камеры
    int *FireInstIndNumber;
@@ -62,4 +80,7 @@ public:
    RCube_VecFloat234 Camera;
    RCube_VecFloat234 Object;
 
+private :
+
+	void Init_Data_Check ( Emitter_Init_Data* _Init_Data );
 };

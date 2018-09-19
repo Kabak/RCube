@@ -80,6 +80,18 @@ private:
 
 	};
 
+	struct BuildSentanceData
+	{
+		FontClass* Font;
+		Vertex_FlatObject* vertexes;
+		char* text;
+		float drawX;
+		float drawY;
+		float RenderFontSize;
+		XMFLOAT4 Colour;
+
+	};
+
 	wchar_t * StoreShaderName(wchar_t* Name);	// Сохраняем имя шейдера  ( например : ClusteredSM_ps.cso  отрезается ClusteredSM и сохраняется )  
 
 public:
@@ -126,6 +138,7 @@ public:
 	vector < SentenceType* >			RCube_Sentences;	// Список созданных текстовых предложений
 	vector <UINT>						UnusedSentenceIndex;// Массив свободных индексов предложений
 	int									TextShaderIndex;	// Номер шейдера для текста в списке шейдеров 
+	int									FontOnTextureShaderIndex;// Номер шрифта для Flat Object
 
 // 3D Models
 // Список 3D объектов на сцене
@@ -149,7 +162,6 @@ public:
 	vector < BB_Particles_Buffers* >	BB_ParticleSystems_Buffers;
 	vector <UINT>						UnusedParticleSystemIndex;
 	vector <UINT>						Unused_BB_BuffersIndex;
-//	vector <UINT>						UnusedEmittersIndex;
 
 
 // CubeMap
@@ -162,8 +174,30 @@ public:
 
 // - CubeMap
 
-// + 3D Models Works
 private:
+
+template <class ObjectType, class ObjectIndex, class NewObject >
+int GetObjectBuffer ( ObjectType &Object, ObjectIndex &ObjIndex, NewObject &NewObj)
+{
+	int Index = -1;
+
+	if ( !ObjIndex.empty () )
+	{
+		Index = ObjIndex.back ();
+		ObjIndex.pop_back ();
+		Object[Index] = NewObj;
+	}
+	else
+	{
+		Object.push_back ( NewObj );
+		Index = ( int ) ( Object.size () - 1 );
+	}
+
+	return  Index;
+
+}
+
+// + 3D Models Works
 	bool LoadKFObject ( std::wstring FileName, _3DModel* New_3D_Model ); // достает из кфо файла обьет
 	int GetNew3D_Obj_Index ( _3DModel* NewModel );	// Получить свободный индекс модели в массиве 3D моделей
 	int GetNew3D_Obj_Mesh_Buffer_Index ( _3D_Obj_Buffers* NewModel );
@@ -377,7 +411,8 @@ public :
 private:
 // + Sentence Works	
 	bool InitializeSentence ( SentenceType*, int& maxLength );
-	void BuildSentanceVertexArray ( FontClass* Font, Vertex_FlatObject* vertices, char* sentence, float& drawX, float& drawY, float& RenderFontSize );
+	void BuildSentanceVertexArray ( BuildSentanceData* BuildData );
+	void BuildSentanceVertexArray ( FontClass* Font, Vertex_FlatObject* vertices, char* sentence, float& drawX, float& drawY, float& RenderFontSize, XMVECTOR& Colour );
 	int GetNewSentenceIndex ( SentenceType* NewSentence );	// Получить свободный индекс предложения в системе
 // - Sentence Works
 

@@ -158,6 +158,7 @@ bool StringsListClass::SetInitFrameData()
 	SENTENCE_INIT_DATA Data;
 	ZeroMemory( &Data, sizeof( SENTENCE_INIT_DATA ) );
 
+		Data.Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
 		Data.FontType   = FontIndex;
 		Data.HideType   = HIDE;
 		Data.ShowType   = SHOW;

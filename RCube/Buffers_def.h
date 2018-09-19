@@ -33,7 +33,7 @@ namespace
 		NOLAYOUT,		// FXAA_vs			Нет Layout
 	    MODEL3D,		// LightRenderSM 
 		FLATOBJECT,		// FireAnimation 
-		BB_PARTICLES,	// FireParticle3D 
+		BB_PARTICLES,	// ParticleAnimated 
 		BB_PARTICLES	// TorchFire3D
 	};
 }

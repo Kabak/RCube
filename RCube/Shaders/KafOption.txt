@@ -13,8 +13,8 @@
  LightRenderSM_vs.cso //12	6  LightRenderSM_ps.cso //13
  FireAnimation_vs.cso //14	7
  FireAnimation_ps.cso //15
- FireParticle3D_vs.cso //16	8
- FireParticle3D_ps.cso //17
+ ParticleAnimated_vs.cso //16	8
+ ParticleAnimated_ps.cso //17
  TorchFire3D_vs.cso //18	9
  TorchFire3D_ps.cso //19
  Horiz_cs.cso //28    CS Shader - 0	

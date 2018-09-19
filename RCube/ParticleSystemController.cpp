@@ -22,12 +22,23 @@ ParticleSystemController::ParticleSystemController ( FPSTimers* _Timers, D3DClas
 	//	TempLight->qtwvp = MyMat.XMF;
 	TempLight->HaveShadow = false;
 
+	CheckParticleSystemInitData ( _InitData );
+
 	memcpy ( &InitData, _InitData, sizeof ( ParticleSysInitData ) );
 
-	SystemType = _InitData->ParticleSystemType; // Required for render class
-
 	Emitters.reserve ( _InitData->ReserveEmittersCount );
+/*
+	switch ( _InitData->ParticleSystemType )
+	{
+		case PS_BASIC:
+			Emitters.reserve ( _InitData->ReserveEmittersCount );
+			break;
 
+		case PS_TORCH :
+			Emitters.reserve ( 4 );
+			break;
+	}
+*/
 	// Add Particle system to Render List
 	ResManager->AddParticleSystem ( dynamic_cast< ParticleSystem* >( this ) );
 }
@@ -48,6 +59,13 @@ ParticleSystemController::~ParticleSystemController()
 	Emitters.clear ();
 	// Remove yourself from render ParticleSystems in Resource Manager
 	ResManager->DeleteParticleSystem ( ParticleSystem_Object_Index );
+}
+
+
+void ParticleSystemController::CheckParticleSystemInitData ( ParticleSysInitData* _InitData )
+{
+	_InitData->ReserveEmittersCount < 0 ? _InitData->ReserveEmittersCount = 0 : _InitData->ReserveEmittersCount;
+
 }
 
 
@@ -82,7 +100,7 @@ void ParticleSystemController::Frame ( )
 void ParticleSystemController::EmitParticles ( Emitter* TempEmitter )
 {
 		//+ CHOOSE PARTICLES EMITTER FUNCTION
-		switch ( TempEmitter->Init_Data.EmitterType )
+		switch ( TempEmitter->Init_Data.EmittFunction )
 		{
 			case E_SNOWFALL:
 				SnowFallEmitt ( TempEmitter );
@@ -108,7 +126,7 @@ void ParticleSystemController::UpdateParticles ( Emitter* TempEmitter )
 		}
 
 		//+ CHOOSE PARTICLES UPDATE FUNCTION
-		switch ( TempEmitter->Init_Data.UpdateType )
+		switch ( TempEmitter->Init_Data.UpdateFunction )
 		{
 			case U_SNOWFALL:
 				SnowFallUpdate ( UpdateFrame, TempEmitter );
@@ -119,39 +137,57 @@ void ParticleSystemController::UpdateParticles ( Emitter* TempEmitter )
 
 }
 
+void ParticleSystemController::DiactivateParticle ( Emitter* _Emitter, Particles_Data* Part, BB_Particle_Instance* Part2 )
+{
+	Part->Active = false;	// CPU side array set particle OFF
+	Part2->Dummy = 0.0f;	// Shader particle not draw
+	--_Emitter->ActiveParticlesCount;
+
+	// Remove Light source if used
+	if ( _Emitter->Init_Data.ApplyLightSourceToParticlses )
+	{
+		EngineLight->FreeLightSource ( Part->LightIndex );
+	}
+}
+
 
 void ParticleSystemController::KillParticles ( Emitter* _Emitter )
 {
 	int Temp = _Emitter->CreatedParticlesCount - 1;
-		// Y Position
-		// If Particles should be killed by Y Position
-		if ( _Emitter->Init_Data.YPosition )
+
+	// Y Position
+	// If Particles should be killed by Y Position
+	if ( _Emitter->Init_Data.KillYPosition == KILL_UNDER )
+	{
+
+		// Kill all the particles that have gone below a certain height range.
+		for ( int i = 0; i < _Emitter->CreatedParticlesCount; ++i )
 		{
-			// Kill all the particles that have gone below a certain height range.
-			for ( int i = 0; i < _Emitter->CreatedParticlesCount; ++i )
+			Particles_Data* Part = &_Emitter->CPU_Particles_Data[i];
+			BB_Particle_Instance* Part2 = &_Emitter->BBInstances[i];
+
+
+			if ( Part->Active == true && Part2->position.y < _Emitter->Init_Data.KillPosition.Fl4.y )
 			{
-				Particles_Data* Part = &_Emitter->CPU_Particles_Data[i];
-				BB_Particle_Instance* Part2 = &_Emitter->BBInstances[i];
-				if ( Part->Active == true && Part2->position.y < _Emitter->Init_Data.KillPosition.Fl4.y )
+
+				// DiactivateParticle ( _Emitter, Part, Part2 );
+
+				Part->Active = false;	// CPU side array set particle OFF
+				Part2->Dummy = 0.0f;	// Shader particle not draw
+				--_Emitter->ActiveParticlesCount;
+
+				// Remove Light source if used
+				if ( _Emitter->Init_Data.ApplyLightSourceToParticlses )
 				{
-					Part->Active = false;	// CPU side array set particle OFF
-					Part2->Dummy = 0.0f;	// Shader particle not draw
-					--_Emitter->ActiveParticlesCount;
-
-					// Remove Light source if used
-					if ( _Emitter->Init_Data.ApplyLightSourceToParticlses )
-					{
-						EngineLight->FreeLightSource ( Part->LightIndex );
-					}
-
-					if ( i == Temp )
-					{
-						--_Emitter->CreatedParticlesCount;	// CreatedParticlesCount
-					}
-
+					EngineLight->FreeLightSource ( Part->LightIndex );
 				}
+
+				// If last particle in list get not active decreasing rendering particles amount
+				i == Temp ? --_Emitter->CreatedParticlesCount : _Emitter->CreatedParticlesCount;
+
 			}
 		}
+	}
 }
 
 
@@ -174,6 +210,288 @@ void ParticleSystemController::SetInstanceStartFrame ( Emitter* _Emitter, int Fr
 		Top + _Emitter->OneFrameHeight,
 		Left + _Emitter->OneFrameWidth
 	};
+}
+
+
+void ParticleSystemController::CheckEmitterInitData ( Emitter_Init_Data* _Init_Data )
+{
+	_Init_Data->MaxActiveParticles > _Init_Data->MaxParticles ? _Init_Data->MaxActiveParticles = _Init_Data->MaxParticles :	_Init_Data->MaxActiveParticles;
+
+	switch ( InitData.ParticleSystemType )
+	{
+		case PS_BASIC :
+			_Init_Data->EmitterType = EM_BILLBOARD;
+			break;
+
+		case PS_TORCH :
+			_Init_Data->EmitterType = EM_BILLBOARD;
+			_Init_Data->Animated	= EM_TORCH_ANIMATION;
+			
+			_Init_Data->FrameNumber			< 1 ? _Init_Data->FrameNumber		= 1 : _Init_Data->FrameNumber;		// Frame number to cut should be in range
+			_Init_Data->FireFlyCutWidth		< 1 ? _Init_Data->FireFlyCutWidth	= 1 : _Init_Data->FireFlyCutWidth;	// Cut amount should be in range
+			_Init_Data->FireFlyCutHeight	< 1 ? _Init_Data->FireFlyCutHeight	= 1 : _Init_Data->FireFlyCutHeight;	// Cut amount should be in range
+			break;
+
+
+	} 
+
+	switch ( _Init_Data->Animated )
+	{
+		case EM_NO_ANIMATION :
+			_Init_Data->ShaderForDraw = ResManager->GetShaderIndexByName ( L"particle" );
+			// One frame = whole texture
+			_Init_Data->UX_Amount = 1;
+			_Init_Data->VY_Amount = 1;
+			break;
+
+		case EM_ANIMATED_FROM_0 :
+			_Init_Data->ShaderForDraw = ResManager->GetShaderIndexByName ( L"ParticleAnimated" );
+			break;
+
+		case EM_ANIMATED_RANDOM :
+			_Init_Data->ShaderForDraw = ResManager->GetShaderIndexByName ( L"ParticleAnimated" );
+			break;
+
+		case EM_NO_ANIMATION_RANDOM :
+			_Init_Data->ShaderForDraw = ResManager->GetShaderIndexByName ( L"ParticleAnimated" );
+			break;
+
+		case EM_TORCH_ANIMATION:
+			_Init_Data->ShaderForDraw = ResManager->GetShaderIndexByName ( L"TorchFire3D" );
+			break;
+	}
+}
+
+
+int   ParticleSystemController::AddEmitter ( Emitter_Init_Data* _Init_Data )
+{
+	int Index = -1;
+
+	CheckEmitterInitData ( _Init_Data );
+
+	Emitter* NewEmitter = new Emitter ( _Init_Data );
+
+	TempLight->attenuationBegin = _Init_Data->LightAttenuationBegin;
+	TempLight->attenuationEnd = _Init_Data->LightAttenuationEnd;
+	TempLight->color = _Init_Data->LightColour.Fl3;
+
+	// Create buffer according EmitterType
+	switch ( _Init_Data->EmitterType )
+	{
+		case EM_BILLBOARD:
+		{
+			// Save emitter buffers index in the emitter
+			NewEmitter->Emitter_Buffers_Index = ResManager->Create_Emitter_BB_Buffers ( true, _Init_Data->MaxParticles, _Init_Data->TextureIndex, NewEmitter );
+			NewEmitter->Active = true;
+			break;
+		}
+
+		default:;
+	}
+
+	Emitters.push_back ( NewEmitter );
+
+	Index = ( int ) Emitters.size () - 1;
+
+	return Index;
+}
+
+
+int  ParticleSystemController::DeleteEmitter ( int EmitterIndex )
+{
+	int Size = ( int ) Emitters.size ();
+
+	Emitter* TempEmitter = Emitters[EmitterIndex];
+
+	if ( EmitterIndex < Size )
+	{
+		switch ( TempEmitter->Init_Data.EmitterType )
+		{
+			case EM_BILLBOARD:
+			{
+				ResManager->Delete_Emitter_BB_Buffer ( TempEmitter->Emitter_Buffers_Index );
+				break;
+			}
+
+			default:;
+		}
+
+		RCUBE_DELETE ( Emitters[EmitterIndex] );
+	}
+
+
+	return -1;
+}
+
+
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//									FUNCTIONS
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+void ParticleSystemController::SnowFallUpdate ( bool UpdateFrame, Emitter* _Emitter )
+{
+	float Variable1 = 0.0f;
+
+	// Each frame we update all the particles by making them move downwards using their position, velocity, and the frame time.
+	for ( int i = 0; i < _Emitter->CreatedParticlesCount; ++i )
+	{
+		if ( Variable1 > XM_2PI )
+			Variable1 = 0;
+		Particles_Data *Part = &_Emitter->CPU_Particles_Data[i];
+		BB_Particle_Instance *Part2 = &_Emitter->BBInstances[i];
+		Part2->position.y = Part2->position.y - Part->Velocity * ( Timers->FrameTime );
+		Part2->position.x = Part2->position.x + cos ( Variable1 ) * 0.0006f;
+		Part2->position.z = Part2->position.z + sin ( Variable1 ) * 0.0006f;
+//		Part2->position.z = Part2->position.z + sin( Variable1 ) * Part->Velocity * 0.05;
+		Variable1 += 0.0174533f;
+
+		if ( Part->Active )
+		{
+
+// update Light pos
+			if ( _Emitter->Init_Data.ApplyLightSourceToParticlses )
+			{
+				EngineLight->ChangeLightPos ( Part->LightIndex, Part2->position );
+			}
+
+
+// +++   ANIMATION   +++
+			if ( (_Emitter->Init_Data.Animated == EM_ANIMATED_RANDOM || _Emitter->Init_Data.Animated == EM_ANIMATED_FROM_0 ) && UpdateFrame )
+			{
+				Part->CurentFrame == _Emitter->NumOfAnimeFrames ? Part->CurentFrame = 0 : ++Part->CurentFrame;
+				SetInstanceStartFrame ( _Emitter, Part->CurentFrame, Part2->NewTexCord );
+			}
+// ---   ANIMATION   ---
+
+			// Заполняем массив расстояний частиц от камеры
+			//		DistanceCalk( Part2->position, D3DGC_Local->CameraPosition, FireInstDistance[i] );
+			// Сохраняем индексы Instance в массиве индексов
+			//		FireInstIndNumber[i] = i;
+		}
+		//	if ( CreatedParticlesCount > 1 )
+		{
+			//		QuickDepthSortDescending( FireInstIndNumber, FireInstDistance, 0, CreatedParticlesCount - 1 );
+
+		}
+
+		}
+}
+
+
+void ParticleSystemController::SnowFallEmitt ( Emitter* _Emitter )
+{
+	bool emitParticle = false;
+
+	bool found;
+	//  Обновление данные системы частиц 
+	Particles_Data	Data;
+	// Позиция и цвет частицы обновляется в массиве который отправляется в шейдер
+	BB_Particle_Instance Data1;
+
+	int index;
+
+	RCube_VecFloat234 Random, Temp;
+
+	// Increment the frame time.
+	if ( Timers->FrameTime < 1.0f )
+		_Emitter->AccumulatedTime += Timers->FrameTime;
+
+	// Check if it is time to emit a new particle or not.
+	if ( _Emitter->AccumulatedTime > ( 1.0f / _Emitter->Init_Data.ParticlesPerSecond ) )
+	{
+		_Emitter->AccumulatedTime = 0.0f;
+		emitParticle = true;
+	}
+
+	// If there are particles to emit then emit one per frame.
+	if ( ( emitParticle == true ) && ( _Emitter->ActiveParticlesCount < _Emitter->Init_Data.MaxParticles ) )
+	{
+		++_Emitter->ActiveParticlesCount;
+
+// +++   ANIMATION   +++
+		Data.CurentFrame = 0;
+
+		if ( _Emitter->Init_Data.Animated == EM_ANIMATED_RANDOM || _Emitter->Init_Data.Animated == EM_NO_ANIMATION_RANDOM )
+		{
+			int FrameNumber = int((( float ) rand () / RAND_MAX) * _Emitter->NumOfAnimeFrames);
+				Data.CurentFrame = FrameNumber;
+				SetInstanceStartFrame ( _Emitter, FrameNumber, Data1.NewTexCord );
+		}
+// ---   ANIMATION   ---
+
+		if ( _Emitter->CreatedParticlesCount < _Emitter->Init_Data.MaxActiveParticles )
+			++_Emitter->CreatedParticlesCount;
+
+		Random.Fl4.w = 1.0f;
+		// Now generate the randomized particle properties.
+		Random.Fl3.x = ( float ) rand () / RAND_MAX - ( float ) rand () / RAND_MAX;
+		Random.Fl3.y = ( float ) rand () / RAND_MAX - ( float ) rand () / RAND_MAX;
+		Random.Fl3.z = ( float ) rand () / RAND_MAX - ( float ) rand () / RAND_MAX;
+		Temp.Vec = Random.Vec * _Emitter->Init_Data.InitPositionDeviation.Vec + _Emitter->Init_Data.InitPosition.Vec;
+		Data1.position = Temp.Fl3;
+
+		Data.Velocity = _Emitter->Init_Data.InitVelocity + ( ( ( float ) rand () - ( float ) rand () ) / RAND_MAX ) * _Emitter->Init_Data.InitVelocityVariation;
+
+		Random.Fl3.x = ( float ) rand () / RAND_MAX ;
+		Random.Fl3.y = ( float ) rand () / RAND_MAX ;
+		Random.Fl3.z = ( float ) rand () / RAND_MAX ;
+		Random.Fl4.w = 1.0f;
+
+		Data1.color = Random.Fl4;
+
+		Data1.Dummy = 1.0f;	// Set particle to render in Shader
+
+		Data.Active = true;
+
+		// Now since the particles need to be rendered from back to front for blending we have to sort the particle array.
+		// We will sort using Z depth so we need to find where in the list the particle should be inserted.
+
+		found = false;
+
+		for (index = 0; index < _Emitter->CreatedParticlesCount; ++index )
+		{
+			if ( _Emitter->CPU_Particles_Data[index].Active == false )
+			{
+				found = true;
+				break;
+			}
+		}
+
+		if ( !found )
+			return;
+
+
+		if ( _Emitter->Init_Data.ApplyLightSourceToParticlses )
+		{
+			TempLight->position = Data1.position;
+			RCube_VecFloat234 TempColor;
+			TempColor.Fl4 = Data1.color;
+			TempLight->color = TempColor.Fl3;
+
+			Data.LightIndex = EngineLight->AddLightSource ( *TempLight );
+		}
+
+		if ( _Emitter->Init_Data.EmitterType == EM_BILLBOARD )
+		{
+			// Now insert it into the particle array in the correct depth order.
+			_Emitter->CPU_Particles_Data[index] = Data;
+
+			_Emitter->BBInstances[index] = Data1;
+		}
+
+	}
+}
+
+
+void ParticleSystemController::ChangeActiveParticleAmount (int EmitterIndex, int Amount )
+{
+	int Size = ( int ) Emitters.size ();
+	if ( EmitterIndex < Size )
+	{
+		Emitter* TempEmitter = Emitters[EmitterIndex];
+		
+		TempEmitter->Init_Data.MaxParticles >= Amount ? TempEmitter->Init_Data.MaxActiveParticles = Amount
+													  : TempEmitter->Init_Data.MaxParticles;
+	}
 }
 
 
@@ -256,238 +574,4 @@ template <class T> void ParticleSystemController::QuickDepthSortDescending ( T* 
 	if ( i < hi ) QuickDepthSortDescending ( indices, depths, i, hi );
 
 
-}
-
-void ParticleSystemController::CheckEmitterInitData ( Emitter_Init_Data* _Init_Data )
-{
-	_Init_Data->MaxActiveParticles > _Init_Data->MaxParticles ? _Init_Data->MaxActiveParticles = _Init_Data->MaxParticles :	_Init_Data->MaxActiveParticles;
-}
-
-
-int   ParticleSystemController::AddEmitter ( Emitter_Init_Data* _Init_Data )
-{
-	int Index = -1;
-
-	CheckEmitterInitData ( _Init_Data );
-
-	Emitter* NewEmitter = new Emitter ( _Init_Data );
-
-	// Create buffer according EmitterType
-	switch ( _Init_Data->EmitterType )
-	{
-		case EM_BILLBOARD:
-		{
-			// Save emitter buffers index in the emitter
-			NewEmitter->Emitter_Buffers_Index = ResManager->Create_Emitter_BB_Buffers ( true, _Init_Data->MaxParticles, _Init_Data->TextureIndex, NewEmitter );
-			NewEmitter->Active = true;
-			break;
-		}
-
-		default:;
-	}
-
-	// Create Particle data ( CPU side massive )
-//	NewEmitter->CPU_Particles_Data = new Particles_Data[_Init_Data->MaxParticles];
-
-	// Create Particles data ( GPU side massive )
-	//				NewEmitter->GPU_Particles_Data
-
-	Emitters.push_back ( NewEmitter );
-
-	Index = ( int ) Emitters.size () - 1;
-
-	return Index;
-}
-
-
-int  ParticleSystemController::DeleteEmitter ( int EmitterIndex )
-{
-	int Size = ( int ) Emitters.size ();
-
-	Emitter* TempEmitter = Emitters[EmitterIndex];
-
-	if ( EmitterIndex < Size )
-	{
-		switch ( TempEmitter->Init_Data.EmitterType )
-		{
-			case EM_BILLBOARD:
-			{
-				ResManager->Delete_Emitter_BB_Buffer ( TempEmitter->Emitter_Buffers_Index );
-				break;
-			}
-
-			default:;
-		}
-
-		RCUBE_DELETE ( Emitters[EmitterIndex] );
-//		Emitters.erase ( Emitters.begin () + EmitterIndex );
-	}
-
-
-	return -1;
-}
-
-
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-//									FUNCTIONS
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-void ParticleSystemController::SnowFallUpdate ( bool UpdateFrame, Emitter* _Emitter )
-{
-	float Variable1 = 0.0f;
-
-	// Each frame we update all the particles by making them move downwards using their position, velocity, and the frame time.
-	for ( int i = 0; i < _Emitter->CreatedParticlesCount; ++i )
-	{
-		if ( Variable1 > XM_2PI )
-			Variable1 = 0;
-		Particles_Data *Part = &_Emitter->CPU_Particles_Data[i];
-		BB_Particle_Instance *Part2 = &_Emitter->BBInstances[i];
-		Part2->position.y = Part2->position.y - Part->Velocity * ( Timers->FrameTime );
-		Part2->position.x = Part2->position.x + cos ( Variable1 ) * 0.006f;
-		//		m_particleList[i].positionZ = m_particleList[i].positionZ + sin(j) * m_particleList[i].velocity * 0.05;
-		Variable1 += 0.0174533f;
-
-		if ( Part->Active )
-		{
-
-			// update Light pos
-			if ( _Emitter->Init_Data.ApplyLightSourceToParticlses )
-			{
-				EngineLight->ChangeLightPos ( Part->LightIndex, Part2->position );
-			}
-			// -- Вставляем свет ---------------------------------------------
-
-			// Время обновлять кадры пришло ? - Обновляем кадры для всех Inctance.
-			if ( _Emitter->NumOfAnimeFrames > 0 && UpdateFrame )
-			{
-				// Если кадр последний, то обнуляем счётчик кадров
-				if ( Part->CurentFrame == _Emitter->NumOfAnimeFrames )
-					Part->CurentFrame = 0;
-				else
-					++Part->CurentFrame;
-
-				SetInstanceStartFrame ( _Emitter, Part->CurentFrame, Part2->NewTexCord );
-			}
-
-			// Заполняем массив расстояний частиц от камеры
-			//		DistanceCalk( Part2->position, D3DGC_Local->CameraPosition, FireInstDistance[i] );
-			// Сохраняем индексы Instance в массиве индексов
-			//		FireInstIndNumber[i] = i;
-		}
-		//	if ( CreatedParticlesCount > 1 )
-		{
-			//		QuickDepthSortDescending( FireInstIndNumber, FireInstDistance, 0, CreatedParticlesCount - 1 );
-
-		}
-
-		}
-}
-
-
-void ParticleSystemController::SnowFallEmitt ( Emitter* _Emitter )
-{
-	bool emitParticle = false;
-
-	bool found;
-	//  Обновление данные системы частиц 
-	Particles_Data	Data;
-	// Позиция и цвет частицы обновляется в массиве который отправляется в шейдер
-	BB_Particle_Instance Data1;
-
-	int index;
-
-	RCube_VecFloat234 Random, Temp;
-
-	// Increment the frame time.
-	if ( Timers->FrameTime < 1.0f )
-		_Emitter->AccumulatedTime += Timers->FrameTime;
-
-	// Check if it is time to emit a new particle or not.
-	if ( _Emitter->AccumulatedTime > ( 1.0f / _Emitter->Init_Data.ParticlesPerSecond ) )
-	{
-		_Emitter->AccumulatedTime = 0.0f;
-		emitParticle = true;
-	}
-
-	// If there are particles to emit then emit one per frame.
-	if ( ( emitParticle == true ) && ( _Emitter->ActiveParticlesCount < _Emitter->Init_Data.MaxParticles ) )
-	{
-		++_Emitter->ActiveParticlesCount;
-
-		if ( _Emitter->CreatedParticlesCount < _Emitter->Init_Data.MaxActiveParticles )
-			++_Emitter->CreatedParticlesCount;
-
-		// Now generate the randomized particle properties.
-		Random.Fl3.x = ( ( float ) rand () - ( float ) rand () ) / RAND_MAX;
-		Random.Fl3.y = ( ( float ) rand () - ( float ) rand () ) / RAND_MAX;
-		Random.Fl3.z = ( ( float ) rand () - ( float ) rand () ) / RAND_MAX;
-		Temp.Vec = Random.Vec * _Emitter->Init_Data.InitPositionDeviation.Vec + _Emitter->Init_Data.InitPosition.Vec;
-		Data1.position = Temp.Fl3;
-
-		Data.Velocity = _Emitter->Init_Data.InitParticleVelocity + ( ( ( float ) rand () - ( float ) rand () ) / RAND_MAX ) * _Emitter->Init_Data.InitParticleVelocityVariation;
-
-		Random.Fl3.x = ( ( ( float ) rand () - ( float ) rand () ) / RAND_MAX ) + 0.5f;
-		Random.Fl3.y = ( ( ( float ) rand () - ( float ) rand () ) / RAND_MAX ) + 0.5f;
-		Random.Fl3.z = ( ( ( float ) rand () - ( float ) rand () ) / RAND_MAX ) + 0.5f;
-		Random.Fl4.w = 0.0f;
-
-		Data1.color = Random.Fl4;
-
-		Data1.Dummy = 1.0f;	// Set particle to render in Shader
-
-		int FrameNumber = int ( ( ( float ) rand () / RAND_MAX ) * _Emitter->NumOfAnimeFrames );
-		Data.CurentFrame = FrameNumber;
-		SetInstanceStartFrame ( _Emitter, FrameNumber, Data1.NewTexCord );
-
-		Data.Active = true;
-
-		// Now since the particles need to be rendered from back to front for blending we have to sort the particle array.
-		// We will sort using Z depth so we need to find where in the list the particle should be inserted.
-
-		found = false;
-
-		for (index = 0; index < _Emitter->CreatedParticlesCount; ++index )
-		{
-			if ( _Emitter->CPU_Particles_Data[index].Active == false )
-			{
-				found = true;
-				break;
-			}
-		}
-
-		if ( !found )
-			return;
-
-
-		if ( _Emitter->Init_Data.ApplyLightSourceToParticlses )
-		{
-			TempLight->position = Data1.position;
-			RCube_VecFloat234 TempColor;
-			TempColor.Fl4 = Data1.color;
-			TempLight->color = TempColor.Fl3;
-
-			Data.LightIndex = EngineLight->AddLightSource ( *TempLight );
-		}
-
-		if ( _Emitter->Init_Data.EmitterType == EM_BILLBOARD )
-		{
-			// Now insert it into the particle array in the correct depth order.
-			_Emitter->CPU_Particles_Data[index] = Data;
-
-			_Emitter->BBInstances[index] = Data1;
-		}
-
-	}
-}
-
-
-void ParticleSystemController::ChangeActiveParticleAmount (int EmitterIndex, int Amount )
-{
-	int Size = ( int ) Emitters.size ();
-	if ( EmitterIndex < Size )
-	{
-		Emitter* TempEmitter = Emitters[EmitterIndex];
-		if ( TempEmitter->Init_Data.MaxParticles >= Amount )
-			TempEmitter->Init_Data.MaxActiveParticles = Amount;
-	}
 }

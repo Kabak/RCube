@@ -5,12 +5,12 @@
 #ifdef _DEBUG
 #ifdef _WIN64
 #pragma comment(lib, "PhysX3DEBUG_x64.lib")
-#pragma comment(lib, "PhysX3GpuDEBUG_x64.lib")  
-#pragma comment(lib, "PxCudaContextManagerDEBUG_x64.lib")
+//#pragma comment(lib, "PhysX3GpuDEBUG_x64.lib")  
+//#pragma comment(lib, "PxCudaContextManagerDEBUG_x64.lib")
 #pragma comment(lib, "PhysX3CommonDEBUG_x64.lib")
 #pragma comment(lib, "PhysX3CookingDEBUG_x64.lib")
 #pragma comment(lib, "PhysX3ExtensionsDEBUG.lib")    //PhysX extended library 
-#pragma comment(lib, "PxCudaContextManager_x64.lib") //For PVD only 
+//#pragma comment(lib, "PxCudaContextManager_x64.lib") //For PVD only 
 #pragma comment(lib, "PhysX3CharacterKinematicDEBUG_x64.lib")
 #pragma comment(lib, "PxFoundationDEBUG_x64.lib")
 #pragma comment(lib, "PxPvdSDKDEBUG_x64.lib")
@@ -18,13 +18,13 @@
 #endif
 #else
 #ifdef _WIN64
-#pragma comment(lib, "PhysX3_x64.lib ")
-#pragma comment(lib, "PhysX3Gpu_x64.lib")  
-#pragma comment(lib, "PxCudaContextManager_x64.lib")
+#pragma comment(lib, "PhysX3_x64.lib")
+//#pragma comment(lib, "PhysX3Gpu_x64.lib")  
+//#pragma comment(lib, "PxCudaContextManager_x64.lib")
 #pragma comment(lib, "PhysX3Common_x64.lib")
 #pragma comment(lib, "PhysX3Cooking_x64.lib")
 #pragma comment(lib, "PhysX3Extensions.lib")    //PhysX extended library 
-#pragma comment(lib, "PxCudaContextManager_x64.lib") //For PVD only 
+//#pragma comment(lib, "PxCudaContextManager_x64.lib") //For PVD only 
 #pragma comment(lib, "PhysX3CharacterKinematic_x64.lib")
 #pragma comment(lib, "PxFoundation_x64.lib")
 #pragma comment(lib, "PxPvdSDK_x64.lib")
@@ -92,21 +92,23 @@ PhysXControler::~PhysXControler () {
 	PXSAFE_RELEASE(g_ControllerManager);
 	PXSAFE_RELEASE(aHeightField);
 	PXSAFE_RELEASE(gScene);
+//	PXSAFE_RELEASE ( GPUDispatcher );
 	PXSAFE_RELEASE(gDispatcher);
-
-#if PX_SUPPORT_GPU_PHYSX
-	PXSAFE_RELEASE( gCudaContextManager );
-#endif
 
 	PXSAFE_RELEASE(theCooking);
 	PXSAFE_RELEASE(gPhysics);
-	PXSAFE_RELEASE(gFoundation);
 
-//#ifdef _DEBUG	
+	//#ifdef _DEBUG	
 //	PXSAFE_RELEASE( pvdClient );
-	PXSAFE_RELEASE( pvd );
-	PXSAFE_RELEASE( transport );
-//#endif
+	PXSAFE_RELEASE ( transport );
+	PXSAFE_RELEASE ( pvd );
+	//#endif
+
+#if PX_SUPPORT_GPU_PHYSX
+	PXSAFE_RELEASE ( gCudaContextManager );
+#endif
+
+	PXSAFE_RELEASE(gFoundation);
 
 }
 

@@ -15,7 +15,7 @@ struct PointLight
   XMFLOAT4X4 qtwvp;				// ћатрица ViewProjection света
 								//		XMFLOAT4 RotQuat;			//  ватернион поворота
 	bool HaveShadow;			// »меет ли свет тень
-	int ShadowMapSliceNumber;	// Ќомер текстуры ShadowMap в массиве Shadow Maps
+	float ShadowMapSliceNumber;	// Ќомер текстуры ShadowMap в массиве Shadow Maps
 	int LightID;				// Ќомер света в массиве светов ( нужно дл€ наложени€ множественных Shadow Map от всех светов с тен€ми
 	int Dummy;					// ѕустышка дл€ скорости https://developer.nvidia.com/pc-gpu-performance-hot-spots   »спользую дл€ хранени€ назначенного индекса света в массиве светов и прив€занного к частице
 };

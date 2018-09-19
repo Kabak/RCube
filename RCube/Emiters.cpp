@@ -9,7 +9,7 @@ Emitter::Emitter ( Emitter_Init_Data* _Init_Data )
 
 	BBInstances = nullptr;
 
-//	Init_Data = new  Emitter_Init_Data;
+	Init_Data_Check ( _Init_Data );
 
 	memcpy ( &Init_Data, _Init_Data, sizeof ( Emitter_Init_Data ) );
 
@@ -81,7 +81,27 @@ Emitter::~Emitter ()
 
 	RCUBE_ARR_DELETE ( TextcordTop );
 	RCUBE_ARR_DELETE ( TextcordLeft );
-//	RCUBE_DELETE ( Init_Data );
 	RCUBE_ARR_DELETE ( CPU_Particles_Data );
 
+}
+
+
+void Emitter::Init_Data_Check ( Emitter_Init_Data* _Init_Data )
+{
+	_Init_Data->UX_Amount < 1 ? _Init_Data->UX_Amount = 1 : _Init_Data->UX_Amount;
+
+	_Init_Data->VY_Amount < 1 ? _Init_Data->VY_Amount = 1 : _Init_Data->VY_Amount;
+
+	_Init_Data->PlayFPS < 1 ? _Init_Data->PlayFPS = 30 : _Init_Data->PlayFPS;
+
+	if ( _Init_Data->ApplyLightSourceToParticlses && _Init_Data->MaxActiveParticles > 3000 )
+	{
+		MessageBox ( nullptr, L"MaxActiveParticles > 3000. ApplyLightSourceToParticlses switched OFF", L"Warning", MB_OK );
+		_Init_Data->ApplyLightSourceToParticlses = false;
+	}
+
+	// PS_TORCH
+	_Init_Data->FireFrameStart < _Init_Data->FireFramesEnd ? _Init_Data->FireFramesEnd = 0 : _Init_Data->FireFramesEnd;
+	_Init_Data->SmokeFrameStart < _Init_Data->SmokeFrameEnd ? _Init_Data->SmokeFrameEnd = 0 : _Init_Data->SmokeFrameEnd;
+	// PS_TORCH
 }

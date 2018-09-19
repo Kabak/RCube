@@ -117,17 +117,11 @@
     <ClInclude Include="EffectsManager.h">
       <Filter>EffectsManager</Filter>
     </ClInclude>
-    <ClInclude Include="FireParticleSystem.h">
-      <Filter>Particles</Filter>
-    </ClInclude>
     <ClInclude Include="BillBord.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="IndexesArray.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SnowFallParticles.h">
-      <Filter>Particles</Filter>
     </ClInclude>
     <ClInclude Include="TorchFireParticles.h">
       <Filter>Particles</Filter>
@@ -191,9 +185,6 @@
     </ClInclude>
     <ClInclude Include="FontClass.h">
       <Filter>Render\Text</Filter>
-    </ClInclude>
-    <ClInclude Include="SceneObject.h">
-      <Filter>Render\3DModel</Filter>
     </ClInclude>
     <ClInclude Include="3DModel.h">
       <Filter>Render\3DModel</Filter>
@@ -287,14 +278,8 @@
     <ClCompile Include="EffectsManager.cpp">
       <Filter>EffectsManager</Filter>
     </ClCompile>
-    <ClCompile Include="FireParticleSystem.cpp">
-      <Filter>Particles</Filter>
-    </ClCompile>
     <ClCompile Include="IndexesArray.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SnowFallParticles.cpp">
-      <Filter>Particles</Filter>
     </ClCompile>
     <ClCompile Include="TorchFireParticles.cpp">
       <Filter>Particles</Filter>
@@ -434,12 +419,6 @@
     <FxCompile Include="Shaders\FireAnimation_ps.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\FireParticle3D_vs.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\FireParticle3D_ps.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="Shaders\TorchFire3D_vs.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
@@ -450,6 +429,12 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Vert_cs.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\ParticleAnimated_ps.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\ParticleAnimated_vs.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>
