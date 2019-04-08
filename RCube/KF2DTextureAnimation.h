@@ -9,20 +9,25 @@
 #ifndef _KF2DTextureANIMATION_H_
 #define _KF2DTextureANIMATION_H_
 
+class ResourceManager;
+
 class KF2DTextureAnimation
 {
 public:
 	 KF2DTextureAnimation();
 	~KF2DTextureAnimation();
 
+	ResourceManager* ResManager;
+
 	HRESULT Init(HWND hwnd, D3DGlobalContext* D3DGC, 
 		int UX_Amount, 
 		int VY_Amount, 
 		ID3D11ShaderResourceView * animTexture,
 		int DrawShaderIndex,				// Номер шейдера в движке которым нужно рисовать анимацию
-		int ReturnShaderIndex,				// Номер шейдера в движке который нужно включить после анимации
-		Flat_Obj_Buffers* _Buffers,
-		XMFLOAT4& _ObjParam				// x,y - позиция на экране  z - Width , w - Height
+//		int ReturnShaderIndex,				// Номер шейдера в движке который нужно включить после анимации
+//		Flat_Obj_Buffers* _Buffers,
+		XMFLOAT4& _ObjParam,				// x,y - позиция на экране  z - Width , w - Height
+		ResourceManager * _GlobalResourceManager
 		);
 
 	void Frame( FPSTimers &fpstimers );
@@ -30,7 +35,7 @@ public:
 	bool Enabled;
 
 	int ShaderForDraw = -1;
-	int ShaderReturnTo = -1;
+//	int ShaderReturnTo = -1;
 
 	XMFLOAT4 ObjParam;	// Дублирует параметры объекта.
 //	XMFLOAT4 ObjPreviosParam; // Предыдущие параметры объекта ( из предыдущего кадра )
@@ -48,7 +53,9 @@ public:
 	void SetFPSpeed(float FPS );
 
 	// Текстура с анимацией
-	FlatObjectClass * AnimeTextures;
+	FlatObjectClass * AnimeTexture;
+
+	int AnimeTextureBufferIndex;
 
 private:
 

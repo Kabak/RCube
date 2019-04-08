@@ -22,8 +22,6 @@
 #include "Terrain.h"
 #include "CubeMap.h"
 #include "TimerClass.h"
-//#include "Emiters.h"
-//#include "ParticleSystem_def.h"
 #include "ParticleSystem.h"
 #include "PhysXControler.h"
 
@@ -35,15 +33,8 @@
 using namespace std;
 
 class ResourceManager{
+
 private:
-/*
-	template <class T>
-	int GetIndexBuf ( T StoreType )
-	{
-		int i = (int)StoreType.size ();
-		return i;
-	}
-	*/
 
 	template <class BufferType, class UnusedBuffer, class VarType >
 	int GetNewBufferIndex ( BufferType& Buffer, UnusedBuffer& IndBuf, VarType* Obj )
@@ -66,7 +57,7 @@ private:
 		return Index;
 	}
 
-	struct KFShadresBunch //  базовая связка шейдеров если нет в этом комлексе определенного шейдера то Nullptr
+	struct KFShadersBunch //  базовая связка шейдеров если нет в этом комлексе определенного шейдера то Nullptr
 	{
 		ID3D11VertexShader *         VS = nullptr; // вертексный шейдер
 		ID3D11HullShader *           HS = nullptr; // халл шейдер
@@ -112,7 +103,7 @@ public:
 	vector< ID3D11DomainShader* >		DomainShderArr;		// массив где все домайн шейдеры
 
 	vector< ID3D10Blob* >				BlobsArr;
-	vector< KFShadresBunch >			BunchArr;			// массив связок шейдеров
+	vector< KFShadersBunch >			BunchArr;			// массив связок шейдеров
 
 	vector< ID3D11ComputeShader* >		ComeputeShaderArr;	// массив где храняться все вычислительные шейдры
 	vector<wchar_t*>					ComeputeShaderNames;// отдельный массив имён ComeputeShader
@@ -132,13 +123,14 @@ public:
 // Fonts
 // Список доступных шрифтов
 	vector < FontClass* >				RCube_Font;			// Список созданных шрифтов
+	vector <UINT>						UnusedFontIndex;	// Free slot
 
 // Sentances
 // Список текстовых строк для отрисовки
 	vector < SentenceType* >			RCube_Sentences;	// Список созданных текстовых предложений
 	vector <UINT>						UnusedSentenceIndex;// Массив свободных индексов предложений
 	int									TextShaderIndex;	// Номер шейдера для текста в списке шейдеров 
-	int									FontOnTextureShaderIndex;// Номер шрифта для Flat Object
+	int									Temp_Font_StyleShaderIndex;// Номер шейлера для Bit_map Мышки 
 
 // 3D Models
 // Список 3D объектов на сцене
@@ -210,7 +202,7 @@ public:
 
 	int Create_3D_Obj_Mesh_Buffers (
 //		UINT ModelType,			// Тип объекта из возможных в RCube для рисования по LayoutTypes объекта
-		bool CPUAccess,			// способ обновления буферы  
+		 int CPUAccess,			// способ обновления буферы  
 		UINT InstanceAmount,	// Сколько Instance в модели
 		UINT IndexAmount		// Есть ли индексный массив для меша модели ( 0 - нет или количество индексов в IndexBuffer - IB )
 	);	// Создание буферов для каждого меша модели
@@ -230,22 +222,14 @@ public:
 	void Set_3D_Object_Rotation ( int IndexOfObject, int InstanceIndex, XMFLOAT4 &Rotation );
 	
 	Material* GetMaterialData ( int ObjIndex );
-	PositionType ** ObjPoses;// это массив который хранит данные об указателях на позиции и поворота для наиболее скоростного доступа без посредников
-// !!!!!!!!!!!!!!
-	vector<bool> IsObjUseClustering; //массив описывающий использует ли тип модели кластеринг true использует false не использует формат заполнения [индекс типа модели]
-// !!!!!!!!!!!!!!
-//	int ModelCout; // количество моделей
-	int * CoutObjetcs;
+
 	vector<int> ActiveShaderIndexes;// массив котопый хранит все индексы активных шейдеров
-// !!!!!!!!!!!	
-	int ShaderDrawObjArrSize;
-// !!!!!!!!!!!
 
 // - 3D Models Works
 
 // + Particle Systems
 
-	int Create_Emitter_BB_Buffers ( bool CPUAccess, UINT InstanceAmount, UINT TempTextureIndex, Emitter* NewEmitter );
+	int Create_Emitter_BB_Buffers ( int CPUAccess, UINT InstanceAmount, UINT TempTextureIndex, Emitter* NewEmitter );
 	int GetNewEmitter_BB_Buffers_Index ( BB_Particles_Buffers* NewBuffer );
 	
    bool Delete_Emitter_BB_Buffer ( int BufferIndex );
@@ -331,7 +315,7 @@ public :
 	void DeleteAllSentences ();
 
 	// Обновляет текст и позицию предложения на экране
-	void UpdateSentence ( int SentenceNumber, char* text, int positionX, int positionY, float RenderFontSize = 36.0f );
+	void UpdateSentence ( int SentenceNumber, char* text, int positionX, int positionY );// , float RenderFontSize = 36.0f );
 	
 	// Получить максимальную длинну предложения
 	int GetSentenceMaxLength ( int SentenceNumber );
@@ -346,6 +330,13 @@ public :
 	int GetPosY ( int SentenceNumber );
 	// Получить указатель на строку
 	char* GetSentenceText ( int SentenceNumber );
+
+	int AddFont ( FontClass* RCubeFont );
+	int DeleteFont ( int FontIndex );	// Delete font by index
+	// Delete last font in the Engine fonts list
+	void DeleteLastFont ();	
+
+
 // - Sentence Works
 
 // + Textures Works
@@ -359,18 +350,23 @@ public :
 	// или -2, если Source создана как STAGING, 
 	// или -1, если клонировать текстуру не получилось
 	int CloneTextureStaging ( int Source );	// Создание коппии текстуры
+
+	COLORREF GetScreenPixelColor ( POINT Position );
 	
 	bool SaveTextureToFile ( int Index, WCHAR* Name ); // Сохранить текстуру в файл
 
 	bool RenderTextureOnTexture ( int Index1, int Index2 ); // Нарисовать текстуру 1 на текструре 2
 
+	// Получить высоту и ширину текстуры
+	// Если текстура для кнопок : меньше, больше задана, и TempData z,w = 0.0f , то берём размеры текстуры
+	void GetTextureParam ( ID3D11ShaderResourceView * Texture, XMFLOAT4& Dimention );
 // - Textures Works
 
 
 	bool CreateLayouts ();	// Создаются все нужные Layout для шейдеров по умолчанию
 
 	int Create_Flat_Obj_Buffers (
-		bool CPUAccess,			// способ обновления буферы  
+		 int CPUAccess,			// способ обновления буферы  
 		UINT InstanceAmount,	// Сколько Instance в модели
 		UINT IndexAmount,		// Есть ли индексный массив для меша модели ( 0 - нет или количество индексов в IndexBuffer - IB )
 		DXTextureSRV* Texture	// Основная текстура

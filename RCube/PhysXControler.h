@@ -5,16 +5,11 @@
 #define PHYSXCONTROLER_H_
 
 #include <PxPhysicsAPI.h>
-//#include <PxDistanceJoint.h>
 #include "characterkinematic/PxControllerManager.h"
-//#include "gpu/PxParticleGpu.h"
-//#include "pxtask/PxGpuDispatcher.h"
-//#include "pxtask/PxGpuTask.h"
 #include <vector>
 #include "D3DGlobalContext.h"
 #include "Buffers_def.h"
 #include <string.h>
-//#include "ResourceManager.h"
 #include "Terrain.h"
 #include "3DModel.h"
 #include <fstream>
@@ -139,10 +134,8 @@ public:
 	PxFoundation * gFoundation = nullptr;
 	PxCooking *	theCooking = nullptr;
 	PxPhysics *	gPhysics = nullptr;
-//	PxProfileZoneManager * gProfileZoneManager = nullptr;
 	PxScene * gScene = nullptr;
 	PxDefaultCpuDispatcher * gDispatcher;
-	PxGpuDispatcher * GPUDispatcher;
 	PxOutputStream * outStream = nullptr;
 	PxCudaContextManager* gCudaContextManager;
 	PxPvdSceneClient* pvdClient;

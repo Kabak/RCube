@@ -1,11 +1,8 @@
 #include "stdafx.h"
 #include "MenuControler.h"
 
-MenuControrerClass::MenuControrerClass(){
+MenuControllerClass::MenuControllerClass(){
 
-//	memset(this, 0, sizeof(MenuControrerClass));
-//				g_Device = nullptr;
-//		 g_DeviceContext = nullptr;
 				 McD3DGC = nullptr;
 			  Background = nullptr;
 	// Активно ли меню - в нём работают кнопки и его рисуем
@@ -20,14 +17,15 @@ MenuControrerClass::MenuControrerClass(){
 	   KeyDefineExpected = false;
 }
 
-HRESULT MenuControrerClass::Init(D3DGlobalContext* D3DGC,
-	KFButton_Elements ButtonsData[], int NumOfButtons, 
-	KFScrollBar_Elements ScrollBarData[], int NumOfScrollbars, 
-	StringsList_Elements StringsLists[], int NumOfStringsList,
-	KF2DTextureAnimation *_Animation,
-	XMFLOAT4 BackGroundCoord,
-	ID3D11ShaderResourceView* BackgroundTexture,
-	ResourceManager * GlobalResManager
+HRESULT MenuControllerClass::Init(D3DGlobalContext* D3DGC,
+	KFButton_Elements ButtonsData[], int NumOfButtons, // Buttons objects , Buttons amount
+	ScrollBar_Elements ScrollBarData[], int NumOfScrollbars, // ScrollBars objects , ScrollBars amount
+	StringsList_Elements StringsLists[], int NumOfStringsList,// StringsLists objects , StringList amount
+	ColorPicker_Elements ColorPicker[], int NumOfColorPickers,// ColorPickers objects , ColorPicker amount
+	KF2DTextureAnimation *_Animation,		// background animation
+	XMFLOAT4 BackGroundCoord,				// x,y - Menu position  z - width , w - height
+	ID3D11ShaderResourceView* BackgroundTexture, // background texture
+	ResourceManager * GlobalResManager		// Engine Resource menager
 	)
 {
 	HRESULT result = S_OK ;
@@ -35,10 +33,6 @@ HRESULT MenuControrerClass::Init(D3DGlobalContext* D3DGC,
 		McD3DGC = D3DGC;
 	GlobalInput = D3DGC->m_EngineInputClass;
 	GlobalResourceManager = GlobalResManager;
-	g_WindowPosX = D3DGC->WindowsPosX;
-	g_WindowPosY = D3DGC->WindowsPosY;
-	MWidth = (int)BackGroundCoord.z;
-	MHeigth = (int)BackGroundCoord.w;
 
 	g_NumOfButtons = NumOfButtons ;
 	// резервируем место под кнопки
@@ -49,12 +43,16 @@ HRESULT MenuControrerClass::Init(D3DGlobalContext* D3DGC,
 
 	g_NumOfStringsLists = NumOfStringsList;
 
-//	g_Device = D3DGC->DX_device;
-//	g_DeviceContext = D3DGC->DX_deviceContext ;
+	g_NumOfColorPickers = NumOfColorPickers;
 
 	Animation = _Animation;
 
-	int TempIndex = GlobalResourceManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 4, 6, BackgroundTexture );
+	BackGroundCoord.x *= McD3DGC->ScreenScale.z;
+	BackGroundCoord.y *= McD3DGC->ScreenScale.w;
+	BackGroundCoord.z *= McD3DGC->ScreenScale.z;
+	BackGroundCoord.w *= McD3DGC->ScreenScale.w;
+
+	int TempIndex = GlobalResourceManager->Create_Flat_Obj_Buffers ( NO_CPU_ACCESS_BUFFER, 4, 6, BackgroundTexture );
 	Background = new FlatObjectClass;
 	Background->Init( D3DGC->ScreenWidth, D3DGC->ScreenHeight, BackGroundCoord,
 		BackgroundTexture, 
@@ -66,16 +64,181 @@ HRESULT MenuControrerClass::Init(D3DGlobalContext* D3DGC,
 	if ( Animation )
 		Animation->SetAnimeParam ( BackGroundCoord );
 
-	XMFLOAT4 ScrCoords =
+	// Позиция окна X , Позиция окна Y , Размер экрана ширина , Размер экрана высота 
+	XMFLOAT4 ScrCoords = McD3DGC->ScreenScale;
+
+	int ItemIndex = 0;
+/*
+	for (int c = 0; c < NumOfButtons; ++c )
 	{
-		(float)McD3DGC->WindowsPosX, // Позиция окна X
-		(float)McD3DGC->WindowsPosY, // Позиция окна Y
-		(float)McD3DGC->ScreenWidth, // Размер экрана ширина
-		(float)McD3DGC->ScreenHeight // Размер экрана высота 
-	};
+		// ADD object into autoplace system
+		KFButton_Elements* ButtonInitData = &ButtonsData[c];
+		MenuItem* TempItem = new MenuItem;
+		TempItem->Index = ItemIndex;
+		TempItem->IndexInType = c;
+		TempItem->Type = ButtonInitData->Type;
+		TempItem->ObjX = ( int ) ButtonInitData->_ObjParam.x;
+		TempItem->ObjY = ( int )ButtonInitData->_ObjParam.y;
+		TempItem->ObjWidth = ( int ) ButtonInitData->_ObjParam.z;
+		TempItem->ObjHeight = ( int ) ButtonInitData->_ObjParam.w;
+		MenuItemsList.push_back ( TempItem );
+		++ItemIndex;
+	}
+	for ( int c = 0; c < NumOfScrollbars; ++c )
+	{
+		ScrollBar_Elements* TempScrollBarData = &ScrollBarData[c];
+		MenuItem* TempItem = new MenuItem;
+		TempItem->Index = ItemIndex;
+		TempItem->IndexInType = c;
+		TempItem->Type = SCROLLBAR;
+		TempItem->ObjX = ( int ) TempScrollBarData->ObjParam.x;
+		TempItem->ObjY = ( int ) TempScrollBarData->ObjParam.y;
+		TempItem->ObjWidth = ( int ) TempScrollBarData->ObjParam.z;
+		TempItem->ObjHeight = ( int ) TempScrollBarData->ObjParam.w;
+		MenuItemsList.push_back ( TempItem );
+		++ItemIndex;
+	}
+	for ( int c = 0; c < NumOfStringsList; ++c )
+	{
+		StringsList_Elements* TempStringsListData = &StringsLists[c];
+		MenuItem* TempItem = new MenuItem;
+		TempItem->Index = ItemIndex;
+		TempItem->IndexInType = c;
+		TempItem->Type = STR_LIST;
+		TempItem->ObjX = ( int ) TempStringsListData->ObjParam.x;
+		TempItem->ObjY = ( int ) TempStringsListData->ObjParam.y;
+		TempItem->ObjWidth = ( int ) TempStringsListData->ObjParam.z;
+		TempItem->ObjHeight = ( int ) TempStringsListData->ObjParam.w;
+		MenuItemsList.push_back ( TempItem );
+		++ItemIndex;
+	}
+	for ( int c = 0; c < NumOfColorPickers; ++c )
+	{
+		ColorPicker_Elements* TempColorPickerData = &ColorPicker[c];
+		MenuItem* TempItem = new MenuItem;
+		TempItem->Index = ItemIndex;
+		TempItem->IndexInType = c;
+		TempItem->Type = COLOR_PICK;
+		TempItem->ObjX = ( int ) TempColorPickerData->ObjParam.x;
+		TempItem->ObjY = ( int ) TempColorPickerData->ObjParam.y;
+		TempItem->ObjWidth = ( int ) TempColorPickerData->ObjParam.z;
+		TempItem->ObjHeight = ( int ) TempColorPickerData->ObjParam.w;
+		MenuItemsList.push_back ( TempItem );
+		++ItemIndex;
+	}
 
+	// CALCULATE MENU ITEMS POS & DIM
+	CalculateMenuObjectsPositions ( MenuItemsList, ItemsGroups );
+	// CALCULATE MENU ITEMS POS & DIM
+
+	size_t Size = ItemsGroups.size ();
+	for ( size_t c = 0; c < Size; ++c )
+	{
+		size_t ItemsIndexs = ItemsGroups[c]->ItemIndexes.size ();
+
+		GroupItem* Group = ItemsGroups[c];
+
+		for ( size_t i = 0; i < ItemsIndexs; ++i )
+		{
+			MenuItem* Item = MenuItemsList[i];
+
+
+			if ( Item->Type < 4 )
+			{
+
+			}
+			Item->ObjX *= McD3DGC->ScreenScale.z;
+			Item->ObjY *= McD3DGC->ScreenScale.w;
+
+			Item->ObjWidth *= McD3DGC->ScreenScale.z;
+			Item->ObjHeight *= McD3DGC->ScreenScale.w;
+
+		}
+
+
+	}
+
+
+
+	// Delete All Groups
+	size_t Size = ItemsGroups.size ();
+	for ( size_t c = 0; c < Size; ++c )
+	{
+		delete ItemsGroups[c];
+	}
+	ItemsGroups.clear ();
+
+	// Clear autoplce system
+	int c = 0;
+	Size = (int)MenuItemsList.size ();
+	while ( c < Size )
+	{
+		delete MenuItemsList[c];
+		++c;
+	}
+	MenuItemsList.clear ();
+*/
+
+
+ItemIndex = 0;
+// Place Objects By scaling
+for ( int c = 0; c < NumOfButtons; ++c )
+{
+	KFButton_Elements* ButtonInitData = &ButtonsData[c];
+
+//	MenuItem* TempItem = MenuItemsList[ItemIndex];
+	ButtonInitData->_ObjParam.x *= McD3DGC->ScreenScale.z;
+	ButtonInitData->_ObjParam.y *= McD3DGC->ScreenScale.w;
+	ButtonInitData->_ObjParam.z *= McD3DGC->ScreenScale.z;
+	ButtonInitData->_ObjParam.w *= McD3DGC->ScreenScale.w;
+
+	++ItemIndex;
+}
+
+for ( int c = 0; c < NumOfScrollbars; ++c )
+{
+	ScrollBar_Elements* TempScrollBarData = &ScrollBarData[c];
+
+//	MenuItem* TempItem = MenuItemsList[ItemIndex];
+	TempScrollBarData->ObjParam.x *= McD3DGC->ScreenScale.z;
+	TempScrollBarData->ObjParam.y *= McD3DGC->ScreenScale.w;
+	TempScrollBarData->ObjParam.z *= McD3DGC->ScreenScale.z;
+	TempScrollBarData->ObjParam.w *= McD3DGC->ScreenScale.w;
+
+	++ItemIndex;
+}
+
+for ( int c = 0; c < NumOfStringsList; ++c )
+{
+	StringsList_Elements* TempStringsListData = &StringsLists[c];
+
+//	MenuItem* TempItem = new MenuItem;
+	TempStringsListData->ObjParam.x *= McD3DGC->ScreenScale.z;
+	TempStringsListData->ObjParam.y *= McD3DGC->ScreenScale.w;
+	TempStringsListData->ObjParam.z *= McD3DGC->ScreenScale.z;
+	TempStringsListData->ObjParam.w *= McD3DGC->ScreenScale.w;
+
+	++ItemIndex;
+}
+
+for ( int c = 0; c < NumOfColorPickers; ++c )
+{
+	ColorPicker_Elements* TempColorPickerData = &ColorPicker[c];
+
+//	MenuItem* TempItem = MenuItemsList[ItemIndex];
+	TempColorPickerData->ObjParam.x *= McD3DGC->ScreenScale.z;
+	TempColorPickerData->ObjParam.y *= McD3DGC->ScreenScale.w;
+	TempColorPickerData->ObjParam.z *= McD3DGC->ScreenScale.z;
+	TempColorPickerData->ObjParam.w *= McD3DGC->ScreenScale.w;
+
+	++ItemIndex;
+}
+
+
+
+
+// Buttons initialisation
 	KFButton* TempButton;
-
 	int c = 0;
 	while(c < NumOfButtons)
 	{
@@ -83,7 +246,7 @@ HRESULT MenuControrerClass::Init(D3DGlobalContext* D3DGC,
 		TempButton = new KFButton ;
 		Buttons.emplace_back (TempButton);
 		KFButton_Elements* ButtonInitData = &ButtonsData[c];
-		TempButton->BuffersIndex = GlobalResourceManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 4, 6, ButtonsData[c].OsnTexture );
+		TempButton->BuffersIndex = GlobalResourceManager->Create_Flat_Obj_Buffers ( NO_CPU_ACCESS_BUFFER, 4, 6, ButtonsData[c].OsnTexture );
 
 		// Если к Button присоединен текст, то смотрим его длинну для создания текстовой строки
 		// Которая будет рисоваться поверх кнопки
@@ -93,11 +256,9 @@ HRESULT MenuControrerClass::Init(D3DGlobalContext* D3DGC,
 
 		// Если создатся объект Edit или Label, то Label можут быть NULL, но ButtonsData[c].Data->MaxLength обязательно должно быть больше 0 
 		// чтобы Edit и Label корректно работал
-//		if ( ( LabelSize != NULL && ButtonInitData->Data != NULL ) || ((ButtonInitData->Data != NULL && ButtonInitData->Data->MaxLength > 0 ) && ( ButtonInitData->Type == LABEL || ButtonInitData->Type == EDIT )) )
 		if (( ButtonInitData->Type == LABEL || ButtonInitData->Type == EDIT ) && 
 		   (  ButtonInitData->Data != NULL ))
 		{
-//			ButtonInitData->Data->MaxLength < 0 ? ButtonInitData->Data->MaxLength = 2 : ButtonInitData->Data->MaxLength;
 			SentenceIndex = GlobalResourceManager->AddSentence( ButtonInitData->Data, ButtonInitData->Label );
 			if ( SentenceIndex == -1 )
 				assert("Инициализация названия кнопки не прошла.");
@@ -109,13 +270,13 @@ HRESULT MenuControrerClass::Init(D3DGlobalContext* D3DGC,
 
 		ButtonInitData->SentenceIndex = SentenceIndex; // Если есть строка у элемента, то привязываем её индекс в массиве к элементу
 
-
 		TempButton->Init(
 			D3DGC,
 			ScrCoords, 
 			BackGroundCoord,
 			*ButtonInitData,
-			GlobalResourceManager->Get_Flat_ObjectBuffers_ByIndex( TempButton->BuffersIndex )
+			GlobalResourceManager->Get_Flat_ObjectBuffers_ByIndex( TempButton->BuffersIndex ),
+			GlobalResourceManager
 			);
 
 		TempButton->SetIfButtonPressTexture( ButtonInitData->IsClickTexture);
@@ -125,31 +286,22 @@ HRESULT MenuControrerClass::Init(D3DGlobalContext* D3DGC,
 			
 		++c ;
 	}
-	
-	ScrollBarClass* TempScrollBar;
 
-	// создание скролл баров
+// ScrollBars initialisation
+	ScrollBarClass* TempScrollBar;
     c = 0 ;
 	while (c < NumOfScrollbars)
 	{
 		TempScrollBar = new ScrollBarClass;
 		ScrollBars.emplace_back ( TempScrollBar );
 
-		KFScrollBar_Elements* TempScrollBarData = &ScrollBarData[c];
-		int IndexMinButton = GlobalResourceManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 4, 6, TempScrollBarData->ButtonsTexture );
-		int IndexMaxButton = GlobalResourceManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 4, 6, TempScrollBarData->ButtonsTexture );
-		int IndexMinTraveler = GlobalResourceManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 4, 6, TempScrollBarData->TravellerTexture );
-		int Body = GlobalResourceManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 4, 6, TempScrollBarData->BodyTexture );
+		ScrollBar_Elements* TempScrollBarData = &ScrollBarData[c];
 
 			TempScrollBar->Init(
 			D3DGC,
-			ScrCoords,
 			BackGroundCoord,
 			*TempScrollBarData,
-			GlobalResourceManager->Get_Flat_ObjectBuffers_ByIndex( IndexMinButton ),
-			GlobalResourceManager->Get_Flat_ObjectBuffers_ByIndex ( IndexMaxButton ),
-			GlobalResourceManager->Get_Flat_ObjectBuffers_ByIndex ( IndexMinTraveler ),
-			GlobalResourceManager->Get_Flat_ObjectBuffers_ByIndex ( Body )
+			GlobalResourceManager
 			);
 
 			TempScrollBar->SetMouseOnButtonTexture( TempScrollBarData->MouseOnButtonTexture);
@@ -163,8 +315,8 @@ HRESULT MenuControrerClass::Init(D3DGlobalContext* D3DGC,
 			++c;
 	}
 
+// StruingLists initialisation
 	StringsListClass* TempStringsList;
-
 	c = 0;
 	while ( c < NumOfStringsList )
 	{
@@ -173,54 +325,66 @@ HRESULT MenuControrerClass::Init(D3DGlobalContext* D3DGC,
 		StringsList.push_back( TempStringsList );
 
 		StringsList_Elements* TempStringsListData = &StringsLists[c];
-		int TempIndex = GlobalResourceManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 4, 6, nullptr );
 
 		TempStringsList->Init(
 			D3DGC,
-			ScrCoords,
 			BackGroundCoord,
 			*TempStringsListData,
-			GlobalResourceManager,
-			GlobalResourceManager->Get_Flat_ObjectBuffers_ByIndex ( TempIndex )
+			GlobalResourceManager
 		);
 		
 		++c;
 	}
 
+// ColorPickers initialization
+	ColorPickerClass* TempColorPicker;
+	c = 0;
+	while ( c < NumOfColorPickers )
+	{
 
-	g_MenuPosX = BackGroundCoord.x;
-	g_MenuPosY = BackGroundCoord.y;
-	g_Width = MWidth ;
-	g_Heigth = MHeigth ;
+		TempColorPicker = new ColorPickerClass;
+		ColorPickers.push_back ( TempColorPicker );
 
+		ColorPicker_Elements* TempColorPickerData = &ColorPicker[c];
+
+		TempColorPicker->Init (
+			D3DGC,
+			ScrCoords,
+			BackGroundCoord,
+			*TempColorPickerData,
+			GlobalResourceManager
+			);
+
+		++c;
+	}
 	return result;
 }
 
 
-MenuControrerClass::~MenuControrerClass()
+MenuControllerClass::~MenuControllerClass()
 {
-
+	
 }
 
 // Размещает текст поверх элементов меню в центе элемента по Y
-void MenuControrerClass::UpdateObjectText ( KFButton* TempButton, char* Str )
+void MenuControllerClass::UpdateObjectText ( KFButton* TempButton, char* Str )
 {
 	int YPos;
 	// Получаем высоту текста в пикселях, чтобы можно было его выровнять поцентру объекта содержащего строку
 	long TextHight = ( long )GlobalResourceManager->GetSentenceHeight ( TempButton->SentenceIndex );
 
-	if (TempButton->ABSolute_Height > TextHight)
-		YPos = (int)TempButton->ABSoluteY + (TempButton->ABSolute_Height - TextHight) / 2 ;
+	if ( TempButton->ABSolute_Height > TextHight )
+		YPos = ( int ) TempButton->ABSoluteY + ( TempButton->ABSolute_Height - TextHight ) / 2;// -2;
 	else
-		YPos = (int)TempButton->ABSoluteY + (TextHight - TempButton->ABSolute_Height) / 2;
+		YPos = (int)TempButton->ABSoluteY + (TextHight - TempButton->ABSolute_Height) / 2 + 2;
 	
 	GlobalResourceManager->UpdateSentence ( TempButton->SentenceIndex, Str, int ( TempButton->ABSoluteX + 10 ), YPos );
 }
 
 
-HRESULT MenuControrerClass::Frame( InputClass* InputClass, int UTF16_KeyCODE, FPSTimers &fpstimers)
+HRESULT MenuControllerClass::Frame( InputClass* InputClass, int UTF16_KeyCODE, FPSTimers &fpstimers)
 {
-	// Все происходит при слловии что конкретное меню сейчас имеет статус IsMenuActive
+	// Все происходит при условии, что конкретное меню сейчас имеет статус IsMenuActive
 	if ( IsMenuActive )
 	{
 		// Таймер для моргания курсора с частотой 0.5 - пол секунды
@@ -231,10 +395,7 @@ HRESULT MenuControrerClass::Frame( InputClass* InputClass, int UTF16_KeyCODE, FP
 		{
 			CursorTime = 0.0f;
 
-			if ( CursorOn_Off )
-				CursorOn_Off = false;
-			else
-				CursorOn_Off = true;
+			CursorOn_Off ? CursorOn_Off = false : CursorOn_Off = true;
 		}
 
 // Обработка всех кнопок на форме
@@ -244,6 +405,7 @@ HRESULT MenuControrerClass::Frame( InputClass* InputClass, int UTF16_KeyCODE, FP
 		while (c < g_NumOfButtons)
 		{
 			TempButton = Buttons[c];
+
 				 // FRAME для каждого BUTTON
 			if ( TempButton->Frame( InputClass->DxInputStruct, ObjectActiveBUSY ))
 			{
@@ -261,7 +423,7 @@ HRESULT MenuControrerClass::Frame( InputClass* InputClass, int UTF16_KeyCODE, FP
 				switch ( TempButton->ObjectType )
 				{
 					// Если Label, то проверяем нужно ли ожидать нажатий на любую кнопку
-					case 2:
+					case LABEL:
 							// Если нужно ввести кнопку, то включаем ожидание нажатия на любую кнопку
 							if ( TempButton->WaitingForKeyPress )
 							{
@@ -275,25 +437,24 @@ HRESULT MenuControrerClass::Frame( InputClass* InputClass, int UTF16_KeyCODE, FP
 									{
 										InputClass->BindKey( 0, (UINT)kode, true );
 										TempButton->ActiveAsEdit = false;
+										TempButton->EditFinished = true;
 										UpdateObjectText ( TempButton,
-										GlobalInput->GetVKeyText ( TempButton->VirtualKeyIndex, TempButton->SecondSlot )
+									    GlobalInput->GetVKeyText ( TempButton->VirtualKeyIndex, TempButton->SecondSlot )
 										);
 									}
-
-
 							}
 							break;
 
 					// Если Edit, то начинаем процесс редактирования строки привязанной к Edit
-					case 3:
-						{
-						int MAXLength = GlobalResourceManager->GetSentenceMaxLength( TempButton->SentenceIndex );
+					case EDIT:
+					{
+						int MAXLength = GlobalResourceManager->GetSentenceMaxLength ( TempButton->SentenceIndex );
 
-						char* TempString = new char [MAXLength];
+						char* TempString = new char[MAXLength];
 
-						strcpy_s( TempString, (size_t)MAXLength, GlobalResourceManager->GetSentenceText( TempButton->SentenceIndex ) );
+						strcpy_s ( TempString, ( size_t ) MAXLength, GlobalResourceManager->GetSentenceText ( TempButton->SentenceIndex ) );
 
-						int RealLength = (int)strlen( TempString );
+						int RealLength = ( int ) strlen ( TempString );
 
 						// ++++++++++++++++++++++++++++++    Моргаем курсором     +++++++++++++++++++++++++++++++++++++++++
 						// Если курсор ВКЛ
@@ -301,11 +462,11 @@ HRESULT MenuControrerClass::Frame( InputClass* InputClass, int UTF16_KeyCODE, FP
 						{
 							if ( !TempButton->CursorOn )
 							{
-								if ((RealLength + 1) < MAXLength )
+								if ( ( RealLength + 1 ) < MAXLength )
 								{
 									TempButton->CursorOn = true;
-									strcat_s( TempString, MAXLength, "|" );
-									UpdateObjectText ( TempButton, TempString);
+									strcat_s ( TempString, MAXLength, "|" );
+									UpdateObjectText ( TempButton, TempString );
 								}
 							}
 						}
@@ -323,64 +484,65 @@ HRESULT MenuControrerClass::Frame( InputClass* InputClass, int UTF16_KeyCODE, FP
 
 					// Если введённый символ отображаемый, то добавляем его в текст
 					// Для того чтобы кнопки нужно было отпускать и вбивалось по одному символу
-					if (UTF16_KeyCODE != -1 && !KeyPressed )
-					{
-						KeyPressed = true;
-						TempKeyCode = UTF16_KeyCODE;
-					}
-
-					// Для того чтобы кнопки нужно было отпускать и вбивалось по одному символу
-					if ( KeyPressed && UTF16_KeyCODE == -1 )
-					{
-						KeyPressed = false;
-
-						// Считываем реальную длинну строки
-						RealLength = (int)strlen( TempString );
-
-						// Enter
-						if (TempKeyCode == 13)
+						if ( UTF16_KeyCODE != -1 && !KeyPressed )
 						{
-							// Если курсор в тексте - убираем его.
-							if (TempButton->CursorOn)
-							{
-								TempButton->CursorOn = false;
-								TempString[RealLength - 1] = NULL;
-							}
-
-							TempButton->ActiveAsEdit = false;
-							UpdateObjectText ( TempButton, TempString );
-							break;
+							KeyPressed = true;
+							TempKeyCode = UTF16_KeyCODE;
 						}
 
-						// Если длинна строки меньше максимальной
-						if (RealLength < MAXLength - 2 || TempKeyCode == 8) // -2  потому что нужно место для символа + в конце строки ещё /0
+						// Для того чтобы кнопки нужно было отпускать и вбивалось по одному символу
+						if ( KeyPressed && UTF16_KeyCODE == -1 )
 						{
+							KeyPressed = false;
 
-							// Если курсор в тексте - убираем его.
-							if (TempButton->CursorOn)
+							// Считываем реальную длинну строки
+							RealLength = ( int ) strlen ( TempString );
+
+							// Enter
+							if ( TempKeyCode == 13 )
 							{
-								TempButton->CursorOn = false;
-								TempString[RealLength - 1] = NULL;
+								// Если курсор в тексте - убираем его.
+								if ( TempButton->CursorOn )
+								{
+									TempButton->CursorOn = false;
+									TempString[RealLength - 1] = NULL;
+								}
+
+								TempButton->ActiveAsEdit = false;
+								TempButton->EditFinished = true;
+								UpdateObjectText ( TempButton, TempString );
+								break;
 							}
 
-							char Str[2];
-							// Что принимает Edit зависит от настроек
-							switch ( TempButton->EditType )
+							// Если длинна строки меньше максимальной
+							if ( RealLength < MAXLength - 2 || TempKeyCode == 8 ) // -2  потому что нужно место для символа + в конце строки ещё /0
 							{
-								case ANYSYMBOL:
-							
+
+								// Если курсор в тексте - убираем его.
+								if ( TempButton->CursorOn )
+								{
+									TempButton->CursorOn = false;
+									TempString[RealLength - 1] = NULL;
+								}
+
+								char Str[2];
+								// Что принимает Edit зависит от настроек
+								switch ( TempButton->EditType )
+								{
+									case ANYSYMBOL:
+
 									Str[0] = UTF16toCHAR ( TempKeyCode );
 									Str[1] = NULL;
 									break;
 
-								case AS_INTEGER:
+									case AS_INTEGER:
 
 									Str[0] = UTF16toINT ( TempKeyCode );
 									Str[1] = NULL;
 
 									// Проверяем что минус можно поставить только в начале строки
-									if (Str[0] == 0x2D)
-										if ( !strlen( TempString ) == NULL )
+									if ( Str[0] == 0x2D )
+										if ( !strlen ( TempString ) == NULL )
 										{
 											Str[0] = 0x00;
 											Str[1] = NULL;
@@ -388,50 +550,50 @@ HRESULT MenuControrerClass::Frame( InputClass* InputClass, int UTF16_KeyCODE, FP
 
 									break;
 
-								case AS_FLOAT:
+									case AS_FLOAT:
 									Str[0] = UTF16toFLOAT ( TempKeyCode );
 									Str[1] = NULL;
 									// Проверка на единственный символ точки в троке
 									if ( Str[0] == 0x2E )
-										if ( PointSet( TempString ) )
+										if ( PointSet ( TempString ) )
 										{
 											Str[0] = 0x00;
 											Str[1] = NULL;
 										}
 									// Проверяем что минус можно поставить только в начале строки
 									if ( Str[0] == 0x2D )
-										if ( !strlen( TempString ) == NULL )
+										if ( !strlen ( TempString ) == NULL )
 										{
 											Str[0] = 0x00;
 											Str[1] = NULL;
 										}
 
 
-								default:;
-							}
-
-							// Если нужно удалить символ ( BackSpace нажат )
-							if (Str[0] == 8)
-							{
-								RealLength = (int)strlen( TempString );
-								// Едаляем символ только если строка содержит хоть один символ
-								if (RealLength > 0)
-								{
-									RealLength = (int)strlen( TempString );
-									TempString[RealLength - 1] = NULL;
+									default:;
 								}
-							}
-							else
-							{
-								strcat_s( TempString, MAXLength, Str );
-							}
 
-							UpdateObjectText ( TempButton, TempString );
+								// Если нужно удалить символ ( BackSpace нажат )
+								if ( Str[0] == 8 )
+								{
+									RealLength = ( int ) strlen ( TempString );
+									// Едаляем символ только если строка содержит хоть один символ
+									if ( RealLength > 0 )
+									{
+										RealLength = ( int ) strlen ( TempString );
+										TempString[RealLength - 1] = NULL;
+									}
+								}
+								else
+								{
+									strcat_s ( TempString, MAXLength, Str );
+								}
+
+								UpdateObjectText ( TempButton, TempString );
+							}
 						}
-					}
 
-					delete [] TempString;
-					break;// case 3
+						delete [] TempString;
+						break;// case 3
 					}
 			default:;
 		}	// switch END
@@ -454,6 +616,16 @@ HRESULT MenuControrerClass::Frame( InputClass* InputClass, int UTF16_KeyCODE, FP
 			StringsList[c]->Frame( InputClass->DxInputStruct, fpstimers, ObjectActiveBUSY );
 			++c;
 		}
+
+// ColorPickers
+		c = 0;
+		while ( c < g_NumOfColorPickers )
+		{
+			ColorPickerClass *Picker = ColorPickers[c];
+
+			Picker->Frame ( InputClass->DxInputStruct, fpstimers, ObjectActiveBUSY );
+			++c;
+		}
 	}
 
 	if ( Animation )
@@ -463,7 +635,7 @@ HRESULT MenuControrerClass::Frame( InputClass* InputClass, int UTF16_KeyCODE, FP
 }
 
 
-void MenuControrerClass::ChangeActiveEdit( int ActiveNumber )
+void MenuControllerClass::ChangeActiveEdit( int ActiveNumber )
 {
 	int c = 0;
 	while (c < g_NumOfButtons)
@@ -476,7 +648,7 @@ void MenuControrerClass::ChangeActiveEdit( int ActiveNumber )
 }
 
 
-void MenuControrerClass::SetButtonAnimation(int NumOfVerses , int NumofColom , ID3D11ShaderResourceView * KF2DTextureFileName
+void MenuControllerClass::SetButtonAnimation(int NumOfVerses , int NumofColom , ID3D11ShaderResourceView * KF2DTextureFileName
 	, int IndexOfButton , int FramesSpead)
 {
 
@@ -485,7 +657,7 @@ void MenuControrerClass::SetButtonAnimation(int NumOfVerses , int NumofColom , I
 }
 
 
-void MenuControrerClass::SetButtonPos( int ButtonIndex, float x, float y )
+void MenuControllerClass::SetButtonPos( int ButtonIndex, float x, float y )
 {
 	KFButton* TButton;
 	TButton = Buttons[ButtonIndex];
@@ -496,7 +668,7 @@ void MenuControrerClass::SetButtonPos( int ButtonIndex, float x, float y )
 }
 
 
-void MenuControrerClass::SetButtonPos(int ButtonIndex, float Percent )
+void MenuControllerClass::SetButtonPos(int ButtonIndex, float Percent )
 {
 	KFButton* TButton;
 	TButton = Buttons[ButtonIndex];
@@ -507,7 +679,7 @@ void MenuControrerClass::SetButtonPos(int ButtonIndex, float Percent )
 }
 
 
-void MenuControrerClass::SetButtonSize( int ButtonIndex, float width , float heigth )
+void MenuControllerClass::SetButtonSize( int ButtonIndex, float width , float heigth )
 {
 	KFButton* TButton;
 	TButton = Buttons[ButtonIndex];
@@ -518,7 +690,7 @@ void MenuControrerClass::SetButtonSize( int ButtonIndex, float width , float hei
 }
 
 
-void MenuControrerClass::SetButtonSize(int ButtonIndex, float Percent)
+void MenuControllerClass::SetButtonSize(int ButtonIndex, float Percent)
 {
 	KFButton* TButton;
 	TButton = Buttons[ButtonIndex];
@@ -529,7 +701,7 @@ void MenuControrerClass::SetButtonSize(int ButtonIndex, float Percent)
 }
 
 
-void MenuControrerClass::SetButtonParam(int ButtonIndex, XMFLOAT4& Param)
+void MenuControllerClass::SetButtonParam(int ButtonIndex, XMFLOAT4& Param)
 {
 	KFButton* TButton;
 	TButton = Buttons[ButtonIndex];
@@ -539,7 +711,7 @@ void MenuControrerClass::SetButtonParam(int ButtonIndex, XMFLOAT4& Param)
 }
 
 
-void MenuControrerClass::SetButtonToOrigin( int ButtonIndex )
+void MenuControllerClass::SetButtonToOrigin( int ButtonIndex )
 {
 	KFButton* TButton;
 	TButton = Buttons[ButtonIndex];
@@ -549,7 +721,7 @@ void MenuControrerClass::SetButtonToOrigin( int ButtonIndex )
 }
 
 
-void MenuControrerClass::SetMenuPos(XMFLOAT2& Pos)
+void MenuControllerClass::SetMenuPos(XMFLOAT2& Pos)
 {
 	Background->ObjParam.x = Pos.x;
 	Background->ObjParam.y = Pos.y;
@@ -558,7 +730,7 @@ void MenuControrerClass::SetMenuPos(XMFLOAT2& Pos)
 }
 
 
-void MenuControrerClass::UpdateMenuElementsPos()
+void MenuControllerClass::UpdateMenuElementsPos()
 {
 	KFButton* TButton;
 	int c = 0;
@@ -572,7 +744,7 @@ void MenuControrerClass::UpdateMenuElementsPos()
 }
 
 
-void  MenuControrerClass::SetMenuSize( float Percent )
+void  MenuControllerClass::SetMenuSize( float Percent )
 {
 	Background->ObjParam.z = Background->ObjOriginalParam.z * Percent;
 	Background->ObjParam.w = Background->ObjOriginalParam.w * Percent;
@@ -581,7 +753,7 @@ void  MenuControrerClass::SetMenuSize( float Percent )
 }
 
 
-void MenuControrerClass::UpdateMenuElementsAll()
+void MenuControllerClass::UpdateMenuElementsAll()
 {
 	KFButton* TButton;
 	int c = 0;
@@ -596,14 +768,14 @@ void MenuControrerClass::UpdateMenuElementsAll()
 }
 
 
-void MenuControrerClass::AddAnyMenuEffect(int Index)
+void MenuControllerClass::AddAnyMenuEffect(int Index)
 {
 
 
 }
 
 
-void MenuControrerClass::SetMenuActive(bool Value)
+void MenuControllerClass::SetMenuActive(bool Value)
 {
 
 	IsMenuActive = Value;
@@ -611,7 +783,7 @@ void MenuControrerClass::SetMenuActive(bool Value)
 }
 
 
-void MenuControrerClass::PutLabelsInsideButtons()
+void MenuControllerClass::PutLabelsInsideButtons()
 {
 	int c = 0;
 	int NumOfButtons = (int)Buttons.size();
@@ -631,7 +803,7 @@ void MenuControrerClass::PutLabelsInsideButtons()
 }
 
 
-void MenuControrerClass::PutLabelInsideButton( int ButtonIndex )
+void MenuControllerClass::PutLabelInsideButton( int ButtonIndex )
 {
 	KFButton* TempButton = Buttons[ ButtonIndex ];
 
@@ -644,7 +816,7 @@ void MenuControrerClass::PutLabelInsideButton( int ButtonIndex )
 }
 
 
-char MenuControrerClass::UTF16toCHAR ( int UTF16_KeyPressed )
+char MenuControllerClass::UTF16toCHAR ( int UTF16_KeyPressed )
 {
 	// Enter
 	if  ( UTF16_KeyPressed == 13 )
@@ -669,7 +841,7 @@ char MenuControrerClass::UTF16toCHAR ( int UTF16_KeyPressed )
 }
 
 
-char MenuControrerClass::UTF16toINT ( int UTF16_KeyPressed )
+char MenuControllerClass::UTF16toINT ( int UTF16_KeyPressed )
 {
 	// Enter
 	if ( UTF16_KeyPressed == 13 )
@@ -688,7 +860,7 @@ char MenuControrerClass::UTF16toINT ( int UTF16_KeyPressed )
 }
 
 // http://cppstudio.com/post/812/
-char MenuControrerClass::UTF16toFLOAT ( int UTF16_KeyPressed )
+char MenuControllerClass::UTF16toFLOAT ( int UTF16_KeyPressed )
 {
 	// Enter
 	if ( UTF16_KeyPressed == 13 )
@@ -710,7 +882,7 @@ char MenuControrerClass::UTF16toFLOAT ( int UTF16_KeyPressed )
 }
 
 
-bool MenuControrerClass::PointSet ( char* Str )
+bool MenuControllerClass::PointSet ( char* Str )
 {
 	int Length = (int)strlen ( Str );
 	
@@ -727,7 +899,7 @@ bool MenuControrerClass::PointSet ( char* Str )
 }
 
 
-void MenuControrerClass::SwithOFFCursor ( KFButton* Button )
+void MenuControllerClass::SwithOFFCursor ( KFButton* Button )
 {
 	KFButton* TempButton;
 
@@ -754,7 +926,7 @@ void MenuControrerClass::SwithOFFCursor ( KFButton* Button )
 }
 
 
-float MenuControrerClass::GetScrollBarValue( int ScrBarIndex )
+float MenuControllerClass::GetScrollBarValue( int ScrBarIndex )
 {
 	int Size = (int)ScrollBars.size();
 	if ( ScrBarIndex < Size )
@@ -765,7 +937,7 @@ float MenuControrerClass::GetScrollBarValue( int ScrBarIndex )
 }
 
 
-void MenuControrerClass::SetScrollBarEnable( int ScrBarIndex, bool value )
+void MenuControllerClass::SetScrollBarEnable( int ScrBarIndex, bool value )
 {
 	int Size = ( int ) ScrollBars.size();
 
@@ -775,7 +947,7 @@ void MenuControrerClass::SetScrollBarEnable( int ScrBarIndex, bool value )
 }
 
 
-bool MenuControrerClass::SetScrollBarValue( int ScrBarIndex, float &Value )
+bool MenuControllerClass::SetScrollBarValue( int ScrBarIndex, float &Value )
 {
 	int Size = ( int ) ScrollBars.size();
 
@@ -788,22 +960,75 @@ bool MenuControrerClass::SetScrollBarValue( int ScrBarIndex, float &Value )
 }
 
 
-bool MenuControrerClass::GetButtonState( int ButtonIndex )
+bool MenuControllerClass::GetButtonState( int ButtonIndex )
 {
 	int Size = (int)Buttons.size();
 
 	ButtonState State;
+	KFButton* Button = Buttons[ButtonIndex];
+
 	if ( ButtonIndex < Size )
 	{
-		Buttons[ButtonIndex]->GetButtonState( State );
-		return State.IsPress;
+		if ( Button->ObjectType == CHECKBOX )
+			return Button->Checked;
+		else // Other button types
+		{
+			Button->GetButtonState ( State );
+			return State.IsPress;
+		}
 	}
 
 	return false;
 }
 
 
-void MenuControrerClass::ClearButtonState( int ButtonIndex )
+bool MenuControllerClass::GetEditFinished ( int ButtonIndex )
+{
+	int Size = ( int ) Buttons.size ();
+
+	KFButton* Button = Buttons[ButtonIndex];
+
+	if ( ButtonIndex < Size )
+	{
+		if ( Button->ObjectType == EDIT || Button->ObjectType == LABEL )
+			return Button->EditFinished;
+	}
+
+	return false;
+}
+
+
+bool MenuControllerClass::GetButtonChanged ( int ButtonIndex )
+{
+	int Size = ( int ) Buttons.size ();
+
+	KFButton* Button = Buttons[ButtonIndex];
+
+	if ( ButtonIndex < Size )
+	{
+		if ( Button->ObjectType == CHECKBOX )
+			return Button->Changed;
+	}
+
+	return false;
+
+}
+
+
+bool MenuControllerClass::GetScrollBarChanged ( int ScrBarIndex )
+{ 
+	int Size = ( int ) ScrollBars.size ();
+
+	if ( ScrBarIndex < Size )
+	{
+		return ScrollBars[ScrBarIndex]->Changed;
+	}
+
+	return false;
+}
+
+
+void MenuControllerClass::ClearButtonState( int ButtonIndex )
 {
 	int Size = (int)Buttons.size();
 
@@ -812,7 +1037,7 @@ void MenuControrerClass::ClearButtonState( int ButtonIndex )
 }
 
 
-void MenuControrerClass::SetButtonEnable( int ButtonIndex, bool value )
+void MenuControllerClass::SetButtonEnable( int ButtonIndex, bool value )
 {
 	int Size = (int)Buttons.size();
 
@@ -820,4 +1045,292 @@ void MenuControrerClass::SetButtonEnable( int ButtonIndex, bool value )
 		Buttons[ButtonIndex]->SetEnable( value );
 
 }
+
+
+float MenuControllerClass::GetButtonTextAsFloat ( int ButtonIndex )
+{
+	int Size = ( int ) Buttons.size ();
+	if ( ButtonIndex < Size )
+	{
+		KFButton* Button = Buttons[ButtonIndex];
+
+		if ( Button->ObjectType == EDIT && ( Button->EditType == AS_FLOAT || Button->EditType == AS_INTEGER ) )
+		{
+			SentenceType * Sentence = GlobalResourceManager->RCube_Sentences[Button->SentenceIndex];
+			return ( float ) ( atof ( Sentence->Text ) );
+		}
+	}
+
+	return -50505.50505f;
+}
+
+
+int MenuControllerClass::GetButtonTextAsInt ( int ButtonIndex )
+{
+	int Size = ( int ) Buttons.size ();
+
+	if ( ButtonIndex < Size )
+	{
+		KFButton* Button = Buttons[ButtonIndex];
+
+		if ( Button->ObjectType == EDIT && Button->EditType == AS_INTEGER )
+		{
+			SentenceType * Sentence = GlobalResourceManager->RCube_Sentences[Button->SentenceIndex];
+			return atoi ( Sentence->Text );
+		}
+	}
+	
+	return -50505050;
+}
+
+
+XMFLOAT4 MenuControllerClass::GetButtonColour ( int ButtonIndex )
+{
+	int Size = ( int ) Buttons.size ();
+	if ( ButtonIndex < Size &&  Buttons[ButtonIndex]->ObjectType == COLOR_PICK )
+	{
+		return Buttons[ButtonIndex]->GetButtonColor ();
+	}
+	else
+	{
+		return XMFLOAT4 { -50505.50505f , -50505.50505f , -50505.50505f , -50505.50505f };
+	}
+}
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void MenuControllerClass::CalculateMenuObjectsPositions ( vector <MenuItem*> &MenuItemsList, vector <GroupItem*> &ItemsGroups )
+{
+	int ElementIndex = FindMinXYPosItem ( MenuItemsList, ItemsGroups );
+
+	GroupItem* NewGroup = new GroupItem;
+	ItemsGroups.push_back ( NewGroup );
+
+	PushIntoGroup ( 0, ElementIndex );
+
+	size_t ItemsAmount = MenuItemsList.size ();
+
+	for ( size_t i = 0; i < ItemsAmount; ++i )
+	{
+		MenuItem* Item = MenuItemsList[i];
+
+		size_t GroupsAmount = ItemsGroups.size ();
+
+		for ( size_t g = 0; g < GroupsAmount; ++g )
+		{
+			// If Item not in group
+			if ( Item->Group == -1 )
+			{
+				size_t AmountInGroup = ItemsGroups[g]->ItemIndexes.size ();
+
+				for ( size_t gi = 0; gi < AmountInGroup; ++gi )
+				{
+
+					bool Direction = false;
+					bool Identical = false;
+					// ???????????????????????????????????????????????????????????					
+					if ( Item->Group == -1 )
+					{
+						GroupItem* Group = ItemsGroups[g];
+
+						int ItemIndex = Group->ItemIndexes[gi];
+
+						CompareItems ( Item, MenuItemsList[ItemIndex], Direction, Identical );
+						// Item seems should be added into existed group
+						if ( Identical )
+						{
+							Group->Direction = Direction;
+							PushIntoGroup ( ( int ) g, Item->Index );
+							break;
+						}
+					}
+				}
+			}
+		}
+		// If Item did not fit any existed groups
+		if ( Item->Group == -1 )
+		{
+			GroupItem* NewGroup = new GroupItem;
+
+			size_t NewGroupIndex = ItemsGroups.size ();
+			ItemsGroups.push_back ( NewGroup );
+			PushIntoGroup ( ( int ) NewGroupIndex, Item->Index );
+		}
+	}
+}
+
+
+void MenuControllerClass::PushIntoGroup ( int GroupIndex, int MenuItemIndex )
+{
+	GroupItem* Group = ItemsGroups[GroupIndex];
+
+	int First = (int)Group->ItemIndexes.size ();
+
+	MenuItem* TempItem = MenuItemsList[MenuItemIndex];
+
+	// Push first element
+	if ( First == 0 )
+	{
+		// Updating group dimentions
+		Group->GroupX = TempItem->ObjX;
+		Group->GroupY = TempItem->ObjY;
+		Group->GroupWidth = TempItem->ObjWidth;
+		Group->GroupHeight = TempItem->ObjHeight;
+		Group->Direction = false;		// Assuming group spread Y direction
+		Group->ItemIndexes.push_back ( MenuItemIndex );	// Store first element into group
+	
+		TempItem->Group = GroupIndex;// Assign group index to Item 
+	}
+	// Not First Item in the group
+	else
+	{
+		int LastGroupItemIndex = ( int ) Group->ItemIndexes.size ();
+
+		int ItemIndex = Group->ItemIndexes[LastGroupItemIndex - 1];
+
+		MenuItem*  LastGroupItem = MenuItemsList[ItemIndex];
+		
+		if ( Group->Direction == _X_ )
+		{
+			TempItem->PreviousItemDistance = TempItem->ObjX - ( LastGroupItem->ObjX + LastGroupItem->ObjWidth );
+		}
+		else
+		{
+			TempItem->PreviousItemDistance = TempItem->ObjY - ( LastGroupItem->ObjY + LastGroupItem->ObjHeight );
+		}
+
+		Group->ItemIndexes.push_back ( MenuItemIndex );	// Store first element into group
+
+		TempItem->Group = GroupIndex;
+
+		UpdateGroupDim ( GroupIndex, MenuItemIndex );
+	}
+
+}
+
+
+void MenuControllerClass::UpdateGroupDim ( int GroupIndex, int NewItemIndex )
+{
+	GroupItem* Group = ItemsGroups[GroupIndex];
+	MenuItem* TempItem = MenuItemsList[NewItemIndex];
+
+	if ( TempItem->ObjX > Group->GroupWidth )
+	{
+		Group->Direction = _X_;
+		// !!!!!!!!!!!!!!!!!!!!!!!!!!!  DistanceBetweenElements  should be other
+		Group->DistanceBetweenElements = TempItem->ObjX - Group->GroupWidth;
+		Group->GroupWidth = Group->GroupWidth + Group->DistanceBetweenElements + TempItem->ObjWidth;
+	}
+	else if ( TempItem->ObjY > Group->GroupHeight )
+	{
+		Group->Direction = _Y_;
+		// !!!!!!!!!!!!!!!!!!!!!!!!!!!  DistanceBetweenElements  should be other
+		Group->DistanceBetweenElements = TempItem->ObjY - Group->GroupHeight;
+		Group->GroupHeight = Group->GroupHeight + Group->DistanceBetweenElements + TempItem->ObjHeight;
+	}
+}
+
+
+bool MenuControllerClass::FindItemBetweenItems ( GroupItem* Group, MenuItem* CheckItem, bool &Direction )
+{
+	bool result = false;
+
+	size_t Size = MenuItemsList.size ();
+	for ( size_t c = 0; c < Size; ++c )
+	{
+		MenuItem* Item = MenuItemsList[c];
+
+		// Do not check with themselves - exclude One & Two and Items in other groups
+		if ( Item->Index != CheckItem->Index )
+		{
+			// Checking according to Direction item placed  X same line or Y
+			// X
+			if ( Direction )
+			{
+				// Check Item & Group neighborhood from any side
+				if ( Group->GroupX + Group->GroupWidth > CheckItem->ObjX )
+				{
+					// Item between Group - CheckItem ( left side near the group )
+					if ( Item->ObjX + Item->ObjWidth < Group->GroupX  && Item->ObjX > CheckItem->ObjX + CheckItem->ObjWidth )
+						return true;
+				}
+				else
+				{
+					// Item between Group - CheckItem ( right side near the group )
+					if ( Item->ObjX + Item->ObjWidth < CheckItem->ObjX  && Item->ObjX > Group->GroupX + Group->GroupWidth )
+						return true;
+				}
+			}
+			else
+			{
+				// If One plased near ZERO menu point
+				if ( Group->GroupY + Group->GroupHeight > CheckItem->ObjY )
+				{
+					// Item between Two - One
+					if ( Item->ObjY + Item->ObjHeight < Group->GroupY  && Item->ObjY > CheckItem->ObjY + CheckItem->ObjHeight )
+						return true;
+				}
+				else
+				{
+					// Item between Two - One
+					if ( Item->ObjY + Item->ObjHeight < CheckItem->ObjY  && Item->ObjY > Group->GroupY + Group->GroupHeight )
+						return true;
+				}
+			}
+		}
+	}
+
+	return result;
+}
+
+
+void MenuControllerClass::CompareItems ( MenuItem* One, MenuItem* GroupedItem, bool &Direction, bool &Identical )
+{
+	bool Yes = false;
+	if ( One->ObjWidth == GroupedItem->ObjWidth && One->ObjHeight == GroupedItem->ObjHeight )
+	{
+		 if ( One->ObjX == GroupedItem->ObjX )
+		 {
+			 Direction = _Y_;
+			 Yes = true;
+		 }
+		 else if ( One->ObjY == GroupedItem->ObjY )
+		 {
+			 Direction = _X_;
+			 Yes = true;
+		 }
+
+		 if (Yes)
+			 if ( !FindItemBetweenItems ( ItemsGroups[GroupedItem->Group], One, Direction ) )
+			 {
+				 Identical = true;
+			 }
+	}
+}
+
+
+int MenuControllerClass::FindMinXYPosItem ( vector <MenuItem*> &MenuItemsList, vector <GroupItem*> &ItemsGroups )
+{
+	int Index = 0;
+	int X = 10000;
+	int Y = 10000;
+
+	size_t Size = MenuItemsList.size ();
+	for ( size_t c = 0; c < Size; ++c )
+	{
+		MenuItem* Item = MenuItemsList[c];
+		
+		if ( Item->ObjX < X && Item->ObjY < Y )
+		{
+			X = Item->ObjX;
+			Y = Item->ObjY;
+			Index = (int)c;
+		}
+	}
+	return Index;
+}
+
 

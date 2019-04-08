@@ -4,19 +4,14 @@
 #ifndef _FLATOBJECTCLASS_H_
 #define _FLATOBJECTCLASS_H_
 
-//#include "D3DGlobalContext.h"
+#include "D3DGlobalContext.h"
 #include "DX11Buffers.h"
 #include "Buffers_def.h"
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ класс для рисования (Прямоугольных) обьектов 
 class FlatObjectClass {
-protected:
-
-	float top;
-	float bottom;
-	float left;
-	float right;
-
+public:
+	   
 	// Используется для курсора мыши
 	int previousPosX;
 	int previousPosY;
@@ -24,18 +19,22 @@ protected:
 	// поворот текстуры для кнопок Min и Max в ScrollBar 
 	int TextureFlip; // 0 = NO_FLIP, 1 = FLIP_HORIZONTAL, 2 = FLIP_VERTICAL
 
-	// максимальное значение для вертекса по X
-	float _2DPixelXmax;
-	// максимальное значение для вертекса по Y
-	float _2DPixelYmax;
-
-	void UpdateVertexPos();	// Пересчёт позиций вертексов в реальные 2D координаты экрана
-
-public :
 	Flat_Obj_Buffers* Buffers;
 
 	 FlatObjectClass();
 	~FlatObjectClass();
+
+	float top;
+	float bottom;
+	float left;
+	float right;
+
+	XMFLOAT4 Dummy;	// Used as dummy for vertex generation
+
+	// максимальное значение для вертекса по X
+	float _2DPixelXmax;
+	// максимальное значение для вертекса по Y
+	float _2DPixelYmax;
 
 	int	ShaderIndex = 0; 
 
@@ -72,6 +71,8 @@ public :
 
 	void SetObjParam();
 
+	void UpdateVertexPos ();	// Пересчёт позиций вертексов в реальные 2D координаты экрана
+
 	// Изменить размер объекту в % к оригинальному размеру = 100%
 	void ResizeObject( float Percent );
 
@@ -81,7 +82,7 @@ public :
 	void SetOriginalSize( void );
 
 	// Генерация вертексов и текстуры объекта
-	void GenerateVertexes( Vertex_FlatObject*, int TextureFlip );
+	void GenerateVertexes( Vertex_FlatObject*, int TextureFlip, XMFLOAT4& Color );
     
 };
 //-------------------------------------------------------------------------------- класс для рисования (Прямоугольных) обьектов 

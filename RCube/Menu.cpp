@@ -38,5 +38,13 @@ Menu::~Menu ()
 		delete StringsList[c];
 	}
 	StringsList.clear ();
+
+	// Удаляем все StringLists
+	size = ( int ) ColorPickers.size ();
+	for ( int c = 0; c < size; ++c )
+	{
+		delete ColorPickers[c];
+	}
+	ColorPickers.clear ();
 	// --------------------------------------------------
 }

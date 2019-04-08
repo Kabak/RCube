@@ -16,7 +16,8 @@ cbuffer MatrixBuffer
 struct VertexInputType
 {
 	float4 position			: POSITION;
-	float4 tex				: TEXCOORD0;
+	float4 tex				: TEXCOORD0;	// only x,y, used as texture coords | z,w - free to use 
+	float4 color			: OMGCOLOR;
 };
 
 
@@ -24,6 +25,9 @@ struct PixelInputType
 {
 	float4 position			: SV_POSITION;
 	float2 tex				: TEXCOORD0;
+
+	float4 FlatObjControl	: Control;
+	float4 Color			: COLOR;
 };
 
 
@@ -39,6 +43,10 @@ PixelInputType TextureVertexShader(VertexInputType input)
 
 	// Store the texture coordinates for the pixel shader.
 	output.tex = input.tex.xy;
+
+	output.FlatObjControl = input.tex.w;	// Color Picker Pixel Shader control
+
+	output.Color = input.color;
 
 	return output;
 }

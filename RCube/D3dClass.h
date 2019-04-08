@@ -53,7 +53,7 @@ public:
 // ------------------------------------
 	const WCHAR *Error = L"D3DClass Error";
 
-	bool Initialize(HWND, int, int, bool, bool, float, float, FrustumClass* frustum );
+	bool Initialize(HWND, XMFLOAT4& SCR_SCALE, bool, bool, float, float, FrustumClass* frustum );
 	void Shutdown();
 	
 	void BeginScene(XMFLOAT4&);
@@ -301,13 +301,6 @@ public:
 
 																// Обновить цвет точечного источника света
 	void UpdatePointLightColor ( int& Index, XMFLOAT4& );
-
-
-	// http://ru.directx.wikia.com/wiki/DirectX_11_%D1%88%D0%B0%D0%B3_%D0%B7%D0%B0_%D1%88%D0%B0%D0%B3%D0%BE%D0%BC:%D0%A2%D0%BE%D1%87%D0%B5%D1%87%D0%BD%D0%BE%D0%B5_%D0%BE%D1%81%D0%B2%D0%B5%D1%89%D0%B5%D0%BD%D0%B8%D0%B5
-	// формула в шейдере для расчёта : Attenuation = att0 + (att1 * d) + (att2 * d?)
-	// XMFLOAT4 Attenuation : X - att0 , Y - att1 , Z - att2 , d - PointLightPower - Distance
-	// Обновить переменные att в формуле расчёта силы действия точечного света включая дальность действия
-	//	void UpdatePointLightAttenuation (int& Index, XMFLOAT4&);
 
 	void GetAmbientColor ( XMFLOAT4& );
 	void GetDiffuseColor ( XMFLOAT4& );

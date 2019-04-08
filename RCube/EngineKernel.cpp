@@ -104,11 +104,20 @@ bool EngineKernel::Initialize()
 	screenHeight = 0;
 	WindowPosX = 0;
 	WindowPosY = 0;
+	SCREEN_SCALE = { 1.0f, 1.0f, 1.0f, 1.0f };
 	IsMenuOn = false;
 
 
 	// Initialize the windows api.
 	InitializeWindows( screenWidth, screenHeight, WindowPosX, WindowPosY );
+
+	// Engine Font, Menu scale system
+	float x, y, z, w;
+	x = ( float ) screenWidth;
+	y = ( float ) screenHeight;
+	z = x / 1920.0f; // 1920
+	w = y / 1080.8f; // 1080  
+	SCREEN_SCALE = { x, y, z, w };
 
 	// Create the input object.  This object will be used to handle reading the input devices from the user.
 	m_Input = new InputClass;
@@ -146,7 +155,7 @@ bool EngineKernel::Initialize()
 	// Create the graphics object.  This object will handle rendering all the graphics for this application.
 	m_Graphics = new GraphicsClass;
 	// Initialize the graphics object.
-	result = m_Graphics->Initialize( m_hwnd, screenWidth, screenHeight, WindowPosX, WindowPosY, m_Input, m_Timer, PxControl );
+	result = m_Graphics->Initialize( m_hwnd, SCREEN_SCALE, WindowPosX, WindowPosY, m_Input, m_Timer, PxControl );
 	if (!result)
 	{
 		Shutdown();
@@ -591,6 +600,8 @@ bool EngineKernel::Frame()
 	// ЭТО СПЕЦИАЛЬНО ДЛЯ обновления КУБИКОВ !!!!
 	PositionType  * Temp3 = m_Graphics->MyManager->_3DModels[0]->Positions;
 
+	float W;
+	//#pragma loop(hint_parallel(8))
 	while ( c <  PxControl->DynamicDataArrCounter )
 	{
 
@@ -600,7 +611,7 @@ bool EngineKernel::Frame()
 		Temp3->position.Fl3 = *QuatXMfloat3.Temp;
 		QuatXMfloat4.Rotation = &KinematicData.q;
 
-		float W = QuatXMfloat4.Temp->w;
+		W = QuatXMfloat4.Temp->w;
 		*QuatXMfloat4.Vec = -*QuatXMfloat4.Vec;// * -1.0f;   В PhysX поворот объекта нужно домножить на -1.0f
 		QuatXMfloat4.Temp->w = W;
 
@@ -643,32 +654,55 @@ bool EngineKernel::Frame()
 	Counters.ComputerSpeed = (int)(( 1 / EngineFrameTime ) / (KeySpeed / 10));
 
 	// если меню выключено
-	if ( !IsMenuOn ){
-
-			KeysPressed();
-			DIMOUSESTATE2 State;
-			m_Input->GetMouseState(State);
-
-			// обновляем HUD
-			m_Graphics->Hud->Frame( m_Input, UTF16_KeyCode, m_Graphics->fpstimers);
-			// рисуем HUD
-//			m_Graphics->Hud->IsMenuDraw = true;
-			if ( m_Graphics->Hud->GetButtonState(0) )
-			{
-//				m_Graphics->MainMenu->SetMenuPos(XMFLOAT2{ 500.0f, 200.0f });
-//				m_Graphics->MainMenu->SetButtonParam( 2 , XMFLOAT4{ 100.0f, 10.0f, 100.0f, 20.0f } );
-//				m_Graphics->MainMenu->SetButtonSize( 2, 1.2f );
-//				m_Graphics->MainMenu->SetButtonPos( 2, 1.2f );
-				m_Graphics->AnimTexture->Enabled = false;
-			}		
-	if ( m_Graphics->Hud->GetButtonState(1) )
+	if ( !IsMenuOn )
 	{
-//				m_Graphics->MainMenu->SetMenuPos(XMFLOAT2{ 112.0f, 84.0f });
-//				m_Graphics->MainMenu->SetButtonToOrigin( 2 );
-//				m_Graphics->MainMenu->SetButtonSize( 2 , 1.0f );
-//				m_Graphics->MainMenu->SetButtonPos( 2, 1.0f );
-				m_Graphics->AnimTexture->Enabled = true;
-	}
+
+		KeysPressed ();
+		DIMOUSESTATE2 State;
+		m_Input->GetMouseState ( State );
+
+		// обновляем HUD
+		m_Graphics->Hud->Frame ( m_Input, UTF16_KeyCode, m_Graphics->fpstimers );
+		// рисуем HUD
+//			m_Graphics->Hud->IsMenuDraw = true;
+
+		// Setting color to button
+//		if ( m_Graphics->Hud->Buttons[8]->SetColour ) // If color  SetColour = true  if pressed for changing color
+		if ( m_Graphics->Hud->GetButtonState ( 8 ) )
+		{
+			m_Graphics->Hud->Buttons[8]->SetButtonColor ( m_Graphics->Hud->ColorPickers[0]->GetSelectedColorFL4 () );
+		}
+		if ( m_Graphics->Hud->GetButtonState ( 9 ) )
+		{
+			m_Graphics->Hud->Buttons[9]->SetButtonColor ( m_Graphics->Hud->ColorPickers[0]->GetSelectedColorFL4 () );
+		}
+		if ( m_Graphics->Hud->GetButtonState ( 10 ) )
+		{
+			m_Graphics->Hud->Buttons[10]->SetButtonColor ( m_Graphics->Hud->ColorPickers[0]->GetSelectedColorFL4 () );
+		}
+		if ( m_Graphics->Hud->GetButtonState ( 13 ) )
+		{
+			m_Graphics->Hud->Buttons[13]->SetButtonColor ( m_Graphics->Hud->ColorPickers[0]->GetSelectedColorFL4 () );
+		}
+
+
+
+		if ( m_Graphics->Hud->GetButtonState ( 0 ) )
+		{
+			//				m_Graphics->MainMenu->SetMenuPos(XMFLOAT2{ 500.0f, 200.0f });
+			//				m_Graphics->MainMenu->SetButtonParam( 2 , XMFLOAT4{ 100.0f, 10.0f, 100.0f, 20.0f } );
+			//				m_Graphics->MainMenu->SetButtonSize( 2, 1.2f );
+			//				m_Graphics->MainMenu->SetButtonPos( 2, 1.2f );
+			m_Graphics->AnimTexture->Enabled = false;
+		}
+		if ( m_Graphics->Hud->GetButtonState ( 1 ) )
+		{
+			//				m_Graphics->MainMenu->SetMenuPos(XMFLOAT2{ 112.0f, 84.0f });
+			//				m_Graphics->MainMenu->SetButtonToOrigin( 2 );
+			//				m_Graphics->MainMenu->SetButtonSize( 2 , 1.0f );
+			//				m_Graphics->MainMenu->SetButtonPos( 2, 1.0f );
+			m_Graphics->AnimTexture->Enabled = true;
+		}
 		// По нажатих ESCAPE выводим меню или закрываем его, если уже выведино
 		if ( m_Input->ActionKey[23].Pressed )
 		{
@@ -698,7 +732,7 @@ bool EngineKernel::Frame()
 
 		// +++++++++++++++++++++++++++++++++ PICKING ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 		// Если не вращаются грани кубика можно проверять нажатие мышки на гранях
-		/*if (!m_Graphics->m_CubeRubic->RotationRuning) // && m_Graphics->m_CubeRubic->RotateIterations > 1 
+		/*if (!m_Graphics->m_CubeRubic->RotationRuning) // && m_Graphics->m_CubeRubic->RotateIterations > 1
 		{
 			if (InputStruct.m_mouseState.rgbButtons[0] & 0x80){
 				// действуящая версия пикинга
@@ -708,7 +742,7 @@ bool EngineKernel::Frame()
 					m_Graphics->m_D3D->GetProjectionMatrix(Proj);
 					m_Graphics->m_Camera->GetViewMatrix(View);
 					int TriAngle = 0xffffffff;
-					//		GetCursorPos(&mousePos);	
+					//		GetCursorPos(&mousePos);
 					int a = Pic->ApproofObjs(InputStruct.m_mouseX, InputStruct.m_mouseY, Proj, View, TriAngle);
 
 					m_Graphics->Exp = TriAngle;
@@ -776,13 +810,13 @@ bool EngineKernel::Frame()
 		// ++++++++++++++++++++++++++++++++++    TEST ВРАЩАЕМ СВЕТ    ++++++++++++++++++++++++++++++
 		//Keep the cubes rotating
 //		rot = 0.05;//1.0f / ( fpstimers.FpsRate );
-		rot = (XM_2PI * Speed2) * EngineFrameTime;
-//		if (rot > XM_2PI)
-//			rot = 0.0f;
-//		rot2 += XM_PI / 360;
-		
-		rot2 += ( XM_2PI * Speed ) * EngineFrameTime ;
-		if (rot2 > XM_2PI)
+		rot = ( XM_2PI * Speed2 ) * EngineFrameTime;
+		//		if (rot > XM_2PI)
+		//			rot = 0.0f;
+		//		rot2 += XM_PI / 360;
+
+		rot2 += ( XM_2PI * Speed ) * EngineFrameTime;
+		if ( rot2 > XM_2PI )
 			rot2 = 0.0f;
 
 		float X, Y, Z;
@@ -799,14 +833,14 @@ bool EngineKernel::Frame()
 		// Ворочаем направление SpotLight
 //		XMVECTOR Source;
 
-		XMVECTOR Axis = XMVECTOR{ 0.0f, 1.0f, 0.0f, 0.0f };
-		XMMATRIX Rot = XMMatrixRotationAxis(XMVECTOR{ 0.0f, 1.0f, 0.0f, 0.0f }, rot);
+		XMVECTOR Axis = XMVECTOR { 0.0f, 1.0f, 0.0f, 0.0f };
+		XMMATRIX Rot = XMMatrixRotationAxis ( XMVECTOR { 0.0f, 1.0f, 0.0f, 0.0f }, rot );
 		// Измеряем быстродействие
 		// Федя 540 ns    Мой  517 ns   
 //			char Str[25];// = new char [25];
 //			m_Timer->StartTimer();
 		// Измеряем быстродействие
-/*	
+/*
 			m_Graphics->m_D3D->GetLightDirection(0, Source);
 			m_Graphics->m_D3D->ChangeLightDirection(0, XMVector3TransformCoord(Source, Rot));
 //		m_Graphics->m_D3D->ChangeLightDirection(0, Axis, rot );
@@ -827,7 +861,7 @@ bool EngineKernel::Frame()
 			m_Graphics->m_D3D->ChangeLightDirection(2, XMVector3TransformCoord(Source, Rot));
 //		m_Graphics->m_D3D->ChangeLightDirection(2, Axis, rot);
 */
-		// Измеряем быстродействие
+// Измеряем быстродействие
 //			m_Timer->StopTimer(Str);
 //			m_Graphics->m_Text->UpdateSentence(4, Str, 100, 160);
 		// Измеряем быстродействие
@@ -842,58 +876,79 @@ bool EngineKernel::Frame()
 		m_Graphics->MainMenu->g_MenuPosX = 0.5f;
 		m_Graphics->MainMenu->g_Width = 0;
 */
-		// ------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------
+/*
+		// Getting windows size
+		LPRECT Rect = new tagRECT;
+		GetWindowRect ( m_Graphics->m_D3D->D3DGC->hwnd, Rect );
+		char Str[256];
+		sprintf_s ( Str, 256, "Window pos x = %d , y = %d , Width = %d , Height = %d ", Rect->left, Rect->top, Rect->right, Rect->bottom );
+		m_Graphics->MyManager->UpdateSentence ( 16, Str, 100, 760 );
+		char a = 0;
+		delete Rect;
+*/
+//			char Str[256];
+//			sprintf_s ( Str, 256, "Color = %x", m_Graphics->Hud->ColorPickers[0]->GetSelectedColorCOLREF() );
+//			m_Graphics->MyManager->UpdateSentence ( 16, Str, 100, 460 );
+//			char a = 0;
+
+
+
 	}
 	// если меню включено
-	else {
-		// По нажатих ESCAPE закрываем меню, если уже выведино
-		if (m_Input->ActionKey[23].Pressed)
-		{
-			IsEscapeDown = true;
-		}
-		else if ( IsEscapeDown )
-		{
-			m_Graphics->MainMenu->IsMenuActive = false;
-			m_Graphics->MainMenu->IsMenuDraw = false;
-			IsMenuOn = false;
-			// включаем обработку нажатия клавиш на HUD
-			m_Graphics->Hud->IsMenuActive = true;
-			IsEscapeDown = false;
-		}
+	else 
+	{
+	// По нажатих ESCAPE закрываем меню, если уже выведино
+	if ( m_Input->ActionKey[23].Pressed )
+	{
+		IsEscapeDown = true;
+	}
+	else if ( IsEscapeDown )
+	{
+		m_Graphics->MainMenu->IsMenuActive = false;
+		m_Graphics->MainMenu->IsMenuDraw = false;
+		IsMenuOn = false;
+		// включаем обработку нажатия клавиш на HUD
+		m_Graphics->Hud->IsMenuActive = true;
+		IsEscapeDown = false;
+	}
 
-			// провекка нажатия кнопки выхода
-			if ( m_Graphics->MainMenu->GetButtonState ( 4 ) )
-				done = true;
+	// провекка нажатия кнопки выхода
+	if ( m_Graphics->MainMenu->GetButtonState ( 4 ) )
+		done = true;
 
-			// кнопка продолжить
-			if ( m_Graphics->MainMenu->GetButtonState ( 0 ) ) 
-			{
-				m_Graphics->MainMenu->IsMenuActive = false;
-				m_Graphics->MainMenu->IsMenuDraw = false;
-				IsMenuOn = false;
-				// включаем обработку нажатия клавиш на HUD
-				m_Graphics->Hud->IsMenuActive = true;
-				IsEscapeDown = false;
-				m_Graphics->MainMenu->ClearButtonState( 0 );
-			}
-			//кнопка новая игра
-			if ( m_Graphics->MainMenu->GetButtonState ( 1 ) ) 
-			{
+	//			if ( m_Graphics->MainMenu->GetButtonState ( 3 ) )
+	//				m_Graphics->MyManager->RCube_Sentences[17]->ShowType = SHOW | SHOW_GLOWING;
 
-			}
-			// кнопка меню настроек
-			if ( m_Graphics->MainMenu->GetButtonState ( 2 ) ) 
-			{
+				// кнопка продолжить
+	if ( m_Graphics->MainMenu->GetButtonState ( 0 ) )
+	{
+		m_Graphics->MainMenu->IsMenuActive = false;
+		m_Graphics->MainMenu->IsMenuDraw = false;
+		IsMenuOn = false;
+		// включаем обработку нажатия клавиш на HUD
+		m_Graphics->Hud->IsMenuActive = true;
+		IsEscapeDown = false;
+		m_Graphics->MainMenu->ClearButtonState ( 0 );
+	}
+	//кнопка новая игра
+	if ( m_Graphics->MainMenu->GetButtonState ( 1 ) )
+	{
 
-			}
+	}
+	// кнопка меню настроек
+	if ( m_Graphics->MainMenu->GetButtonState ( 2 ) )
+	{
 
-			// естли включено меню настроек
-			if (m_Graphics->IsSettingsMenuOn)
-			{
-			}
+	}
+
+	// естли включено меню настроек
+	if ( m_Graphics->IsSettingsMenuOn )
+	{
+	}
 
 
-//		m_Graphics->Frame(Counters, InputStruct);
+	//		m_Graphics->Frame(Counters, InputStruct);
 	}
 
 	if ( IsMenuOn )
@@ -965,7 +1020,7 @@ void EngineKernel::InitializeWindows(int& screenWidth, int& screenHeight, int& W
 	m_hinstance = GetModuleHandle(NULL);
 
 	// Give the application a name.
-	m_applicationName = L"Engine";
+	m_applicationName = L"RCube Engine";
 
 	// Setup the windows class with default settings.
 	wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
@@ -1010,8 +1065,8 @@ void EngineKernel::InitializeWindows(int& screenWidth, int& screenHeight, int& W
 	else
 	{
 		// If windowed then set it to 800x600 resolution.====================================================================
-		//screenWidth  = 800;
-		//screenHeight = 600;
+//		screenWidth = 1366;// 1366;// 800;
+//		screenHeight = 1024;// 1024;// 600;
 
 		// Place the window in the middle of the screen.
 		posX = (GetSystemMetrics(SM_CXSCREEN) - screenWidth) / 2;
@@ -1146,26 +1201,24 @@ void EngineKernel::KeysPressed()
 		m_Graphics->m_Camera->SetRotationFirstPerson(CamX, CamY, CamZ);
 
 	}
-
-		XMFLOAT3 Position;
+/*
+		RCube_VecFloat234 Position;
 		XMVECTOR CamLook = m_Graphics->m_Camera->lookAt;
-		m_Graphics->m_Camera->GetPosition(Position);
-		XMFLOAT3 ComeputerVector, NormiliseVector;
+		m_Graphics->m_Camera->GetPosition(Position.Fl3);
+		RCube_VecFloat234 ComeputerVector, NormiliseVector;
 
-			ComeputerVector.x = Position.x - XMVectorGetX(CamLook);
-			ComeputerVector.y = Position.y - XMVectorGetY(CamLook);
-			ComeputerVector.z = Position.z - XMVectorGetZ(CamLook);
+			ComeputerVector.Vec = Position.Vec - CamLook;
 
 			//if (!IsPreviosFrameWSADPressed) {
 
-			float inv_length = 1.0f / sqrt(ComeputerVector.x*ComeputerVector.x + ComeputerVector.y*ComeputerVector.y + ComeputerVector.z*ComeputerVector.z);
-			NormiliseVector.x = inv_length * ComeputerVector.x;
-			NormiliseVector.y = inv_length * ComeputerVector.y;
-			NormiliseVector.z = inv_length * ComeputerVector.z;
+			float inv_length = 1.0f / sqrt(ComeputerVector.Fl3.x*ComeputerVector.Fl3.x + ComeputerVector.Fl3.y*ComeputerVector.Fl3.y + ComeputerVector.Fl3.z*ComeputerVector.Fl3.z);
+			NormiliseVector.Vec = inv_length * ComeputerVector.Vec;
+//			NormiliseVector.y = inv_length * ComeputerVector.y;
+//			NormiliseVector.z = inv_length * ComeputerVector.z;
 		//	m_Graphics->m_Camera->SetPosition(m_Graphics->ModelList->ObjDescs[2]->Positions[0].position.x + (NormiliseVector.x * 10)
 		//		, m_Graphics->ModelList->ObjDescs[2]->Positions[0].position.y + NormiliseVector.y
 		//		, m_Graphics->ModelList->ObjDescs[2]->Positions[0].position.z + (NormiliseVector.z * 10));
-	
+*/	
 
 
 	if (InputStruct.m_mouseDZ != 0)

@@ -9,12 +9,15 @@ StringsListClass::StringsListClass()
 			Scroll_Y_Pos = 0;
 	 First_Visible_Index = 0;
 	  Last_Visible_Index = 0;
+	  
+	  StringListObj = nullptr;
 }
 
 
 StringsListClass::~StringsListClass()
 {
-
+	ResManager->Delete_Flat_ObjectBuffers ( StringListObjBufferIndex );
+	RCUBE_DELETE ( StringListObj );
 }
 
 
@@ -33,11 +36,9 @@ void StringsListClass::ShutDown()
 
 HRESULT StringsListClass::Init( 
 	D3DGlobalContext* D3DGC,
-	XMFLOAT4& _ScreenCoords,
 	XMFLOAT4& _FormCoord,
 	StringsList_Elements& StringsListClassInit,
-	ResourceManager * _GlobalResourceManager,
-	Flat_Obj_Buffers* _Buffers
+	ResourceManager * _GlobalResourceManager
 	)
 {
 	HRESULT Result = S_OK;
@@ -47,11 +48,9 @@ HRESULT StringsListClass::Init(
 	 StrList_RTV  = D3DGC->BackBuffer_ProxyTextureRTV;
 	 StrList_SRV  = D3DGC->BackBuffer_ProxyTextureSRV;
 
-		  Buffers = _Buffers;
-
 	  ResManager = _GlobalResourceManager;
 
-		 Strings = StringsListClassInit.Strings;
+	  Strings = StringsListClassInit.Strings;
 
 	    ObjParam = StringsListClassInit.ObjParam;
 ObjOriginalParam = ObjParam;
@@ -71,17 +70,17 @@ StringsMAXLength = StringsListClassInit.StringsMAXLength;
 		 Scaling = StringsListClassInit.Scaling;
 	 ScrollSpeed = StringsListClassInit.ScrollSpeed;
 
-	ScreenCoords = _ScreenCoords;
 	   FormCoord = _FormCoord;
 
 First_Visible_Index = 0;
 
-  _2DPixelXmax = float( ScreenCoords.z / 2 );
-  _2DPixelYmax = float( ScreenCoords.w / 2 );
+StringListObj = new FlatObjectClass;
 
-  UpdateABSElementAll();
+StringListObjBufferIndex = ResManager->Create_Flat_Obj_Buffers ( NO_CPU_ACCESS_BUFFER, 4, 6, nullptr );
 
-  SetStringsListParam();
+StringListObj->Init ( D3DGC->ScreenWidth, D3DGC->ScreenHeight, ObjParam, D3DGC->BackBuffer_ProxyTextureSRV, NO_FLIP, ResManager->Get_Flat_ObjectBuffers_ByIndex ( StringListObjBufferIndex ) );
+
+UpdateBodyPos ();
 
 FontHeightInPixel = ResManager->GetFontHeightInPixels( FontIndex );
 
@@ -99,36 +98,32 @@ Result = SetInitFrameData();
 	float X_OnePixel = 1 / ( float ) Local_D3DGC->ScreenWidth;
 	float Y_OnePixel = 1 / ( float ) Local_D3DGC->ScreenHeight;
 
-	// Координаты строк в текстуре в которой мы рисуем строки
-	TextureLeftTop		= { ObjParam.x * X_OnePixel, ObjParam.y * Y_OnePixel };
-	TextureRightBottom	= {(ObjParam.x + ObjParam.z) * X_OnePixel, (ObjParam.y + ObjParam.w) * Y_OnePixel };
-	TextureLeftBottom	= { ObjParam.x * X_OnePixel, ( ObjParam.y + ObjParam.w ) * Y_OnePixel };
-	TextureRightTop		= {(ObjParam.x + ObjParam.z) * X_OnePixel, ObjParam.y * Y_OnePixel };
-	Vertex_FlatObject* vertices;
-	// Create the vertex array.
-	vertices = new Vertex_FlatObject[4];
-	if ( !vertices )
-	{
-		return E_FAIL;
-	}
+	// Координаты окна в текстуре Local_D3DGC->BackBuffer_ProxyTextureRTV в котором мы рисуем строки
+	TextureLeftTop		= { ObjParam.x * X_OnePixel, ObjParam.y * Y_OnePixel , 0.0f , 0.0f };
+	TextureRightBottom	= {(ObjParam.x + ObjParam.z) * X_OnePixel, (ObjParam.y + ObjParam.w) * Y_OnePixel , 0.0f , 0.0f };
+	TextureLeftBottom	= { ObjParam.x * X_OnePixel, ( ObjParam.y + ObjParam.w ) * Y_OnePixel , 0.0f , 0.0f };
+	TextureRightTop		= {(ObjParam.x + ObjParam.z) * X_OnePixel, ObjParam.y * Y_OnePixel , 0.0f , 0.0f };
 
-	vertices[0].Position = XMFLOAT3( left, top, 0.0f );  // Top left.
+	Vertex_FlatObject* vertices = new Vertex_FlatObject[4];
+
+	vertices[0].Position = XMFLOAT3( StringListObj->left, StringListObj->top, 0.0f );  // Top left.
 	vertices[0].TexCoord = TextureLeftTop;
 
-	vertices[1].Position = XMFLOAT3( right, bottom, 0.0f );  // Bottom right.
+	vertices[1].Position = XMFLOAT3( StringListObj->right, StringListObj->bottom, 0.0f );  // Bottom right.
 	vertices[1].TexCoord = TextureRightBottom;
 
-	vertices[2].Position = XMFLOAT3( left, bottom, 0.0f );  // Bottom left.
+	vertices[2].Position = XMFLOAT3( StringListObj->left, StringListObj->bottom, 0.0f );  // Bottom left.
 	vertices[2].TexCoord = TextureLeftBottom;
 
-	vertices[3].Position = XMFLOAT3( right, top, 0.0f );  // Top right.
+	vertices[3].Position = XMFLOAT3( StringListObj->right, StringListObj->top, 0.0f );  // Top right.
 	vertices[3].TexCoord = TextureRightTop;
 
-	Buffers->FlatObjectVB->Update ( vertices );
-	Buffers->IndexBs->Update ( (Index_Type*)FlatObjectIndices );
-	Buffers->RenderTexture = StrList_SRV;
+	StringListObj->Buffers->FlatObjectVB->Update ( vertices );
+	StringListObj->Buffers->IndexBs->Update ( (Index_Type*)FlatObjectIndices );
 
 	delete[] vertices;
+
+	UpdateABSElementAll();
 
 return Result;
 }
@@ -158,7 +153,7 @@ bool StringsListClass::SetInitFrameData()
 	SENTENCE_INIT_DATA Data;
 	ZeroMemory( &Data, sizeof( SENTENCE_INIT_DATA ) );
 
-		Data.Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
+		Data.Colour = { 1.0f, 1.0f, 1.0f, 0.0f };	//	w = 0.0f  For correct render StringList Sentences
 		Data.FontType   = FontIndex;
 		Data.HideType   = HIDE;
 		Data.ShowType   = SHOW;
@@ -380,12 +375,12 @@ void StringsListClass::UpdateABSElementAll()
 }
 
 
-void StringsListClass::SetStringsListParam()
+void StringsListClass::UpdateBodyPos ()
 {
-	left = -_2DPixelXmax + ( FormCoord.x + ObjParam.x );
-	right = left + ObjParam.z;
-	top = _2DPixelYmax - ( FormCoord.y + ObjParam.y );
-	bottom = top - ObjParam.w;
+	StringListObj->left = - StringListObj->_2DPixelXmax + ( FormCoord.x + ObjParam.x );
+	StringListObj->right = StringListObj->left + ObjParam.z;
+	StringListObj->top = StringListObj->_2DPixelYmax - ( FormCoord.y + ObjParam.y );
+	StringListObj->bottom = StringListObj->top - ObjParam.w;
 }
 
 /*

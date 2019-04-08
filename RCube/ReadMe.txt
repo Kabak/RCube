@@ -1,8 +1,34 @@
 ========================================================================
     WIN32 APPLICATION : RCube Project Overview
 ========================================================================
+// DX Debug control panel
+// dxcpl.exe
+
+// Copy CTRL+C
+// http://www.cyberforum.ru/cpp-beginners/thread250979.html?uri=/cpp-beginners/thread250979.html#post1414310
+// http://www.cyberforum.ru/c-beginners/thread287006.html
+
+// ColorPicker
+// https://gamedev.ru/code/forum/?id=242690
+// http://www.iquilezles.org/www/articles/palettes/palettes.htm
+
+// D3D11_MAPPED_SUBRESOURCE structure & Color storing in textures
+// https://gamedev.ru/code/forum/?id=242925
+// https://gamedev.ru/code/forum/?id=183734
+// https://docs.microsoft.com/en-us/windows/desktop/api/d3d10/ns-d3d10-d3d10_mapped_texture3d
+// https://docs.microsoft.com/en-us/windows/desktop/direct3d10/d3d10-graphics-programming-guide-resources-block-compression
+
+// PhysX Joints problems
+// https://gamedev.ru/code/forum/?id=243303
+
 // Кватернионы
 // https://gamedev.ru/code/articles/?id=4215
+
+// Outlined text
+// https://archive.codeplex.com/?p=outlinetext
+// https://www.codeproject.com/Articles/376597/Outline-Text-With-DirectWrite?msg=4797862#intro
+// https://www.codeproject.com/Articles/42529/Outline-Text
+// https://www.codeproject.com/Articles/865246/Outline-Text-Part
 
 // Templates
 //	https://ru.stackoverflow.com/questions/437553/%d0%a8%d0%b0%d0%b1%d0%bb%d0%be%d0%bd-%d0%b2-%d0%ba%d0%b0%d1%87%d0%b5%d1%81%d1%82%d0%b2%d0%b5-%d0%bf%d0%b0%d1%80%d0%b0%d0%bc%d0%b5%d1%82%d1%80%d0%b0-%d1%88%d0%b0%d0%b1%d0%bb%d0%be%d0%bd%d0%b0
@@ -29,11 +55,6 @@
 
 // Указатели на функцию
 // http://www.amse.ru/courses/cpp2/2011_04_11.html
-
-// Multithreading DX11
-// https://msdn.microsoft.com/en-us/library/windows/desktop/ff476891(v=vs.85).aspx
-// Command list in DX11
-// https://msdn.microsoft.com/en-us/library/windows/desktop/ff476887(v=vs.85).aspx
 
 // DX Samples
 // http://developer.download.nvidia.com/SDK/10.5/direct3d/samples.html#Sparkles
@@ -108,6 +129,8 @@ http://www.gamedev.ru/community/nsfgd/articles/terrain_experiment
 https://docs.unrealengine.com/latest/INT/Engine/Content/FBX/Materials/
 //Source code 
 https://github.com/GameTechDev
+https://github.com/Microsoft/DirectX-Graphics-Samples/pull/293
+
 // Materials
 // https://www.3dgep.com/texturing-lighting-directx-11/#Materials
 // http://paulbourke.net/dataformats/mtl/
@@ -187,12 +210,38 @@ http://www.gamedev.ru/terms/AABB
 // https://www.scss.tcd.ie/Michael.Manzke/CS7057/cs7057-1516-06-BVH-mm.pdf
 // http://fileadmin.cs.lth.se/cs/Education/EDAN30/lectures/S2-bvh.pdf
 
+// Multithreading DX11
+// https://docs.microsoft.com/en-us/windows/desktop/direct3d11/overviews-direct3d-11-render-multi-thread-support
+// https://docs.microsoft.com/en-us/windows/desktop/direct3d11/overviews-direct3d-11-render-multi-thread-intro
+// https://docs.microsoft.com/en-us/windows/desktop/direct3d11/overviews-direct3d-11-render-multi-thread-create
+// https://msdn.microsoft.com/en-us/library/windows/desktop/ff476891(v=vs.85).aspx
+// https://software.intel.com/en-us/articles/performance-methods-and-practices-of-directx-11-multithreaded-rendering
+// Working 2017 Multithreading DX11 Example
+// https://code.msdn.microsoft.com/windowsdesktop/Direct3D-Multithreaded-d02193c0
+// Command list in DX11
+// https://msdn.microsoft.com/en-us/library/windows/desktop/ff476887(v=vs.85).aspx
 // Многопоточность
+// https://xakep.ru/2011/03/13/55985/
+// https://habr.com/ru/post/111173/
+// http://www.codenet.ru/progr/cpp/process-threads-sync.php
+// http://qaru.site/questions/2652781/multithreading-and-classes
+// https://www.codeproject.com/Articles/14746/Multithreading-Tutorial
+// https://msdn.microsoft.com/en-us/library/ms682516(v=vs.85).aspx
+// https://stackoverflow.com/questions/10673585/start-thread-with-member-function
+// http://www.cyberforum.ru/visual-cpp/thread12242.html
+// Про _beginthreadex vs CreateThread C++
+// https://stackoverflow.com/questions/331536/windows-threading-beginthread-vs-beginthreadex-vs-createthread-c
+// по-русски
+// http://www.quizful.net/post/multithreading-cpp11
 // http://www.gamedev.ru/code/articles/?id=4244
-// https://gamedev.ru/code/articles/?id=5533
+// Многопоточночть циклов
+// https://docs.microsoft.com/en-us/cpp/parallel/auto-parallelization-and-auto-vectorization?view=vs-2017
+// /Qpar-report:2 
+
 // Intel scalable particle system
 // https://software.intel.com/ru-ru/articles/ticker-tape-sample
 // https://gamedev.ru/code/articles/?id=4207#teoriya_i_ne_tol_ko
+// https://gamedev.ru/code/articles/?id=5533
 
 // Много всего по теме движков
 // http://www.gamedev.ru/flame/forum/?id=216202

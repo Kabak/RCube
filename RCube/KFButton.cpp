@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "KFButton.h"
+#include "ResourceManager.h"
 
 KFButton::KFButton()
 {
@@ -9,10 +10,7 @@ KFButton::KFButton()
 		  IsMouseOnButtonTexture = nullptr;
 			  NotEnalbledTexture = nullptr;
 			    OsnButtontexture = nullptr;
-//							 Obj = nullptr;
 						 Buffers = nullptr;
-				 g_State.IsPress = false ;
-		 g_State.IsMouseOnButton = false ;
 						 Checked = false;
 					  ObjectType = 0;
 					  EditType	 = 0;
@@ -21,6 +19,9 @@ KFButton::KFButton()
 				   SentenceIndex = -1;	// Нет строки привязанной к компоненту
 				    ActiveAsEdit = false;
 						CursorOn = false;
+					   SetColour = false;
+					EditFinished = false;
+					     Changed = false;
 }
 
 HRESULT KFButton::Init(
@@ -28,11 +29,12 @@ HRESULT KFButton::Init(
 			XMFLOAT4& _ScreenCoords,
 			XMFLOAT4& _FormCoord,
    KFButton_Elements& ButtonInitData,
-	Flat_Obj_Buffers* _Buffers
+	Flat_Obj_Buffers* _Buffers,
+	ResourceManager * _GlobalResourceManager
 		  ) 
 	{
 	HRESULT Result = S_OK ;
-
+	ResManager = _GlobalResourceManager;
 	   Buffers = _Buffers;
 	Checked    = ButtonInitData.Checked;
 	ObjectType = ButtonInitData.Type;
@@ -52,64 +54,64 @@ HRESULT KFButton::Init(
 	  OsnButtontexture = ButtonInitData.OsnTexture;
 	
 	// определение размеров текстуры
-	if ( ButtonInitData.OsnTextureResource )
-	{
-		D3D11_TEXTURE2D_DESC* InputTextureDesc = new D3D11_TEXTURE2D_DESC;
-		ID3D11Texture2D* InputTexture;
-		ButtonInitData.OsnTextureResource->QueryInterface<ID3D11Texture2D>(&InputTexture);
-		InputTexture->GetDesc(InputTextureDesc);
+	  if ( ObjectType == COLOR_PICK )
+	  {
+		  Colour = ButtonInitData.Colour;
 
-		if ( ObjParam.z == 0.0f )
-			ObjParam.z = (float)InputTextureDesc->Width;
+		  ObjParam.z < 1.0f ? ObjParam.z = MIN_BUTTON_WIDTH : ObjParam.z;
+		  ObjParam.w < 1.0f ? ObjParam.w = MIN_BUTTON_HEIGHT : ObjParam.w;
+	  }
+	  else if ( ButtonInitData.OsnTexture )
+	  {
+		  XMFLOAT4 Temp;
+		  ResManager->GetTextureParam ( ButtonInitData.OsnTexture, Temp );
 
-		if ( ObjParam.w == 0.0f )
-			ObjParam.w = (float)InputTextureDesc->Height;
-
-		delete InputTextureDesc;
-		InputTexture->Release();
-	}
-	else
-	{
-		ObjParam.z = 0.0f;
-		ObjParam.w = 0.0f;
-	}
+		  ObjParam.z < 1.0f ?  ObjParam.z = Temp.z : ObjParam.z;
+		  ObjParam.w < 1.0f ?  ObjParam.w = Temp.w : ObjParam.w;
+	  }
+	  else
+	  {
+		  ObjParam.z = MIN_BUTTON_WIDTH;
+		  ObjParam.w = MIN_BUTTON_HEIGHT;
+	  }
 
 	ObjOriginalParam = ObjParam;
 
-	_2DPixelXmax = float(ScreenCoords.z / 2);
-	_2DPixelYmax = float(ScreenCoords.w / 2);
+	_2DPixelXmax = ScreenCoords.x / 2;
+	_2DPixelYmax = ScreenCoords.y / 2;
 
 	UpdateABSElementAll();
 
-	SetButtonParam();
+	UpdateBodyPos ();
 
-	Vertex_FlatObject* vertices ;
-	// Create the vertex array.
-	vertices = new Vertex_FlatObject[4];
-	if(!vertices)
+	if ( ObjectType == COLOR_PICK )
 	{
-		return E_FAIL ;
+		SetButtonColor ( Colour );
 	}
+	else
+	{
+		Vertex_FlatObject* vertexes;
+		vertexes = new Vertex_FlatObject[4];
 
-	vertices[0].Position = XMFLOAT3(left, top, 0.0f);  // Top left.
-	vertices[0].TexCoord = XMFLOAT2(0.0f, 0.0f);
+		vertexes[0].Position = XMFLOAT3 ( left, top, 0.0f );  // Top left.
+		vertexes[0].TexCoord = XMFLOAT4 ( 0.0f, 0.0f, 0.0f, 0.0f );
 
-	vertices[1].Position = XMFLOAT3(right, bottom, 0.0f);  // Bottom right.
-	vertices[1].TexCoord = XMFLOAT2(1.0f, 1.0f);
+		vertexes[1].Position = XMFLOAT3 ( right, bottom, 0.0f );  // Bottom right.
+		vertexes[1].TexCoord = XMFLOAT4 ( 1.0f, 1.0f, 0.0f, 0.0f );
 
-	vertices[2].Position = XMFLOAT3(left, bottom, 0.0f);  // Bottom left.
-	vertices[2].TexCoord = XMFLOAT2(0.0f, 1.0f);
+		vertexes[2].Position = XMFLOAT3 ( left, bottom, 0.0f );  // Bottom left.
+		vertexes[2].TexCoord = XMFLOAT4 ( 0.0f, 1.0f, 0.0f, 0.0f );
 
-	vertices[3].Position = XMFLOAT3(right, top, 0.0f);  // Top right.
-	vertices[3].TexCoord = XMFLOAT2(1.0f, 0.0f);
+		vertexes[3].Position = XMFLOAT3 ( right, top, 0.0f );  // Top right.
+		vertexes[3].TexCoord = XMFLOAT4 ( 1.0f, 0.0f, 0.0f, 0.0f );
 
 
-	Buffers->FlatObjectVB->Update ( vertices );
-	Buffers->IndexBs->Update ( (Index_Type*)FlatObjectIndices );
-	Buffers->RenderTexture = ButtonInitData.OsnTexture;
+		Buffers->FlatObjectVB->Update ( vertexes );
+		Buffers->IndexBs->Update ( ( Index_Type* ) FlatObjectIndices );
+		Buffers->RenderTexture = ButtonInitData.OsnTexture;
 
-	delete [] vertices ;
-	
+		delete [] vertexes;
+	}
 	return Result ;
 }
 
@@ -161,29 +163,33 @@ void KFButton::ResetButtonParam() {
 
 	UpdateABSElementAll();
 
-	SetButtonParam();
+	UpdateBodyPos ();
 
-	Vertex_FlatObject* vertices ;
-	// Create the vertex array.
-	vertices = new Vertex_FlatObject[4];
+	if ( ObjectType == COLOR_PICK )
+	{
+		SetButtonColor ( Colour );
+	}
+	else
+	{
+		Vertex_FlatObject* vertexes;
+		vertexes = new Vertex_FlatObject[4];
 
+		vertexes[0].Position = XMFLOAT3 ( left, top, 0.0f );  // Top left.
+		vertexes[0].TexCoord = XMFLOAT4 ( 0.0f, 0.0f, 0.0f, 0.0f );
 
-	vertices[0].Position = XMFLOAT3(left, top, 0.0f);  // Top left.
-	vertices[0].TexCoord = XMFLOAT2(0.0f, 0.0f);
+		vertexes[1].Position = XMFLOAT3 ( right, bottom, 0.0f );  // Bottom right.
+		vertexes[1].TexCoord = XMFLOAT4 ( 1.0f, 1.0f, 0.0f, 0.0f );
 
-	vertices[1].Position = XMFLOAT3(right, bottom, 0.0f);  // Bottom right.
-	vertices[1].TexCoord = XMFLOAT2(1.0f, 1.0f);
+		vertexes[2].Position = XMFLOAT3 ( left, bottom, 0.0f );  // Bottom left.
+		vertexes[2].TexCoord = XMFLOAT4 ( 0.0f, 1.0f, 0.0f, 0.0f );
 
-	vertices[2].Position = XMFLOAT3(left, bottom, 0.0f);  // Bottom left.
-	vertices[2].TexCoord = XMFLOAT2(0.0f, 1.0f);
+		vertexes[3].Position = XMFLOAT3 ( right, top, 0.0f );  // Top right.
+		vertexes[3].TexCoord = XMFLOAT4 ( 1.0f, 0.0f, 0.0f, 0.0f );
+		
+		Buffers->FlatObjectVB->Update ( vertexes );
 
-	vertices[3].Position = XMFLOAT3(right, top, 0.0f);  // Top right.
-	vertices[3].TexCoord = XMFLOAT2(1.0f, 0.0f);
-
-	Buffers->FlatObjectVB->Update ( vertices );
-
-	delete [] vertices ;
-
+		delete [] vertexes;
+	}
 }
 
 bool KFButton::Frame( DXINPUTSTRUCT& InputClass, bool &ObjectBUSY)
@@ -194,7 +200,9 @@ bool KFButton::Frame( DXINPUTSTRUCT& InputClass, bool &ObjectBUSY)
 		return false;
 
 	bool ActiveEditChanged = false;
-
+	
+	   EditFinished = false;	// Reset Editing was finished last Frame
+	        Changed = false;	// Reset Checkbox was changed last frame
 	g_State.IsPress = false;
 	// если кнопка активна
 	if (Enabled == true) 	
@@ -202,7 +210,7 @@ bool KFButton::Frame( DXINPUTSTRUCT& InputClass, bool &ObjectBUSY)
 
 		g_State.IsMouseOnButton = false;
 		// Если объект CHeckBox и установлен
-		if ( ObjectType == 1 && Checked )
+		if ( ObjectType == CHECKBOX && Checked )
 			g_State.IsPress = true;
 		else
 			g_State.IsPress = false;
@@ -216,24 +224,28 @@ bool KFButton::Frame( DXINPUTSTRUCT& InputClass, bool &ObjectBUSY)
 				
 				switch ( ObjectType )
 				{
-					case 0:
-								NeedReleaseOnObject = 0;
+					case BUTTON:
+								NeedReleaseOnObject = BUTTON;
 								ObjectBUSY = true;
 								break;
 
 					// CheckBox Если кнопка с фиксацией
-					case 1: 
-								NeedReleaseOnObject = 1;
+					case CHECKBOX:
+								NeedReleaseOnObject = CHECKBOX;
 								ObjectBUSY = true;
 								break;
 					// Label
-					case 2:
-								NeedReleaseOnObject = 2;
+					case LABEL:
+								NeedReleaseOnObject = LABEL;
 								ObjectBUSY = true;
 								break;
 					// Edit
-					case 3:
-								NeedReleaseOnObject = 3;
+					case EDIT:
+								NeedReleaseOnObject = EDIT;
+								ObjectBUSY = true;
+								break;
+					case COLOR_PICK:
+								NeedReleaseOnObject = COLOR_PICK;
 								ObjectBUSY = true;
 								break;
 					default:;				
@@ -251,8 +263,8 @@ bool KFButton::Frame( DXINPUTSTRUCT& InputClass, bool &ObjectBUSY)
 				switch ( ObjectType )
 				{
 					// Button
-					case 0:
-						if (NeedReleaseOnObject == 0)
+					case BUTTON:
+						if (NeedReleaseOnObject == BUTTON )
 						{
 							NeedReleaseOnObject = -1;
 							ObjectBUSY = false;
@@ -261,28 +273,30 @@ bool KFButton::Frame( DXINPUTSTRUCT& InputClass, bool &ObjectBUSY)
 						break;
 
 					// CheckBox
-					case 1:
-						if ( NeedReleaseOnObject == 1 )
+					case CHECKBOX:
+						if ( NeedReleaseOnObject == CHECKBOX )
 						{
+							NeedReleaseOnObject = -1;
+
 							if (Checked)
 							{
 								Checked = false;
-								NeedReleaseOnObject = -1;
 								ObjectBUSY = false;
 								g_State.IsPress = true;
+								Changed = true;
 							}
 							else
 							{
 								Checked = true;
-								NeedReleaseOnObject = -1;
 								ObjectBUSY = false;
 								g_State.IsPress = true;
+								Changed = true;
 							}
 						}
 						break;
 					// Label
-					case 2:
-						if (NeedReleaseOnObject == 2)
+					case LABEL:
+						if (NeedReleaseOnObject == LABEL )
 						{
 							NeedReleaseOnObject = -1;
 							ObjectBUSY = false;
@@ -294,14 +308,33 @@ bool KFButton::Frame( DXINPUTSTRUCT& InputClass, bool &ObjectBUSY)
 						}
 						break;
 					// Edit
-					case 3:
-						if (NeedReleaseOnObject == 3)
+					case EDIT:
+						if (NeedReleaseOnObject == EDIT )
 						{
 							NeedReleaseOnObject = -1;
 							ObjectBUSY = false;
 							ActiveAsEdit = true;
 							ActiveEditChanged = true;
 						}
+					// COLOR
+					case COLOR_PICK:
+					if ( NeedReleaseOnObject == COLOR_PICK )
+					{
+						if ( SetColour )
+						{
+							SetColour = false;
+							NeedReleaseOnObject = -1;
+							ObjectBUSY = false;
+							g_State.IsPress = true;
+						}
+						else
+						{
+							SetColour = true;
+							NeedReleaseOnObject = -1;
+							ObjectBUSY = false;
+							g_State.IsPress = true;
+						}
+					}
 
 				default:;
 				}
@@ -331,12 +364,10 @@ bool KFButton::Frame( DXINPUTSTRUCT& InputClass, bool &ObjectBUSY)
 			if ( Checked )
 			{
 				Buffers->RenderTexture = IsButonPressTexture;
-//				g_State.IsPress = true;
 			}
 			else
 			{
 				Buffers->RenderTexture = OsnButtontexture;
-
 			}
 
 		}
@@ -346,7 +377,7 @@ bool KFButton::Frame( DXINPUTSTRUCT& InputClass, bool &ObjectBUSY)
 }
 
 
-void KFButton::SetButtonParam()
+void KFButton::UpdateBodyPos ()
 {
 	left = -_2DPixelXmax + (FormCoord.x + ObjParam.x);
 	right = left + ObjParam.z;
@@ -398,4 +429,62 @@ void KFButton::SetEnable ( bool Value )
 		}
 	}
 
+}
+
+
+void KFButton::SetButtonColor ( XMFLOAT4 _Color )
+{
+	if ( ObjectType == COLOR_PICK )
+	{
+		Vertex_FlatObject* vertexes;
+		vertexes = new Vertex_FlatObject[4];
+
+		Colour = _Color;
+
+		GenerateVertexes ( vertexes, COLOR_BUTTON, Colour );
+
+		Buffers->FlatObjectVB->Update ( vertexes );
+
+		delete [] vertexes;
+	}
+}
+
+
+void KFButton::SetButtonColorREF ( COLORREF Color )
+{
+	if ( ObjectType == COLOR_PICK )
+	{
+		Vertex_FlatObject* vertexes;
+		vertexes = new Vertex_FlatObject[4];
+
+		RCube_VecFloat234 RGBA;
+
+		UINT R;
+		UINT G;
+		UINT B;
+		UINT A;
+
+		R = Color & 0x000000FF;
+		G = ( Color & 0x0000FF00 ) >> 8;
+		B = ( Color & 0x00FF0000 ) >> 16;
+		A = ( Color & 0xFF000000 ) >> 24;
+
+		RGBA.Fl4 = { float ( R ) , float ( G ) , float ( B ) , float ( A ) };
+
+		RGBA.Vec /= 255.0f;
+
+		Colour = RGBA.Fl4;
+
+		GenerateVertexes ( vertexes, COLOR_BUTTON, RGBA.Fl4 );
+
+		Buffers->FlatObjectVB->Update ( vertexes );
+
+		delete [] vertexes;
+	}
+}
+
+
+XMFLOAT4 KFButton::GetButtonColor ()
+{
+	return Colour;
 }

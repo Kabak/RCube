@@ -11,34 +11,22 @@
 #include "Menu.h"
 #include "ResourceManager.h"
 
-
 using namespace std;
 
-class MenuControrerClass : public Menu {
+class MenuControllerClass : public Menu {
 
 private :
 
 	D3DGlobalContext* McD3DGC;
 	ResourceManager * GlobalResourceManager;
 
-//	TextClass* G_Text;
 	InputClass* GlobalInput;
-
-	// Зачем-то задаётся размер который меню считает основням и в него разворачивается при открытии
-	int MWidth;
-	int MHeigth;
-
-	int g_WindowPosX;
-	int g_WindowPosY;
 
 	// Позиция и размеры фона окна меню
 	//	x - X в % , y - Y в % , Width в % к оригинальному размеру текстуры,
 	// Height в % к оригинальному размеру текстуры
 	XMFLOAT4 BackGroundCoord;	// Позиция фона 
 
-								// Позиция меню во время анимации
-	float g_MenuPosX;
-	float g_MenuPosY;
 	// Размеры меню во время анимации
 	int g_Width;
 	int g_Heigth;
@@ -85,6 +73,18 @@ private :
 
 	void UpdateObjectText( KFButton* TempButton, char* Str );	// Размещает текст поверх элементов меню в центе элемента по Y
 
+
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	vector <MenuItem*> MenuItemsList;
+	vector <GroupItem*> ItemsGroups;
+	int FindMinXYPosItem ( vector <MenuItem*> &MenuItemsList, vector <GroupItem*> &ItemsGroups );
+	void PushIntoGroup ( int GroupIndex, int MenuItemIndex );
+	void UpdateGroupDim ( int GroupIndex, int NewItemIndex );
+	void CompareItems ( MenuItem* One, MenuItem* GroupedItem, bool &Direction, bool &Identical );
+	bool FindItemBetweenItems ( GroupItem* Group, MenuItem* CheckItem, bool &Direction ); // return true if its some item between One & Two items
+	void CalculateMenuObjectsPositions ( vector <MenuItem*> &MenuItemsList, vector <GroupItem*> &ItemsGroups );
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 public :
 
 	// Переопределяем операторы New и delete для правильного размещения XMMATRIX в памяти
@@ -98,20 +98,20 @@ public :
         _mm_free(p);
     }
 
-	 MenuControrerClass();
-	~MenuControrerClass();
+	 MenuControllerClass();
+	~MenuControllerClass();
 
 	// _Animation - Указатель на анимацию в фоне
 	// BackGroundCoord - Фактически размеры меню и позиция на экране
 	HRESULT Init(D3DGlobalContext* D3DGC,
 		KFButton_Elements ButtonsData[], int NumOfButtons, // Описание объектов кнопок и их количество в массиве описаний
-		KFScrollBar_Elements ScrollBarData[], int NumOfScrollbars,// Описание объектов ScrollBars и их количество в массиве описаний
+		ScrollBar_Elements ScrollBarData[], int NumOfScrollbars,// Описание объектов ScrollBars и их количество в массиве описаний
 		StringsList_Elements StringsLists[], int NumOfStringsList,// StringsList и их количество
+		ColorPicker_Elements ColorPicker[], int NumOfColorPickers,	// ColorPickers
 		KF2DTextureAnimation *_Animation,			// Указатель на анимацию в фоне, если NULL, то нет анимации
 		XMFLOAT4 BackGroundCoord,					// Фактически размеры меню и позиция на экране
 		ID3D11ShaderResourceView* BackgroundTexture,// Указатель на текстуру фона
 		ResourceManager * GlobalResManager			// Указатель на класс менеджера текстур и буферов объектов
-//		TextClass * GolobalText						// Указатель на класс текста в движке, для создания строк в Label, Edit
 		);
 
 	HRESULT Frame( InputClass* InputClass, int UTF16_KeyCODE, FPSTimers& fpstimers);
@@ -155,8 +155,10 @@ public :
 	void SetButtonEnable( int ButtonIndex, bool value );
 	
 	// Возвращает нажата ли кнопка. Если указан несуществующий индекс Button функция возвращает false
-	bool GetButtonState( int ButtonIndex );
-
+	bool GetButtonState( int ButtonIndex );	// For CHECKBOX will be returned Checked  For other types will be returned State.IsPress
+	bool GetEditFinished ( int ButtonIndex ); // true if Edit was finished in that engine Frame
+	bool GetButtonChanged ( int ButtonIndex ); // For CHECKBOXes ONLY. Will be returned true if was changed last engine Frame
+	bool GetScrollBarChanged ( int ScrBarIndex ); // For ScrollBars was changed 
 	// Установить позицию элемента НА ФОРМЕ 
 	void SetButtonPos( int buttonIndex, float x, float y );
 
@@ -186,7 +188,12 @@ public :
 	void SetButtonAnimation( int NumOfVerses, int NumofColom, ID3D11ShaderResourceView * KF2DTextureFileName,
 							 int IndexOfButton, int FramesSpead );
 
-	void GetButtonText( char* Text );
+	float GetButtonTextAsFloat( int ButtonIndex );
+	  int GetButtonTextAsInt ( int ButtonIndex );
+
+XMFLOAT4 GetButtonColour ( int ButtonIndex );
+
+
 
 	void SetButtonText( char* Text );
 

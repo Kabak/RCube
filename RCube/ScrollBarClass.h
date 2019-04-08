@@ -15,14 +15,13 @@
 #include "DX11Buffers.h"
 #include "D3DGlobalContext.h"
 
+class ResourceManager;
 
-class ScrollBarClass : public FlatObjectClass {
+class ScrollBarClass {
 
 private:
 
-	const float MIN_TRAVELER_SIZE = 20.0f; // В пикселях 20
-
-	Vertex_FlatObject *BodyVertexes;
+	ResourceManager* ResManager;
 
 	ID3D11ShaderResourceView *ButtonsTexture;
 	ID3D11ShaderResourceView *MouseOnButtonTexture;
@@ -35,15 +34,18 @@ private:
 	ID3D11ShaderResourceView *BodyTexture;
 	ID3D11ShaderResourceView *NotEnalbledBodyTexture;
 
+	XMFLOAT4 ObjOriginalParam;
+	XMFLOAT4 ObjParam;
+
+	XMFLOAT4 Dummy;
+
 	// Граничные значение переменной скролинга
 	float MinValue;		// Минимальное значение
 	float MaxValue;		// Максимальное значение
 	float CurrentValue; // Текущее значение
 	float StepValue;	// Шаг с которым позиционируем значения
 	
-//	int ClickScroll;	// Сколько значений прокручивается при нажатии на тело ScrollBar
-
-	float MiddleBodyPos;	// Середина тела, для ровного размещения кнопок относительно центра ScrollBox
+	float MiddleBodyPos;// Середина тела, для ровного размещения кнопок относительно центра ScrollBox
 
 	// Нужно для отслеживания сдвига ползунка
 	POINT MousePosXX;
@@ -59,18 +61,11 @@ private:
 	bool TimerStop;
 	float Time;
 	
-
-//	bool StaticTravelerWidth; // постоянная ширина ползунка
-
-	// Коэффициент сколько данных в одном клике мышкой по телу скролбокса нужно прокрутить в процентах
-	// к общему диапозону значений Min - Max в этом ScrollBox
-	float Ratio;		
-
 	// Получить перевёрнутое значение относительно центра скролбара
 	float UpSideDownValue();
 
 	// Обновление координат для вертексов
-	void SetScrollBarBodyParam();
+	void UpdateBodyPos ();	// Calkulate body - vertex position on the screen
 	
 	// Изменяем позицию ползунка в соответствии с нажатием мышки на теле ScrollBox
 	void ChangeTravelerPositionByValue( float &value );
@@ -81,20 +76,23 @@ private:
 	// Устанавливаем ползунок по координатам рассчитываем по значению CurrentValue
 	void BodyClickToValue( POINT &Position );
 
-	// Получить высоту и ширину текстуры
-	// Если текстура для кнопок : меньше, больше задана, и TempData z,w = 0.0f , то берём размеры текстуры
-	void GetTextureParam( ID3D11ShaderResourceView * Texture, XMFLOAT4& Dimention );
-
 	// Обработка нажатия на ползунок
 	bool TravellerPreseed( DXINPUTSTRUCT& InputClass );
 
-	XMFLOAT4 ScreenCoords;
+//	XMFLOAT4 ScreenCoords;
 	XMFLOAT4 FormCoord;
 
 	// Если объект доступен для манипуляций
 	bool Enabled;
 
 public:
+	int IndexMinButton;
+	int IndexMaxButton;
+	int IndexMinTraveler;
+	int IndexBody;
+
+	bool Changed;	// If any element was chenged last engine frame
+
 	// Кнопки
 	FlatObjectClass *MinButton;
 	FlatObjectClass *MaxButton;
@@ -105,7 +103,7 @@ public:
 	void SetValue( float value );
 	
 	// рисуются ли кнопки по вершинам скролбара
-	bool MinMixButtonsShow;
+	bool MinMaxButtonsShow;
 	// Скролбар позиционирует по фиксированным значениям
 //	bool Jumping;
 	// Горизонтальный или вертикальный скролбар
@@ -150,18 +148,14 @@ public:
 	}
 
 	HRESULT Init( D3DGlobalContext* D3DGC,
-		XMFLOAT4& _ScreenCoords,
 		XMFLOAT4& _FormCoord,
-		KFScrollBar_Elements& TempScrollBarData,
-		Flat_Obj_Buffers* _BuffersMin,
-		Flat_Obj_Buffers* _BuffersMax,
-		Flat_Obj_Buffers* _BuffersTraveler,
-		Flat_Obj_Buffers* _Body
+		ScrollBar_Elements& TempScrollBarData,
+		ResourceManager * _GlobalResourceManager
 		);
 
 
 	// Возвращает номер элемента с которым были изменения
-	int Frame( DXINPUTSTRUCT& InputClass, FPSTimers& fpstimers, bool &ObjectBUSY );
+	bool Frame( DXINPUTSTRUCT& InputClass, FPSTimers& fpstimers, bool &ObjectBUSY );
 
 	void SetMouseOnButtonTexture(ID3D11ShaderResourceView * Texture);
 	void SetButtonsPressTexture(ID3D11ShaderResourceView * Texture);
@@ -186,6 +180,8 @@ public:
 
 	// Установка кнопок и ползунка в нужную позицию по отношению к телу ScrollBox
 	void SetButtonsToBody(bool _Horizontal, XMFLOAT4 &MinButton, XMFLOAT4 &MaxButton, XMFLOAT4 &TravellerButton );
+	// Calculating Body position & and dimentions
+	void CalculateBodyPosDim ( bool _Horizontal, XMFLOAT4 &Body, XMFLOAT4 &AnyButton );
 
 	float GetCurrentValue();
 

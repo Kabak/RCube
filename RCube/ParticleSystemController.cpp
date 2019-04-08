@@ -182,7 +182,7 @@ void ParticleSystemController::KillParticles ( Emitter* _Emitter )
 					EngineLight->FreeLightSource ( Part->LightIndex );
 				}
 
-				// If last particle in list get not active decreasing rendering particles amount
+				// If last particle in list get not active - decreasing rendering particles amount
 				i == Temp ? --_Emitter->CreatedParticlesCount : _Emitter->CreatedParticlesCount;
 
 			}
@@ -281,7 +281,7 @@ int   ParticleSystemController::AddEmitter ( Emitter_Init_Data* _Init_Data )
 		case EM_BILLBOARD:
 		{
 			// Save emitter buffers index in the emitter
-			NewEmitter->Emitter_Buffers_Index = ResManager->Create_Emitter_BB_Buffers ( true, _Init_Data->MaxParticles, _Init_Data->TextureIndex, NewEmitter );
+			NewEmitter->Emitter_Buffers_Index = ResManager->Create_Emitter_BB_Buffers ( CPU_ACCESS_BUFFER, _Init_Data->MaxParticles, _Init_Data->TextureIndex, NewEmitter );
 			NewEmitter->Active = true;
 			break;
 		}

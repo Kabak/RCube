@@ -68,6 +68,12 @@ public:
 
 	int screenWidth, screenHeight, WindowPosX , WindowPosY;
 
+	// Needed for calculate Menu & Text size for any screen resolution 
+	// 	Z,W = Width , Height
+	// 1.0 = 100% = resulution 1920 * 1080
+	XMFLOAT4 SCREEN_SCALE;
+ 
+
 // Вращающиеся объекты движка для теста
 	float Speed; // Скорость вращения объекта в об/мин
 	float Speed2;// Скорость вращения объекта2 в об/мин

@@ -71,7 +71,7 @@ ID3D11ShaderResourceView* sharedTex11_SRV;	// SRV Текстуры на которой рисуются ш
 				   float ScreenRatio; // ScreenWidth / ScreenHeight
 				   float NearPlane;
 				   float FarPlane;
-				XMFLOAT2 ScreenDimentions;	// Width , Height
+				XMFLOAT4 ScreenScale;	// Width, Height, Width in %, Height in %  Engine Screen resolution autoadapting scale system
 				XMMATRIX WorldMatrix;
 			    XMMATRIX ViewMatrix;
 			    XMMATRIX OrthoMatrix;
@@ -168,23 +168,92 @@ ID3D11UnorderedAccessView*BackBuffer_CopyResolveTextureUAV; // Невозможно создат
 	};
 
 
-
+	enum FLAT_OBJ_TYPE
+	{
+		ANIMATION   = -1,
+		REGULAR     = 0
+	};
 
 // Перечень глобальных индексов строк текста 
-enum GLOBAL_TEXT_INDEXES{
-	INGAME_TEXT	= 0,
-	HUD			= 1,
-	MENU		= 2,
-	STRINGLIST1 = 3
+	enum GLOBAL_TEXT_INDEXES
+	{
+		INGAME_TEXT = 0,
+		HUD			= 1,
+		MENU		= 2,
+		STRINGLIST1 = 3
 	};
 
 	//  +++++++++++++++++++++++++++    MENU    +++++++++++++++++++++++++++++++++++++++++++++
-	// Типы объектов которые могут быть созданы на базе KFButton
-enum {
-	   BUTTON	= 0,
-	   CHECKBOX = 1,
-	   LABEL	= 2,
-	   EDIT		= 3
+
+	struct MenuItem
+	{
+		MenuItem ()
+		{
+						ObjX = 0; 
+						ObjY = 0; 
+					ObjWidth = 0; 
+				   ObjHeight = 0; 
+					   Group = -1;  
+	    PreviousItemDistance = 0;
+//			NextItemDistanceY = 0; 
+//					  Plased = false;
+		}
+
+		int ObjX;		// Object X pos
+		int ObjY;		// Object Y pos
+		int ObjWidth;	// Object Width
+		int ObjHeight;	// Object Height
+
+		int PreviousItemDistance; // Distance to next MenuItem X direction
+//		int NextItemDistanceY; // Distance to next MenuItem Y direction
+
+//		bool Plased;
+
+		int Index;
+		int Type;
+		int IndexInType; // Index among Buttons or ScrollBars...
+		int Group; // Screen Zone where Item is located
+//		XMFLOAT4 MenuDimention;
+	};
+
+//	vector <int*> ItemIndex;
+
+	struct GroupItem
+	{
+		GroupItem ()
+		{
+			GroupX = 0; GroupY = 0; GroupWidth = 0; GroupHeight = 0; DistanceBetweenElements = 0;
+			ItemIndexes.reserve ( 10 );
+		}
+
+		~GroupItem () { ItemIndexes.clear (); };
+
+		int GroupX;		// Group X pos
+		int GroupY;		// Group Y pos
+		int GroupWidth;	// Group Width
+		int GroupHeight;	// Group Height
+		float ScaleX;	// 
+		float ScaleY;	// 
+		bool Direction; // If X = true, if false = Y
+		int DistanceBetweenElements;
+		vector <int> ItemIndexes; // Objects indexes that fits into group
+
+	};
+	
+enum _X_Y_ {
+	_X_ = true,
+	_Y_ = false
+};
+// Типы объектов которые могут быть созданы на базе KFButton
+enum MENU_OBJ_STYLE {
+	   BUTTON		= 0,
+	   CHECKBOX		= 1,
+	   LABEL		= 2,
+	   EDIT			= 3,
+	   COLOR_PICK	= 4,
+	   SCROLLBAR	= 5,
+	   STR_LIST		= 6,
+	   TEXTSTRING	= 7
 	};
 /*
 enum {
@@ -197,12 +266,20 @@ enum {
 	};
 */
 
-enum {
+enum EDIT_INPUT_STYLE {
 	   ANYSYMBOL  = 1,
 	   AS_INTEGER = 2,
 	   AS_FLOAT   = 3
 	 };
 
+/*
+enum COLOR_PICKER_STYLE
+{
+	PANTHON = 1,
+	COLOR_PICKER = 2,
+	ALPHA_PICKER = 3
+};
+*/
 
 	typedef enum {
 //		NOBACKGROUND,
@@ -218,7 +295,12 @@ enum {
 	  FLIP_VERTICAL				= 2,
 	  ROTATE90					= 3,
 	  ROTATE_90					= 4,
-	  FLIP_HORIZONTAL_ROTATE_90 = 5
+	  FLIP_HORIZONTAL_ROTATE_90 = 5,
+	  ANIMATION_TEXTURE			= 6,
+	  COLOR_BUTTON				= 7,
+	  COLOR_PICKER				= 8,
+	  ALPHA_PICKER_HORIZONTAL	= 9,
+	  ALPHA_PICKER_VERTICAL		= 10
 	};
 
 
@@ -227,11 +309,40 @@ enum {
 	} MenuShowMethod;
 
 
+	struct Font_Param {
+	
+		 bool Outlined;
+		  int OutlineWidth;
+		float FontSize;
+		D2D1_GRADIENT_STOP gradientStops[3];
+		XMFLOAT4 GradientPos;
+		XMFLOAT4 OutlineColor;
+		wchar_t *Font_Path_Name;
+
+	};
+
+// MENU definitions
+	const int MIN_PLACE_ACCURACY = 0;
+	// Button
+	const float MIN_BUTTON_WIDTH = 20.0f;
+	const float MIN_BUTTON_HEIGHT = 20.0f;
+	const float MIN_BUTTON_SIZE   = 5.0f;
+	// ScrollBar
+	const float MIN_TRAVELER_SIZE = 20.0f; // В пикселях 20
+	// ColorPicker
+//	const float MIN_SELECTOR_SIZE = 11.0f; // В пикселях ( потому, что мой текстура селектора 11 pix
+	const float MIN_PANTHON_SIZE = 5.0f; // В пикселях 
+	const float MAX_PANTHON_SIZE = 50.0f; // В пикселях 
+	const float MIN_COLORPICKER_SIZE = 50.0f; // In pixel
+	const float MIN_DISTANCE_FROM_BODY = 5.0f; // MIN distance from ColorPicker to Panton & Alpha
+
+
 	struct KFButton_Elements {
-	XMFLOAT4 _ObjParam;	// Координаты объекта X,Y, и размеры Z - Height, W - Width
+	XMFLOAT4 _ObjParam;	// Координаты объекта X,Y, и размеры Z - Width, W - Height
 						// Если Z или W = 0.0f , то берутся размеры текстуры для начального размера
+	XMFLOAT4 Colour;	// If the button is COLOR square type
 		char *Label;	// начальный текст
-		int  Type;		// BUTTON = 0, CHECKBOX = 1, LABEL = 2, EDIT = 3
+		int  Type;		// BUTTON = 0, CHECKBOX = 1, LABEL = 2, EDIT = 3, COLOR = 4
 		int  EditType;	// ANYSYMBOL = 1, AS_INTEGER = 2, AS_FLOAT = 3   если равно NULL или отличное от указанного, то кнопка не будет работать как Edit
 		int  SentenceIndex; // Номер предложения из класса TextClass ( обязательно только для Label и Edit  для остальных можно -1 )
 		SENTENCE_INIT_DATA* Data;
@@ -243,7 +354,6 @@ enum {
 		int  VirtualKeyIndex;		// Привязка Label к виртуальной кнопке в движке. ( Для переопределения кнопки в меню )
 		bool SecondSlot;			// Слот для определения кнопок tckb true, то привязка ко 2-му слоту
 // Label
-		ID3D11Resource * OsnTextureResource;
 		ID3D11ShaderResourceView * OsnTexture;
 		ID3D11ShaderResourceView * IsClickTexture;
 		ID3D11ShaderResourceView * IsMouseOnButtonTexture;
@@ -255,7 +365,7 @@ enum {
 		bool IsMouseOnButton;
 	};
 
-	struct KFScrollBar_Elements
+	struct ScrollBar_Elements
 	{
 		bool ShowButtons;
 		XMFLOAT4 ObjParam;	// Координаты объекта X,Y, и размеры Z - Width, W - Height
@@ -263,7 +373,6 @@ enum {
 		XMFLOAT4 Values;	// Min, Max, Current, Step
 		bool Horizontal;	// Горизонтальный ли ScrollBar
 		bool UpSideDown;	// Если ScrollBar вертикальный, то удобно когда большее значение - вверху. Для прокрутки на странице удобнее наоборот
-		ID3D11Resource * OsnTextureResource;
 		ID3D11ShaderResourceView * BodyTexture;
 		ID3D11ShaderResourceView * ButtonsTexture;
 		ID3D11ShaderResourceView * TravellerTexture;
@@ -278,6 +387,34 @@ enum {
 		ID3D11ShaderResourceView * ButtonPressTexture;
 		ID3D11ShaderResourceView * TravellerPressTexture;
 	};
+
+
+	struct ColorPicker_Horisontal_Layout
+	{
+		XMFLOAT4 Body			= {   0.0f,   0.0f, 300.0f, 300.0f };
+		XMFLOAT4 Selector		= {  10.0f,   5.0f,  20.0f, 255.0f };
+
+	};
+
+
+	struct ColorPicker_Vertical_Layout
+	{
+		XMFLOAT4 Body			= {   0.0f,   0.0f, 300.0f, 300.0f };
+		XMFLOAT4 Selector		= {  10.0f,   5.0f,  20.0f, 255.0f };
+	};
+
+
+	struct ColorPicker_Elements
+	{
+		XMFLOAT4 ObjParam;	// Object location X,Y  , size : Z - Width, W - Height
+							// If Z or W = 0.0f Will be used for create ColorPicker dementions
+							// otherwise dementions will be calculated using BodyTexture size
+		XMFLOAT4 ActiveColorValue;
+		float _Panthon_Alpha_Thickness;	// Desired width of elements
+		bool Horizontal;				// Horizontal or Vertical ColorPicker layout
+		ID3D11ShaderResourceView * PanthonTexture;
+	};
+
 
 	struct StringsList_Elements
 	{

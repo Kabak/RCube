@@ -464,19 +464,19 @@ bool TorchFireParticles::InitializeBuffers( ID3D11Device* device )
 
 	// Top left.
 	FlameVertices[0].Position = XMFLOAT3( -1.0f * ParticleSize, 1.0f * ParticleSize, 0.0f );  // Top left
-	FlameVertices[0].TexCoord = XMFLOAT2( 0.0f, 0.0f );
+	FlameVertices[0].TexCoord = XMFLOAT4( 0.0f, 0.0f, 0.0f, 0.0f );
 
 	// Bottom right.
 	FlameVertices[1].Position = XMFLOAT3( 1.0f * ParticleSize, -1.0f * ParticleSize, 0.0f );  // Bottom right
-	FlameVertices[1].TexCoord = XMFLOAT2( 1.0f, 1.0f );
+	FlameVertices[1].TexCoord = XMFLOAT4( 1.0f, 1.0f, 0.0f, 0.0f );
 
 	// Bottom left.
 	FlameVertices[2].Position = XMFLOAT3( -1.0f * ParticleSize, -1.0f * ParticleSize, 0.0f );  // Bottom left.
-	FlameVertices[2].TexCoord = XMFLOAT2( 0.0f, 1.0f );
+	FlameVertices[2].TexCoord = XMFLOAT4( 0.0f, 1.0f, 0.0f, 0.0f );
 
 	// Top right.
 	FlameVertices[3].Position = XMFLOAT3( 1.0f * ParticleSize, 1.0f * ParticleSize, 0.0f );  // Top right.
-	FlameVertices[3].TexCoord = XMFLOAT2( 1.0f, 0.0f );
+	FlameVertices[3].TexCoord = XMFLOAT4( 1.0f, 0.0f, 0.0f, 0.0f );
 /*
 	memset( SmokeVertices, 0, ( sizeof( BillBordVertexes ) * 4 ) );
 
@@ -762,7 +762,7 @@ void TorchFireParticles::KillFireFlyParticles()
 	for ( int i = 0; i < FireFlyInstancesAmount; ++i )
 	{
 		Particles_Data *InstanceAddData = &TorchFireFlyAddData[i];
-		BB_Particle_Instance *ShaderInstance = &FireFlyInstances[i];
+//		BB_Particle_Instance *ShaderInstance = &FireFlyInstances[i];
 
 		if ( ( InstanceAddData->Active == true ) && ( InstanceAddData->LifeTime < 0.0f ) )
 		{

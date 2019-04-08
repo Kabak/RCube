@@ -1,12 +1,13 @@
 #include "stdafx.h"
 #include "KF2DTextureAnimation.h"
+#include "ResourceManager.h"
 
 KF2DTextureAnimation::KF2DTextureAnimation()
 {
 
 	  TextcordTop = nullptr;
 	 TextcordLeft = nullptr;
-	AnimeTextures = nullptr;
+	AnimeTexture  = nullptr;
 		  Enabled = true;
 	  CurentFrame = 0; 
 		  PlayFPS = 24.0f;
@@ -18,7 +19,8 @@ KF2DTextureAnimation::KF2DTextureAnimation()
 
 KF2DTextureAnimation::~KF2DTextureAnimation()
 {
-	RCUBE_DELETE ( AnimeTextures )
+	ResManager->Delete_Flat_ObjectBuffers ( AnimeTextureBufferIndex );
+	RCUBE_DELETE ( AnimeTexture )
 	RCUBE_ARR_DELETE ( TextcordTop )
 	RCUBE_ARR_DELETE ( TextcordLeft )
 }
@@ -29,16 +31,19 @@ HRESULT KF2DTextureAnimation::Init(HWND hwnd,
 	int _VY_Amount,							// Количестко столбцов в текстуре анимации
 	ID3D11ShaderResourceView * animTexture,	// Текстура с анимацией
 	int DrawShaderIndex,					// Номер шейдера которым нужно рисовать
-	int ReturnShaderIndex,					// Номер шейдера на который нужно вернуть после анимации
-	Flat_Obj_Buffers* _Buffers,				// Менеджер шейдеров для переключения шейдера
-	XMFLOAT4& _ObjParam						// x,y - позиция X,Y , z - Width , w - Height элемента
+//	int ReturnShaderIndex,					// Номер шейдера на который нужно вернуть после анимации
+//	Flat_Obj_Buffers* _Buffers,				// Менеджер шейдеров для переключения шейдера
+	XMFLOAT4& _ObjParam,					// x,y - позиция X,Y , z - Width , w - Height элемента
+	ResourceManager * _GlobalResourceManager
 	)
 {
 
 	HRESULT result;
 	
+	ResManager = _GlobalResourceManager;
+
 	ShaderForDraw = DrawShaderIndex;
-	ShaderReturnTo = ReturnShaderIndex;
+//	ShaderReturnTo = ReturnShaderIndex;
 
 	ObjParam = _ObjParam;
 
@@ -69,11 +74,13 @@ HRESULT KF2DTextureAnimation::Init(HWND hwnd,
 		++UX;
 	}
 
-	AnimeTextures = new FlatObjectClass;
-	result = AnimeTextures->Init( D3DGC->ScreenWidth, D3DGC->ScreenHeight, ObjParam, animTexture, NO_FLIP, _Buffers );
+	AnimeTextureBufferIndex = ResManager->Create_Flat_Obj_Buffers ( NO_CPU_ACCESS_BUFFER, 4, 6, nullptr );
+
+	AnimeTexture = new FlatObjectClass;
+	result = AnimeTexture->Init( D3DGC->ScreenWidth, D3DGC->ScreenHeight, ObjParam, animTexture, ANIMATION_TEXTURE, ResManager->Get_Flat_ObjectBuffers_ByIndex ( AnimeTextureBufferIndex ) );
 	if (result == E_FAIL){
 
-		MessageBox(hwnd, L"Не могу создать место для отрисовки. KFAnimation.cpp.", L"Error", MB_OK);
+		MessageBox(hwnd, L"Can't create KFAnimation.", L"Error", MB_OK);
 		return E_FAIL;
 
 	}
@@ -121,28 +128,28 @@ void KF2DTextureAnimation::Frame( FPSTimers &fpstimers )
 		Left + OneFrameWidth
 	};
 
-		AnimeTextures->ResetObjectTexcord( Data );
+		AnimeTexture->ResetObjectTexcord( Data );
 }
 
 
 void KF2DTextureAnimation::SetAnimeParam( XMFLOAT4& Param )
 {
-	AnimeTextures->ObjParam = Param;
-	AnimeTextures->SetObjParam();
+	AnimeTexture->ObjParam = Param;
+	AnimeTexture->SetObjParam();
 }
 
 
 void KF2DTextureAnimation::SetAnimePos(XMFLOAT2& Pos)
 {
-	AnimeTextures->ObjParam.x = Pos.x;
-	AnimeTextures->ObjParam.y = Pos.y;
-	AnimeTextures->SetObjParam();
+	AnimeTexture->ObjParam.x = Pos.x;
+	AnimeTexture->ObjParam.y = Pos.y;
+	AnimeTexture->SetObjParam();
 }
 
 
 void KF2DTextureAnimation::SetAnimeSize(XMFLOAT2& Size)
 {
-	AnimeTextures->ObjParam.z = Size.x;
-	AnimeTextures->ObjParam.w = Size.y;
-	AnimeTextures->SetObjParam();
+	AnimeTexture->ObjParam.z = Size.x;
+	AnimeTexture->ObjParam.w = Size.y;
+	AnimeTexture->SetObjParam();
 }

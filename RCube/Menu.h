@@ -9,7 +9,9 @@
 #include "KFButton.h"
 #include "ScrollBarClass.h"
 #include "StringsListClass.h"
+#include "ColorPickerClass.h"
 #include "FlatObjectClass.h"
+
 
 using namespace std;
 
@@ -22,6 +24,7 @@ public:
 	vector<KFButton*> Buttons;
 	vector<ScrollBarClass*> ScrollBars;
 	vector<StringsListClass*> StringsList;
+	vector<ColorPickerClass*> ColorPickers;
 
 	FlatObjectClass * Background;
 
@@ -30,6 +33,7 @@ public:
 	int g_NumOfButtons;
 	int	g_NumOfScrollBars;
 	int g_NumOfStringsLists;
+	int g_NumOfColorPickers;
 
 	// јктивно ли меню - в нЄм работают кнопки и его рисуем
 	bool IsMenuActive = 0;

@@ -75,7 +75,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(ProjectDir)\DirectXTex-master\DDSTextureLoader;$(ProjectDir)\DirectXTex-master\WICTextureLoader;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\PhysX-3.4-master\PxShared\lib\vc15win64;C:\PhysX-3.4-master\PhysX_3.4\Lib\vc15win64;$(LibraryPath)</LibraryPath>
+    <LibraryPath>C:\PhysX\physx\bin\win.x86_64.vc141.mt\debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -85,7 +85,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(ProjectDir)\DirectXTex-master\DDSTextureLoader;$(ProjectDir)\DirectXTex-master\WICTextureLoader;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\PhysX-3.4-master\PxShared\lib\vc15win64;C:\PhysX-3.4-master\PhysX_3.4\Lib\vc15win64;$(LibraryPath)</LibraryPath>
+    <LibraryPath>C:\PhysX\physx\bin\win.x86_64.vc141.mt\release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -130,7 +130,7 @@
       <StructMemberAlignment>16Bytes</StructMemberAlignment>
       <FloatingPointModel>Fast</FloatingPointModel>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>C:\PhysX-3.4-master\PxShared\include;C:\PhysX-3.4-master\PxShared\include\foundation\windows;C:\PhysX-3.4-master\PhysX_3.4\Include;$(SolutionDir)\DirectXTex-master\DDSTextureLoader;$(SolutionDir)\DirectXTex-master\WICTextureLoader;$(SolutionDir)\DirectXTex-master\DirectXTex</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\PhysX\pxshared\include;C:\PhysX\physx\include;$(SolutionDir)\DirectXTex-master\DDSTextureLoader;$(SolutionDir)\DirectXTex-master\WICTextureLoader;$(SolutionDir)\DirectXTex-master\DirectXTex</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
@@ -206,7 +206,7 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <StructMemberAlignment>16Bytes</StructMemberAlignment>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>C:\PhysX-3.4-master\PxShared\include;C:\PhysX-3.4-master\PxShared\include\foundation\windows;C:\PhysX-3.4-master\PhysX_3.4\Include;$(SolutionDir)\DirectXTK-master\\Src;$(SolutionDir)\DirectXTex-master\DDSTextureLoader;$(SolutionDir)\DirectXTex-master\WICTextureLoader;$(SolutionDir)\DirectXTK-master\\Inc;$(SolutionDir)\DirectXTex-master\DirectXTex</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\PhysX\pxshared\include;C:\PhysX\physx\include;$(SolutionDir)\DirectXTK-master\\Src;$(SolutionDir)\DirectXTex-master\DDSTextureLoader;$(SolutionDir)\DirectXTex-master\WICTextureLoader;$(SolutionDir)\DirectXTK-master\\Inc;$(SolutionDir)\DirectXTex-master\DirectXTex</AdditionalIncludeDirectories>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <DebugInformationFormat>None</DebugInformationFormat>
@@ -257,6 +257,7 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClInclude Include="BoundingBox.h" />
     <ClInclude Include="BillBord.h" />
     <ClInclude Include="ClusterShadingFragmentFactory.h" />
+    <ClInclude Include="ColorPickerClass.h" />
     <ClInclude Include="CubeMap.h" />
     <ClInclude Include="D3DGlobalContext.h" />
     <ClInclude Include="DX11Buffers.h" />
@@ -315,6 +316,7 @@ xcopy /Y "$(ProjectDir)\Shaders\*.kaf" "$(OutDir)\Shaders\"</Command>
     <ClCompile Include="3DModel.cpp" />
     <ClCompile Include="BoundingBox.cpp" />
     <ClCompile Include="ClusterShadingFragmentFactory.cpp" />
+    <ClCompile Include="ColorPickerClass.cpp" />
     <ClCompile Include="CubeMap.cpp" />
     <ClCompile Include="EffectsManager.cpp" />
     <ClCompile Include="Emiters.cpp" />

@@ -5,7 +5,7 @@ ResourceManager::ResourceManager()
 {
 	RCube_Sentences.reserve ( 30 );
 	ComeputeShaderNames.reserve(2);
-	RCube_Font.reserve ( 6 );
+	RCube_Font.reserve ( 10 );
 	UnusedSentenceIndex.reserve ( 10 );
 	UnusedFlatObjBuffersIndex.reserve ( 10 );
 	UnusedTexturesIndex.reserve ( 10 );
@@ -88,6 +88,7 @@ void ResourceManager::ShutDown()
 		++c;
 	}
 	RCube_Font.clear ();
+	UnusedFontIndex.clear ();
 
 // TEXTURES
 	c = 0;
@@ -332,6 +333,8 @@ HRESULT ResourceManager::InitTextures(WCHAR * kafFilename){
 
 HRESULT ResourceManager::InitShaders( WCHAR * kafFilename) {
 
+	HRESULT Result = S_OK;
+
 	unsigned char * Buff = nullptr, *temp;
 	decodeFile(&Buff, kafFilename, 0);
 	unsigned char IsKaf[4];
@@ -402,7 +405,7 @@ HRESULT ResourceManager::InitShaders( WCHAR * kafFilename) {
 
 			++VSCounter;
 
-			KFShadresBunch temp;
+			KFShadersBunch temp;
 
 			BunchArr.push_back(temp); // с каждого нового вертекного шейдера добавляю новую связку шейдеров
 
@@ -538,9 +541,14 @@ HRESULT ResourceManager::InitShaders( WCHAR * kafFilename) {
 		++Amount;
 	}
 
-	CreateLayouts ();
-
-	ApplyLayoutsToShaderBunches ();
+	if ( CreateLayouts () )
+	{
+		ApplyLayoutsToShaderBunches ();
+	}
+	else
+	{
+		Result = E_FAIL;
+	}
 
 	delete[] TempName;
 //	delete[] names;
@@ -548,7 +556,7 @@ HRESULT ResourceManager::InitShaders( WCHAR * kafFilename) {
 
 	delete[] Buff;
 	
-	return S_OK;
+	return Result;
 
 }
 
@@ -696,7 +704,7 @@ void ResourceManager::SetActiveShadersInProgramm(int ShadersIndex)
 		// Setting Last shader for checking later in render. So we will not set same shader multiple times
 		ActiveShaderNumber = ShadersIndex;
 
-		KFShadresBunch *BunchArray = &BunchArr[ShadersIndex];
+		KFShadersBunch *BunchArray = &BunchArr[ShadersIndex];
 		if ( BunchArray->PS != NULL )
 			Local_D3DGC->DX_deviceContext->PSSetShader ( BunchArray->PS, NULL, 0 );
 		else
@@ -761,7 +769,7 @@ int ResourceManager::InitOneShader( WCHAR * CSOFileName) {
 
 		ID3D11VertexShader * m_vertexShader;
 
-		KFShadresBunch temp;
+		KFShadersBunch temp;
 
 		BunchArr.push_back(temp); // с каждого нового пиксельного шейдера добавляю новую связку шейдеров
 
@@ -1151,7 +1159,7 @@ ID3D11VertexShader*  ResourceManager::GetVertexShader ( int ShaderIndex )
 
 
 // Создание буферов для объектов на сцене
-int ResourceManager::Create_Flat_Obj_Buffers (bool CPUAccess, UINT InstanceAmount, UINT IndexAmount = 0, DXTextureSRV* Texture = 0 )
+int ResourceManager::Create_Flat_Obj_Buffers (int CPUAccess, UINT InstanceAmount, UINT IndexAmount = 0, DXTextureSRV* Texture = 0 )
 {
 	VertexBuffer <Vertex_FlatObject>* FlatObjectVB = nullptr;
 
@@ -1179,13 +1187,13 @@ int ResourceManager::Create_Flat_Obj_Buffers (bool CPUAccess, UINT InstanceAmoun
 		FlatObjectBuffers.push_back ( FlatObjBuffers );
 	}
 
-		FlatObjectVB = new VertexBuffer <Vertex_FlatObject> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, (int)CPUAccess, InstanceAmount, nullptr );			// Создаём буфер вертексов FlatObject
+		FlatObjectVB = new VertexBuffer <Vertex_FlatObject> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, CPUAccess, InstanceAmount, nullptr );			// Создаём буфер вертексов FlatObject
 		FlatObjBuffers->FlatObjectVB = FlatObjectVB;
 
 
 	if (IndexAmount > 0)
 	{
-		TempIB = new IndexBuffer < Index_Type > ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, CPUAccess, IndexAmount, nullptr);
+		TempIB = new IndexBuffer < Index_Type > ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, CPUAccess, IndexAmount, FlatObjectIndices);
 		FlatObjBuffers->IndexBs = TempIB;
 	}
 
@@ -1506,34 +1514,28 @@ void  ResourceManager::BuildSentanceVertexArray ( BuildSentanceData* BuildData)
 			float DXSS = BuildData->drawX + Source->Symbol_Width;
 			// First triangle in quad.
 			BuildData->vertexes->Position = XMFLOAT3 ( BuildData->drawX, BuildData->drawY, 0.0f );  // Top left.
-			BuildData->vertexes->TexCoord = XMFLOAT2 ( Source->Start, 0.0f );
-			BuildData->vertexes->padding1.y = BuildData->Colour.w;
+			BuildData->vertexes->TexCoord = XMFLOAT4 ( Source->Start, 0.0f, 0.0f, BuildData->Colour.w );
 			++BuildData->vertexes;
 
 			BuildData->vertexes->Position = XMFLOAT3 ( ( BuildData->drawX + Source->Symbol_Width), DYRFS, 0.0f );  // Bottom right.
-			BuildData->vertexes->TexCoord = XMFLOAT2 ( Source->End, 1.0f );
-			BuildData->vertexes->padding1.y = BuildData->Colour.w;
+			BuildData->vertexes->TexCoord = XMFLOAT4 ( Source->End, 1.0f, 0.0f, BuildData->Colour.w );
 			++BuildData->vertexes;
 
 			BuildData->vertexes->Position = XMFLOAT3 ( BuildData->drawX, DYRFS, 0.0f );  // Bottom left.
-			BuildData->vertexes->TexCoord = XMFLOAT2 ( Source->Start, 1.0f );
-			BuildData->vertexes->padding1.y = BuildData->Colour.w;
+			BuildData->vertexes->TexCoord = XMFLOAT4 ( Source->Start, 1.0f, 0.0f, BuildData->Colour.w );
 			++BuildData->vertexes;
 
 			// Second triangle in quad.
 			BuildData->vertexes->Position = XMFLOAT3 ( BuildData->drawX, BuildData->drawY, 0.0f );  // Top left.
-			BuildData->vertexes->TexCoord = XMFLOAT2 ( Source->Start, 0.0f );
-			BuildData->vertexes->padding1.y = BuildData->Colour.w;
+			BuildData->vertexes->TexCoord = XMFLOAT4 ( Source->Start, 0.0f, 0.0f, BuildData->Colour.w );
 			++BuildData->vertexes;
 
 			BuildData->vertexes->Position = XMFLOAT3 ( DXSS, BuildData->drawY, 0.0f );  // Top right.
-			BuildData->vertexes->TexCoord = XMFLOAT2 ( Source->End, 0.0f );
-			BuildData->vertexes->padding1.y = BuildData->Colour.w;
+			BuildData->vertexes->TexCoord = XMFLOAT4 ( Source->End, 0.0f, 0.0f, BuildData->Colour.w );
 			++BuildData->vertexes;
 
 			BuildData->vertexes->Position = XMFLOAT3 ( DXSS, DYRFS, 0.0f );  // Bottom right.
-			BuildData->vertexes->TexCoord = XMFLOAT2 ( Source->End, 1.0f );
-			BuildData->vertexes->padding1.y = BuildData->Colour.w;
+			BuildData->vertexes->TexCoord = XMFLOAT4 ( Source->End, 1.0f, 0.0f, BuildData->Colour.w );
 			++BuildData->vertexes;
 
 			// Update the x location for drawing by the size of the letter and one pixel.
@@ -1560,13 +1562,13 @@ bool ResourceManager::InitializeSentence ( SentenceType* sentence, int& maxLengt
 	// Set the number of vertices in the vertex array.
 	sentence->vertexCount = 6 * maxLength;
 
-	sentence->VertexBufferIndex = Create_Flat_Obj_Buffers ( false, sentence->vertexCount, 0, TexturesArr[RCube_Font[sentence->FontType]->FontTextureIndex]->SRV );
+	sentence->VertexBufferIndex = Create_Flat_Obj_Buffers ( NO_CPU_ACCESS_BUFFER, sentence->vertexCount, 0, TexturesArr[RCube_Font[sentence->FontType]->FontTextureIndex]->SRV );
 
 	return true;
 }
 
 
-void ResourceManager::UpdateSentence ( int SentenceNumber, char* text, int positionX, int positionY, float RenderFontSize )
+void ResourceManager::UpdateSentence ( int SentenceNumber, char* text, int positionX, int positionY )// , float RenderFontSize )
 {
 	int numLetters;
 	Vertex_FlatObject* vertices;
@@ -1605,7 +1607,7 @@ void ResourceManager::UpdateSentence ( int SentenceNumber, char* text, int posit
 	BuildData->drawX = ( float ) ( ( ( Local_D3DGC->ScreenWidth / 2 ) * -1 ) + positionX );
 	BuildData->drawY = ( float ) ( ( Local_D3DGC->ScreenHeight / 2 ) - positionY );
 	BuildData->Font = RCube_Font[Source->FontType];
-	BuildData->RenderFontSize = RenderFontSize;
+	BuildData->RenderFontSize = RCube_Font[Source->FontType]->FontSize;// RenderFontSize;
 	BuildData->text = text;
 	BuildData->vertexes = vertices;
 
@@ -1655,8 +1657,8 @@ int ResourceManager::AddSentence ( SENTENCE_INIT_DATA* data, char* String )
 	Source->FontType = data->FontType;
 	Source->Render = data->Render;
 	Source->MaxLength = data->MaxLength;
-	Source->PosX = data->PosX;
-	Source->PosY = data->PosY;
+	Source->PosX = ( int ) ( data->PosX * Local_D3DGC->ScreenScale.z );
+	Source->PosY = ( int ) ( data->PosY * Local_D3DGC->ScreenScale.w );
 	Source->ShowType = data->ShowType;
 	Source->HideType = data->HideType;
 	Source->Level = data->Level;
@@ -1755,13 +1757,13 @@ int ResourceManager::GetFontHeightInPixels ( int FontNumber )
 
 
 
-int ResourceManager::Create_3D_Obj_Mesh_Buffers( bool CPUAccess, UINT InstanceAmount, UINT IndexAmount = 0 )
+int ResourceManager::Create_3D_Obj_Mesh_Buffers( int CPUAccess, UINT InstanceAmount, UINT IndexAmount = 0 )
 {
 	_3D_Obj_Buffers *_3DObjBuffers = new _3D_Obj_Buffers ();
 	
 	int ReturnIndex = GetNew3D_Obj_Mesh_Buffer_Index( _3DObjBuffers );
 
-	_3DObjBuffers->Vertexes = new VertexBuffer <Vertex_Model3D> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, (int)CPUAccess, InstanceAmount, nullptr);			// Создаём буфер вертексов FlatObject
+	_3DObjBuffers->Vertexes = new VertexBuffer <Vertex_Model3D> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, CPUAccess, InstanceAmount, nullptr);			// Создаём буфер вертексов FlatObject
 
 	if (IndexAmount > 0)
 	{
@@ -1782,7 +1784,7 @@ bool ResourceManager::LoadKFObject ( std::wstring FileName, _3DModel* New_3D_Mod
 	std::basic_ifstream< UCHAR > file ( FileName, std::ios::in | std::ios::binary );
 	if ( !file )
 	{
-		MessageBox ( NULL, L"Не удалось открыть файл для чтения.", Error, MB_OK );
+		MessageBox ( NULL, L"Can't open .kfo for reading.", Error, MB_OK );
 		return false;
 	}
 
@@ -1814,7 +1816,7 @@ bool ResourceManager::LoadKFObject ( std::wstring FileName, _3DModel* New_3D_Mod
 		//		file.read ( ( UCHAR* ) &NewMesh->IndexBufferSize, sizeof ( int ) ); // читаю размер следующего индексного буферы
 		
 		// Создаём VertexBuffer для загруженного меша и сохраняем его индекс
-		NewMesh->BufferIndex = Create_3D_Obj_Mesh_Buffers ( true, NewMesh->VertexBufferSize );
+		NewMesh->BufferIndex = Create_3D_Obj_Mesh_Buffers ( CPU_ACCESS_BUFFER, NewMesh->VertexBufferSize );
 
 		// Загружаем вертексы меша из KFO в буфер
 		Vertex_Model3D* Buffer = _3DModelsMeshBuffers[NewMesh->BufferIndex]->Vertexes->MapDiscard ();
@@ -3409,7 +3411,7 @@ int ResourceManager::Add_CubeMap ( WCHAR* TextureName )
 	indices[k + 1] = ( NumSphereVertices - 1 ) - LongLines;
 	indices[k + 2] = NumSphereVertices - 2;
 
-	CubeMapBufferIndex = Create_Flat_Obj_Buffers ( false, NumSphereVertices, NumSphereFaces * 3, TexturesArr[TempTextureIndex]->SRV );
+	CubeMapBufferIndex = Create_Flat_Obj_Buffers ( NO_CPU_ACCESS_BUFFER, NumSphereVertices, NumSphereFaces * 3, TexturesArr[TempTextureIndex]->SRV );
 	if ( CubeMapBufferIndex < 0 )
 	{
 		MessageBox ( 0, L"Can't init CubeMap Buffers", Error, MB_OK );
@@ -3494,24 +3496,24 @@ void ResourceManager::CreateInitial_BB_VertexBuffer ( Vertex_FlatObject* Vertice
 
 	// Top left.
 	Vertices[0].Position = XMFLOAT3 ( -1.0f * NewEmitter->Init_Data.InitSize, 1.0f *  NewEmitter->Init_Data.InitSize, 0.0f );  // Top left
-	Vertices[0].TexCoord = XMFLOAT2 ( 0.0f, 0.0f );
+	Vertices[0].TexCoord = XMFLOAT4 ( 0.0f, 0.0f, 0.0f, 0.0f );
 
 	// Bottom right.
 	Vertices[1].Position = XMFLOAT3 ( 1.0f *  NewEmitter->Init_Data.InitSize, -1.0f *  NewEmitter->Init_Data.InitSize, 0.0f );  // Bottom right
-	Vertices[1].TexCoord = XMFLOAT2 ( 1.0f, 1.0f );
+	Vertices[1].TexCoord = XMFLOAT4 ( 1.0f, 1.0f, 0.0f, 0.0f );
 
 	// Bottom left.
 	Vertices[2].Position = XMFLOAT3 ( -1.0f *  NewEmitter->Init_Data.InitSize, -1.0f *  NewEmitter->Init_Data.InitSize, 0.0f );  // Bottom left.
-	Vertices[2].TexCoord = XMFLOAT2 ( 0.0f, 1.0f );
+	Vertices[2].TexCoord = XMFLOAT4 ( 0.0f, 1.0f, 0.0f, 0.0f );
 
 	// Top right.
 	Vertices[3].Position = XMFLOAT3 ( 1.0f *  NewEmitter->Init_Data.InitSize, 1.0f *  NewEmitter->Init_Data.InitSize, 0.0f );  // Top right.
-	Vertices[3].TexCoord = XMFLOAT2 ( 1.0f, 0.0f );
+	Vertices[3].TexCoord = XMFLOAT4 ( 1.0f, 0.0f, 0.0f, 0.0f );
 
 }
 
 
-int ResourceManager::Create_Emitter_BB_Buffers ( bool CPUAccess, UINT InstanceAmount, UINT TempTextureIndex, Emitter* NewEmitter )
+int ResourceManager::Create_Emitter_BB_Buffers ( int CPUAccess, UINT InstanceAmount, UINT TempTextureIndex, Emitter* NewEmitter )
 {
 	int Index = -1;
 
@@ -3520,11 +3522,11 @@ int ResourceManager::Create_Emitter_BB_Buffers ( bool CPUAccess, UINT InstanceAm
 	// Init  BillBoard 4 vertexes
 	Vertex_FlatObject* m_vertices = new Vertex_FlatObject[4];
 	CreateInitial_BB_VertexBuffer ( m_vertices, NewEmitter );
-	_EmitterBuffers->FlatObjectVB = new VertexBuffer <Vertex_FlatObject>	( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, ( int ) CPUAccess, 4, m_vertices );
+	_EmitterBuffers->FlatObjectVB = new VertexBuffer <Vertex_FlatObject>	( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, CPUAccess, 4, m_vertices );
 	RCUBE_ARR_DELETE ( m_vertices );
 
 	_EmitterBuffers->IndexBs	  = new IndexBuffer  <Index_Type>			( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, CPUAccess, 6, FlatObjectIndices );
-	_EmitterBuffers->InstanceVBs  = new VertexBuffer <BB_Particle_Instance> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, ( int ) CPUAccess, InstanceAmount, NewEmitter->BBInstances );
+	_EmitterBuffers->InstanceVBs  = new VertexBuffer <BB_Particle_Instance> ( Local_D3DGC->DX_device, Local_D3DGC->DX_deviceContext, CPUAccess, InstanceAmount, NewEmitter->BBInstances );
 
 	_EmitterBuffers->RenderTexture = TexturesArr[TempTextureIndex]->SRV;
 
@@ -3560,4 +3562,186 @@ bool ResourceManager::DeleteParticleSystem ( int ObjectIndex )
 	}
 
 	return 0;
+}
+
+
+int ResourceManager::AddFont ( FontClass* RCubeFont )
+{
+	int ReturnIndex;
+
+	if ( !UnusedFontIndex.empty () )
+	{
+		ReturnIndex = UnusedFontIndex.back ();
+		UnusedFontIndex.pop_back ();
+		
+		RCube_Font[ReturnIndex] = RCubeFont;
+	}
+	else
+	{
+		ReturnIndex = (int)RCube_Font.size ();
+		RCube_Font.push_back ( RCubeFont );
+	}
+
+	return ReturnIndex;
+}
+
+
+void ResourceManager::DeleteLastFont ()
+{
+	int i = ( int )RCube_Font.size ();
+	DeleteTexture ( RCube_Font[i - 1]->FontTextureIndex );
+	RCUBE_DELETE ( RCube_Font[i - 1] );
+	RCube_Font.pop_back ();
+}
+
+
+int ResourceManager::DeleteFont ( int FontIndex )
+{
+	int i = ( int ) RCube_Font.size ();
+
+	if ( FontIndex < i )
+	{
+		UnusedFontIndex.push_back ( ( UINT ) FontIndex );
+		DeleteTexture ( RCube_Font[FontIndex]->FontTextureIndex );
+		RCUBE_DELETE ( RCube_Font[FontIndex] );
+//		RCube_Font.erase ( RCube_Font.begin () + FontIndex );
+	}
+
+	return 0;
+}
+
+
+void ResourceManager::GetTextureParam ( ID3D11ShaderResourceView * Texture, XMFLOAT4& Dimention )
+{
+	D3D11_TEXTURE2D_DESC* InputTextureDesc = new D3D11_TEXTURE2D_DESC;
+	ID3D11Texture2D* InputTexture;
+	ID3D11Resource* MyRes;
+
+	Texture->GetResource ( &MyRes );
+	MyRes->QueryInterface<ID3D11Texture2D> ( &InputTexture );
+	InputTexture->GetDesc ( InputTextureDesc );
+
+	Dimention.z = ( float ) InputTextureDesc->Width;
+	Dimention.w = ( float ) InputTextureDesc->Height;
+
+	RCUBE_RELEASE ( MyRes );
+	RCUBE_RELEASE ( InputTexture );
+	delete InputTextureDesc;
+}
+
+
+COLORREF ResourceManager::GetScreenPixelColor ( POINT Position )
+{
+		COLORREF Color;
+		bool Result = true;
+		ID3D11Resource* tempResource = nullptr;
+		ID3D11Texture2D* InputTexture = nullptr;
+		D3D11_TEXTURE2D_DESC* InputTextureDesc = new D3D11_TEXTURE2D_DESC;
+		D3D11_TEXTURE2D_DESC* desc = new D3D11_TEXTURE2D_DESC;
+
+		// Screen - Back Buffer texture SRV used
+		Local_D3DGC->BackBuffer_SRV->GetResource ( &tempResource );
+		tempResource->QueryInterface<ID3D11Texture2D> ( &InputTexture );
+		InputTexture->GetDesc ( InputTextureDesc );
+
+		ZeroMemory ( desc, sizeof ( D3D11_TEXTURE2D_DESC ) );
+		desc->BindFlags = 0;
+		desc->Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		desc->Height = InputTextureDesc->Height;
+		desc->Width = InputTextureDesc->Width;
+		desc->ArraySize = 1;
+		desc->SampleDesc.Count = 1;
+		desc->SampleDesc.Quality = 0;
+		desc->MipLevels = 1;
+		desc->CPUAccessFlags = D3D11_CPU_ACCESS_READ; // D3D11_CPU_ACCESS_WRITE |
+		desc->BindFlags = 0;
+		desc->Usage = D3D11_USAGE_STAGING;
+		// Сохранение возможно только для текстуры без MSAA 
+		// Нужно делать ResolveSubresource
+
+		hr = Local_D3DGC->DX_device->CreateTexture2D ( desc, 0, &Local_D3DGC->ScreenShootTexture );
+		if ( FAILED ( hr ) )
+		{
+			MessageBox ( NULL, L"Can't create ScreenShotTexture in GetScreenPixelColor call", Error, 0 );
+			Result = false;
+			goto END;
+		}
+
+		// Если текстура MSAA, то делаем ResolveSubresurces
+		if ( InputTextureDesc->SampleDesc.Count > 1 )
+		{
+			Local_D3DGC->DX_deviceContext->ResolveSubresource ( Local_D3DGC->BackBuffer_CopyResolveTexture, 0, tempResource, 0, DXGI_FORMAT_R8G8B8A8_UNORM );
+			// D3DGC->BackBuffer_CopyResolveTextureSRV
+			ID3D11Resource* Resource;
+			Local_D3DGC->BackBuffer_CopyResolveTextureSRV->GetResource ( &Resource );
+			Local_D3DGC->DX_deviceContext->CopyResource ( Local_D3DGC->ScreenShootTexture, Resource );
+			RCUBE_RELEASE ( Resource );
+		}
+		else
+		{
+			Local_D3DGC->DX_deviceContext->CopyResource ( Local_D3DGC->ScreenShootTexture, tempResource );
+		}
+
+		D3D11_MAPPED_SUBRESOURCE  mapResource;
+		hr = Local_D3DGC->DX_deviceContext->Map ( Local_D3DGC->ScreenShootTexture, 0, D3D11_MAP_READ, NULL, &mapResource );
+
+/*
+		union _block
+		{
+			byte  *data;
+			unsigned int *udata;
+		} block;
+
+		UINT amount = mapResource.DepthPitch; // RowPitch * Height;
+		block.data = new byte[amount];
+		memcpy ( block.data, mapResource.pData, amount );
+*/
+
+		UINT* Pointer = ( UINT* ) mapResource.pData;
+
+		// Выравнивание D3D11_MAPPED_SUBRESOURCE
+		// https://gamedev.ru/code/forum/?id=242925
+		// int Temp = ( mapResource.RowPitch - Local_D3DGC->ScreenWidth * sizeof ( UINT ) ) / sizeof ( UINT );
+		int Temp = ( mapResource.RowPitch - Local_D3DGC->ScreenWidth * 4 ) / 4;
+
+
+		int Y = Position.y * Local_D3DGC->ScreenWidth + ( Position.y * Temp );
+		int X = Position.x;
+		int PickPoint = Y + X;
+
+		// Geting Pixel Color at position
+		Color = Pointer[ PickPoint ];
+		
+		Local_D3DGC->DX_deviceContext->Unmap ( Local_D3DGC->ScreenShootTexture, 0 );
+
+/*
+
+		Image img;
+		img.height = desc->Height;
+		img.width = desc->Width;
+		img.format = desc->Format;
+		img.rowPitch = mapResource.RowPitch;
+		img.slicePitch = mapResource.DepthPitch;
+		img.pixels = block.data;
+
+		hr = SaveToWICFile ( img, WIC_FLAGS_NONE, GetWICCodec ( WIC_CODEC_PNG ), L"1_Texture.png" );
+		if ( FAILED ( hr ) )
+		{
+			assert ( L"Could not save Texture.png file." );
+			Result = false;
+		}
+
+		delete [] block.data;
+*/
+
+END:
+
+		delete InputTextureDesc;
+		delete desc;
+
+		RCUBE_RELEASE ( tempResource );
+		RCUBE_RELEASE ( InputTexture );
+		RCUBE_RELEASE ( Local_D3DGC->ScreenShootTexture );
+
+		return Color;
 }

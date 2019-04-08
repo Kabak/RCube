@@ -12,16 +12,21 @@
 #include "FlatObjectClass.h"
 #include "D3DGlobalContext.h"
 #include "DX11Buffers.h"
-						
+				
+class ResourceManager;
+
 struct ButtonState{
-	bool	IsPress;
-	bool    IsMouseOnButton;
+	ButtonState () { IsPress = false; IsMouseOnButton = false; }
+
+	bool	IsPress;		// Button was pressed last engine Frame
+	bool    IsMouseOnButton;// Mouse was on button body last engine Frame
 };
 
 class KFButton : public FlatObjectClass{
 
 private :
-	
+		      ResourceManager* ResManager;
+
 				  ButtonState   g_State ;
 
 						 HWND   g_hwnd;
@@ -30,34 +35,39 @@ private :
 	ID3D11ShaderResourceView*	IsMouseOnButtonTexture;
 	ID3D11ShaderResourceView*	NotEnalbledTexture;
 	
-	// Для CheckBox
-	bool Checked;	// Зафиксированна в нажатом состоянии
+	XMFLOAT4 Colour;	// Color if the button should draw like color square
 
 	// Для проверки, что клик и отпускание клика было на конкретном элементе меню
-	// Если кнопка с фиксацией - CheckBox, то отпускать мышь нужно на объекте иначе Checked не сработает
-	// Для любого объекта : Отпускать мышку нужно на том же объекте на котором нажали
+	// Например : Если кнопка с фиксацией - CheckBox, то отпускать мышь нужно на объекте. Иначе Checked не сработает
+	// Для любого типа объекта Button : Отпускать мышку нужно на том же объекте на котором нажали кнопку мыши, иначе эффекта нажатия не произойдёт.
 	int NeedReleaseOnObject; 
 
 	// Обновление координат для вертексов
-	void SetButtonParam();
+	void UpdateBodyPos ();	// Calkulate body - vertex position on the screen
 
 	// В принципе включена для манипуляций
 	bool Enabled;
 
 public :
 
-	// Для Edit
+	// if CHECKBOX
+	bool Checked;		// Зафиксированна в нажатом состоянии
+	bool Changed;		// true for CHECKBOX if changed this frame 
+	// if EDIT
 	bool ActiveAsEdit;	// Если конкретный Edit активен для ввода текста. Для отображения курсора ( показывать / не показывать )
 	bool CursorOn;		// Установлено, если курсор уже отображается ( чтобы не добавлять лишний при отображении )
+	bool EditFinished;  // Set true if user press Enter after Editing EDIT type  or pressed key in LABEL
+	// if COLOR
+	bool SetColour;		// = true If Button is COLOR type and was pressed for colorpicking.  If pressed once again Setcolour = false
 
-	int ObjectType;		// Тип объекта которым будет работать созданный объект BUTTON = 0, CHECKBOX = 1, LABEL = 2, EDIT = 3
+	int ObjectType;		// Тип объекта которым будет работать созданный объект BUTTON = 0, CHECKBOX = 1, LABEL = 2, EDIT = 3, COLOR = 4
 
 	int EditType;		// ANYSYMBOL = 1, AS_INTEGER = 2, AS_FLOAT = 3
 
 	// Для Label
-	bool WaitingForKeyPress;// Показывает что Label ждёт нажатия на клавишу
+	bool WaitingForKeyPress;// Показывает что Label ждёт нажатия на клавишу ( для привязки кнопок к действиям в движке )
 	 int VirtualKeyIndex;	// Привязка к конкретному действию в игре
-    bool SecondSlot;		// Слот для определения кнопок tckb true, то привязка ко 2-му слоту
+    bool SecondSlot;		// Слот для определения кнопок если true, то привязка ко 2-му слоту ( два массива кнопок для дейтвий )
 
 	// Параметры экрана
 	XMFLOAT4 ScreenCoords;
@@ -92,7 +102,8 @@ public :
 				XMFLOAT4& ScreenCoords,
 				XMFLOAT4& FormCoord,
 	   KFButton_Elements& ButtonInitData,
-		Flat_Obj_Buffers* _Buffers
+		Flat_Obj_Buffers* _Buffers,
+		ResourceManager * _GlobalResourceManager
 		);
 
 
@@ -130,6 +141,11 @@ public :
 	// разрешает или закрывает манипуляции с объектом
 	void SetEnable ( bool Value );
 
+	void SetButtonColor ( XMFLOAT4 _Color );
+	void SetButtonColorREF ( COLORREF Color );
+
+	COLORREF GetButtonColorREF ();
+	XMFLOAT4 GetButtonColor ();
 };
 
 #endif

@@ -28,8 +28,6 @@
 #include "Light_def.h"
 // ++++++++++++++++++++++++  PARTICLE SYSTEM  ++++++++++
 #include "ParticleSystemController.h"
-//#include "FireParticleSystem.h"
-//#include "SnowFallParticles.h"
 #include "TorchFireParticles.h"
 #include "ParticleSystem_def.h"
 // ++++++++++++   Измеряем быстродействие кода   +++++++++++++
@@ -44,6 +42,7 @@
 // -------------------------мои классы-------------------
 #include <thread>
 #include <process.h>
+#include <string.h>
 
 using namespace std;
 /////////////
@@ -55,8 +54,6 @@ const float SCREEN_DEPTH = 5000.0f;
 const float SCREEN_NEAR = 1.0f;
 const float MATRIX_SCALING = SCREEN_DEPTH * 2;
 
-
-// We'll need these four globals to start with.
 ////////////////////////////////////////////////////////////////////////////////
 // Class name: GraphicsClass
 ////////////////////////////////////////////////////////////////////////////////
@@ -95,7 +92,7 @@ public:
     }
 // ------------------------------------
 
-	bool Initialize(HWND , int&, int&, int& , int&, InputClass* _Input, TimerClass* _Timer, PhysXControler* PhysX );
+	bool Initialize(HWND , XMFLOAT4 &_SCR_SCALE , int& , int&, InputClass* _Input, TimerClass* _Timer, PhysXControler* PhysX );
 //	void Shutdown();
 	bool Frame(FPSTimers& , DXINPUTSTRUCT&);
 	bool Render(int& mouseX, int& mouseY);
@@ -106,7 +103,18 @@ public:
 	// http://stackoverflow.com/questions/1950993/how-do-i-get-the-position-of-a-control-relative-to-the-windows-client-rect
 	void GetWindowPos( HWND hWnd, int &x, int &y );
 
-	void SnowThread( FPSTimers& );
+private:
+	// THREADS
+	static DWORD WINAPI ThreadFunc ( LPVOID lpParam );
+	DWORD idThread;
+
+public:
+	void RunThread ();
+	void RunThread2 ();
+	bool TheradStarted;
+	bool ThreadDone;
+
+
 	// Возвращает на глобальный массив переменных движка
 	// Нужно для инициализации CUDA в PhysX в EngineKernal
 	D3DGlobalContext *GraphicsClass::GetD3DGC();
@@ -126,7 +134,7 @@ public:
 // And the second change is the new private pointer to the D3DClass which we have called m_D3D. In case you were wondering I use the prefix m_ on all class variables. 
 // That way when I'm coding I can remember quickly what variables are members of the class and which are not.
 //	vector < IDWriteTextFormat* > TextFormat;
-	vector < FontOnTextureData* > FontList;
+//	vector < RCube_Font_Style* > FontList;
 
 	vector <char*> Strings; // Для тестирования StringsList
 
@@ -141,13 +149,13 @@ public:
 
 			RCubeProfiling* Profile;
 			  FrustumClass* m_Frustum;
-//				LightClass* m_Light;
 
 // +++++++++++++++   Свой курсор мыши   ++++++++++++++
 		 FlatObjectClass* m_Bitmap;
 	  
-		MenuControrerClass* MainMenu ;
-	   MenuControrerClass * Hud;
+		MenuControllerClass* MainMenu;
+	   MenuControllerClass * Hud;
+	   MenuControllerClass * FontSettingsHud;
 
 // ++++++++++++   Ландшафт   +++++++++++++
 //				 KFTerrain* KFTerrain1;
@@ -156,7 +164,7 @@ public:
 	  KF2DTextureAnimation* AnimTexture;
 // -------------------     Анимация     ------------------------------
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++ то чо надо для меню
-		RenderTextureClass* m_RenderTexture;
+//		RenderTextureClass* m_RenderTexture;
 	//--------------------------------------------------- то чо надо для меню
 
 	int Exp;
@@ -164,10 +172,10 @@ public:
 	FPSTimers fpstimers;
 	bool IsSphereStartRender ;
 
-	int screenWidth;
-	int screenHeight;
-	int g_WindowPosX ;
-	int g_WindowPosY ;
+//	int screenWidth;
+//	int screenHeight;
+//	int g_WindowPosX ;
+//	int g_WindowPosY ;
 
 	bool IsSettingsMenuOn ;
 

@@ -38,6 +38,7 @@ namespace
 	};
 }
 
+// Flat Object Indexes
 namespace
 {
 	UINT FlatObjectIndices[6] = { 0, 1, 2, 0, 3, 1 };
@@ -129,9 +130,9 @@ namespace
 struct Vertex_FlatObject
 {
 	XMFLOAT3 Position;
-	   float padding;	// Для скорости
-	XMFLOAT2 TexCoord;
-	XMFLOAT2 padding1;	// Для скорости
+	   float padding;
+	XMFLOAT4 TexCoord;
+	XMFLOAT4 ColorPicker;
 };
 
 namespace
@@ -140,14 +141,20 @@ namespace
 	D3D11_INPUT_ELEMENT_DESC FlatObject_Layout[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0,							  D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+// НЕ создаётся LAYOUT если следующую семантику назвать COLOR
+		{ "OMGCOLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+
 	};
 #endif // RCube_DX11
 #ifdef RCube_DX12
 	D3D12_INPUT_ELEMENT_DESC FlatObject_Layout [] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0,							  D3D12_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G3B32A322_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_PER_VERTEX_DATA, 0 }
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G3B32A322_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_PER_VERTEX_DATA, 0 },
+		// НЕ создаётся LAYOUT если следующую семантику назвать COLOR
+		{ "OMGCOLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_PER_VERTEX_DATA, 0 }
+
 	};
 #endif // RCube_DX12
 }

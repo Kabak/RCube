@@ -137,7 +137,7 @@ D3DClass::~D3DClass()
 	delete D3DGC;
 }
 
-bool D3DClass::Initialize(HWND hwnd, int screenWidth, int screenHeight, bool vsync, bool fullscreen,
+bool D3DClass::Initialize(HWND hwnd, XMFLOAT4 &SCR_SCALE, bool vsync, bool fullscreen,
 	float screenDepth, float screenNear, FrustumClass* frustum )
 {
 	HRESULT result;
@@ -145,10 +145,10 @@ bool D3DClass::Initialize(HWND hwnd, int screenWidth, int screenHeight, bool vsy
 	IDXGIOutput*        AdapterOutput	= nullptr;
 
 	D3DGC->hwnd							= hwnd;
-	D3DGC->ScreenWidth					= screenWidth;
-	D3DGC->ScreenHeight					= screenHeight;
-	D3DGC->ScreenDimentions				= { float ( screenWidth ), float ( screenHeight ) };
-	D3DGC->ScreenRatio = float(D3DGC->ScreenWidth / D3DGC->ScreenHeight);
+	D3DGC->ScreenWidth					= ( int ) SCR_SCALE.x;
+	D3DGC->ScreenHeight					= ( int ) SCR_SCALE.y;
+	D3DGC->ScreenScale					= SCR_SCALE;
+	D3DGC->ScreenRatio					= float( SCR_SCALE.x / SCR_SCALE.y );
 	D3DGC->FarPlane						= screenDepth;
 	D3DGC->NearPlane					= screenNear;
 	UINT numModes = 0;
@@ -284,9 +284,9 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 
 			lastwidth = displayModeList[i].Width;
 		}
-		if (displayModeList[i].Width == screenWidth)
+		if (displayModeList[i].Width == D3DGC->ScreenWidth )
 		{
-			if (displayModeList[i].Height == screenHeight)
+			if (displayModeList[i].Height == D3DGC->ScreenHeight )
 			{
 				numerator = displayModeList[i].RefreshRate.Numerator;
 				denominator = displayModeList[i].RefreshRate.Denominator;
@@ -311,8 +311,8 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	swapChainDesc.BufferCount = 1;
 
 	// Set the width and height of the back buffer.
-	swapChainDesc.BufferDesc.Width = screenWidth;
-	swapChainDesc.BufferDesc.Height = screenHeight;
+	swapChainDesc.BufferDesc.Width = D3DGC->ScreenWidth;
+	swapChainDesc.BufferDesc.Height = D3DGC->ScreenHeight;
 
 	// Set regular 32-bit surface for the back buffer.
 	swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -389,6 +389,21 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 		RCUBE_RELEASE( Factory1 );
 		goto ERROR_EXIT;
 	}
+
+// Multithreading Device driver checking +++++++++++++
+// https://docs.microsoft.com/en-us/windows/desktop/direct3d11/overviews-direct3d-11-render-multi-thread-support	
+	D3D11_FEATURE Feature = D3D11_FEATURE_THREADING;
+	D3D11_FEATURE_DATA_THREADING Future;
+
+	void          *pFeatureSupportData = &Future;
+	UINT          FeatureSupportDataSize = sizeof( D3D11_FEATURE_DATA_THREADING);
+
+	result = D3DGC->DX_device->CheckFeatureSupport (
+		Feature,
+		pFeatureSupportData,
+		FeatureSupportDataSize
+	);
+// // Multithreading Device driver checking -----------
 
 #if defined( DEBUG ) || defined( _DEBUG )
 
@@ -507,8 +522,8 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	ZeroMemory(&depthBufferDesc, sizeof(depthBufferDesc));
 
 	// Set up the description of the depth buffer.
-	depthBufferDesc.Width = screenWidth;
-	depthBufferDesc.Height = screenHeight;
+	depthBufferDesc.Width = D3DGC->ScreenWidth;
+	depthBufferDesc.Height = D3DGC->ScreenHeight;
 	depthBufferDesc.MipLevels = 1;
 	depthBufferDesc.ArraySize = 1;
 	depthBufferDesc.Format = DXGI_FORMAT_R32G8X24_TYPELESS;//DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -726,8 +741,8 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	// The viewport also needs to be setup so that Direct3D can map clip space coordinates to the render target space. Set this to be the entire size of the window.
 
 	// Setup the viewport for rendering.
-	viewport.Width = (float)screenWidth;
-	viewport.Height = (float)screenHeight;
+	viewport.Width = D3DGC->ScreenScale.x; // screenwidth
+	viewport.Height = D3DGC->ScreenScale.y; // screenHeight
 	viewport.MinDepth = 0.0f;
 	viewport.MaxDepth = 1.0f;
 	viewport.TopLeftX = 0.0f;
@@ -741,7 +756,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 
 	// Setup the projection matrix.
 	fieldOfView = (float)XM_PIDIV4;//XM_PI / 4.0f;
-	screenAspect = (float)screenWidth / (float)screenHeight;
+	screenAspect = D3DGC->ScreenRatio;
 
 	// Create the projection matrix for 3D rendering.
 	D3DGC->ProjectionMatrix = XMMatrixPerspectiveFovLH(fieldOfView, screenAspect, screenNear, screenDepth);
@@ -759,7 +774,7 @@ Goon:       Display_Mode *Mode = new Display_Mode; // освобождается в Shutdown
 	// us to skip the 3D rendering. You will see this used in later tutorials when we look at rendering 2D graphics and fonts to the screen.
 
 	// Create an orthographic projection matrix for 2D rendering.
-	D3DGC->OrthoMatrix = XMMatrixOrthographicLH((float)screenWidth, (float)screenHeight, screenNear, screenDepth);
+	D3DGC->OrthoMatrix = XMMatrixOrthographicLH( D3DGC->ScreenScale.x, D3DGC->ScreenScale.y, screenNear, screenDepth);
 
 	// First initialize the blend state description.
 	// Clear the blend state description.
@@ -1105,6 +1120,7 @@ void D3DClass::Shutdown()
 	//    if (D3DGC->Adapter)                        D3DGC->Adapter->Release();
 
 	RCUBE_ARR_DELETE ( m_videoCardDescription );
+
 }
 
 // In the D3DClass I have a couple helper functions. The first two are BeginScene and EndScene. BeginScene will be called whenever we are going to draw a new 3D scene at the beginning of each frame.

@@ -16,8 +16,8 @@ static const wchar_t* DX11BuffersError = L"ResourceManager Error" ;
 enum
 {
 	NO_CPU_ACCESS_BUFFER = 0,	// GPU Read / Write
+	CONST_BUFFER,				// Immutable
 	CPU_ACCESS_BUFFER,			// CPU Write
-	CONST_BUFFER				// Immutable
 };
 
 // + ConstantBuffer
@@ -161,8 +161,8 @@ VertexBuffer<T>::VertexBuffer (Device* d3dDevice, DeviceContext* D3DContext, int
 		0	// Structure Bytes Stride
 	);
 	// Imutable Buffer
-	_CPUAccess == 2 ? desc.Usage = D3D11_USAGE_IMMUTABLE : desc.Usage;
-	_CPUAccess == 2 ? desc.CPUAccessFlags = 0 : desc.CPUAccessFlags;
+	_CPUAccess == 1 ? desc.Usage = D3D11_USAGE_IMMUTABLE : desc.Usage;
+	_CPUAccess == 1 ? desc.CPUAccessFlags = 0 : desc.CPUAccessFlags;
 
 	D3D11_SUBRESOURCE_DATA SubRes;
 	if ( InitRes )
@@ -274,8 +274,8 @@ IndexBuffer<T>::IndexBuffer (Device* d3dDevice, DeviceContext* D3DContext, int _
 	);
 
 	// Imutable Buffer
-	_CPUAccess == 2 ? desc.Usage = D3D11_USAGE_IMMUTABLE : desc.Usage;
-	_CPUAccess == 2 ? desc.CPUAccessFlags = 0 : desc.CPUAccessFlags;
+	_CPUAccess == 1 ? desc.Usage = D3D11_USAGE_IMMUTABLE : desc.Usage;
+	_CPUAccess == 1 ? desc.CPUAccessFlags = 0 : desc.CPUAccessFlags;
 
 	D3D11_SUBRESOURCE_DATA SubRes;
 	if ( InitRes )

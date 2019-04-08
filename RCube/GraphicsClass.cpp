@@ -6,13 +6,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "GraphicsClass.h"
 
-void __stdcall Duck()
-{
-	int a = 1;
-}
-
 GraphicsClass::GraphicsClass()
 {
+			   TheradStarted = false;
+				  ThreadDone = false;
 
 					   m_D3D = nullptr;
 					 Profile = nullptr;
@@ -24,18 +21,12 @@ GraphicsClass::GraphicsClass()
 					MainMenu = nullptr;
 				 AnimTexture = nullptr;
 						 Hud = nullptr;
+			 FontSettingsHud = nullptr;
 
 // + Particel systems
-//			   SnowParticles = nullptr;
 				   TorchFire = nullptr;
-//			   FireParticles = nullptr;
 // - Particel systems
 
-
-//				   KFTerrain1 = nullptr;
-//				   ModelList = nullptr;
-//				  ClusterMap = nullptr;
-//				  ShadowWork = nullptr;
 				  RCubeRender = nullptr;
 
 			Global = new  char[260];
@@ -68,27 +59,14 @@ GraphicsClass::~GraphicsClass()
 
 	delete Snow;
 
-//	RCUBE_DELETE ( TempFont )
-
 	delete [] Global;
 	delete [] Str1;
-
-	UINT i = 0;
-	UINT j = (UINT) FontList.size();
-	while ( i < j )
-	{
-		RCUBE_DELETE( FontList[i] );
-		++i;
-	};
-
-	FontList.clear();
 
 	Strings.clear();
 
 	RCUBE_DELETE ( RCubeRender );
- // RCUBE_SHUTDOWN ( FireParticles );
   RCUBE_SHUTDOWN ( TorchFire );
-//  RCUBE_SHUTDOWN ( SnowParticles );
+    RCUBE_DELETE ( FontSettingsHud );
 	RCUBE_DELETE ( Hud );
 	RCUBE_DELETE ( AnimTexture );
 	RCUBE_DELETE ( MainMenu );
@@ -108,18 +86,18 @@ D3DGlobalContext *GraphicsClass::GetD3DGC()
 }
 
 
-bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight, int& WindowPosX, int& WindowPosY, InputClass* _Input, TimerClass* _Timer, PhysXControler* PhysX )
+bool GraphicsClass::Initialize(HWND hwnd , XMFLOAT4& _SCR_SCALE, int& WindowPosX, int& WindowPosY, InputClass* _Input, TimerClass* _Timer, PhysXControler* PhysX )
 {
 	bool result;
 //	XMMATRIX baseViewMatrix;
 
 	const WCHAR *Error = L"Graphics Error";
 
-	screenWidth = _screenWidth;
-	screenHeight = _screenHeight;
+//	screenWidth = _screenWidth;
+//	screenHeight = _screenHeight;
 
-	g_WindowPosX = WindowPosX ;
-	g_WindowPosY = WindowPosY ;
+//	g_WindowPosX = WindowPosX ;
+//	g_WindowPosY = WindowPosY ;
 
 // Проверка выравнивания
 // http://stackoverflow.com/questions/22133742/dx11-crash-when-accessing-xmmatrix
@@ -132,7 +110,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 
 	m_D3D = new D3DClass;
 
-	result = m_D3D->Initialize(hwnd, screenWidth, screenHeight, VSYNC_ENABLED, FULL_SCREEN, SCREEN_DEPTH, SCREEN_NEAR, m_Frustum);
+	result = m_D3D->Initialize(hwnd, _SCR_SCALE, VSYNC_ENABLED, FULL_SCREEN, SCREEN_DEPTH, SCREEN_NEAR, m_Frustum);
 	if(!result)
 	{
 		MessageBox(hwnd, L"Could not initialize m_D3D Class", Error, MB_OK);
@@ -153,8 +131,9 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	m_D3D->D3DGC->m_EngineInputClass = _Input;
 	_PhysX = PhysX;
 	// Инициализируем глобальные размеры окна и положение окна не экране
-	m_D3D->D3DGC->ScreenWidth = _screenWidth;
-	m_D3D->D3DGC->ScreenHeight = _screenHeight;
+//	m_D3D->D3DGC->ScreenScale = _SCR_SCALE;
+//	m_D3D->D3DGC->ScreenWidth = ( int ) _SCR_SCALE.x;
+//	m_D3D->D3DGC->ScreenHeight = ( int ) _SCR_SCALE.y;
 	m_D3D->D3DGC->WindowsPosX = WindowPosX;
 	m_D3D->D3DGC->WindowsPosY = WindowPosY;
 
@@ -191,447 +170,118 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 // +++++++++++++++++++++     СОЗДАЁМ ШРИФТЫ     +++++++++++++++++++++++++++++++++++
 // Максимальный размер шрифта 74.0f 
 // Максимальный Outline 10
-	FontOnTextureData					 *FontOnTexture;
 
-// +++++++++++++++++++++     Создаём 1 - й шрифт  0 - Й   ++++++++++++++++++++++++++++++
-	ID2D1LinearGradientBrush	*LinearGradientBrush1 = nullptr;
-	ID2D1SolidColorBrush		  *SolidBrushOutline1 = nullptr;
-	ID2D1GradientStopCollection		  *GradientStops1 = nullptr;
-	FontOnTexture = new FontOnTextureData;
-
-	FontOnTexture->AliasingMode = D2D1_ANTIALIAS_MODE_PER_PRIMITIVE;// Включаем алиасинг
-	FontOnTexture->FontFaceType = DWRITE_FONT_FACE_TYPE_TRUETYPE;
-
-	FontOnTexture->FontSize = 36.0f;			// Размер шрифта
-	wchar_t * Font1 = L"Fonts/BuxtonSketch.ttf";// Файл шрифта TTF
-	FontOnTexture->FontName = Font1;
-
-	FontOnTexture->Outline = true;				// Будет ли в шрифте окантовка
-	FontOnTexture->OutlineWidth = 3.0f;			// Толщина окантовки 0 < 10 
-
-	const int GradientStopAmount1 = 3;
-	// Про кисти градиентов
-	// https://msdn.microsoft.com/en-us/library/dd368041(v=vs.85).aspx
-	D2D1_GRADIENT_STOP gradientStops1[GradientStopAmount1];
-	gradientStops1[0].color = D2D1::ColorF( 0x00, 0x00, 0x00, 1.0f );
-	gradientStops1[0].position = 0.0f;
-	gradientStops1[1].color = D2D1::ColorF( 0xDC, 0x6A, 0x2E, 1.0f );
-	gradientStops1[1].position = 0.8f;
-	gradientStops1[2].color = D2D1::ColorF( 0x81, 0x20, 0x40, 1.0f );
-	gradientStops1[2].position = 1.0f;
-
-	// x,y - start point  z,w - end point
-	XMFLOAT4 GradientPos = { 0.0f, -20.0f, 0.0f, 20.0f };
-	XMFLOAT4 OutlineColor = { 0.0f, 1.0f, 0.0f, 1.0f };
-
-	hr = m_D3D->D3DGC->D2DRenderTarget->CreateGradientStopCollection(
-		gradientStops1,
-		GradientStopAmount1,
-		D2D1_GAMMA_2_2,
-		D2D1_EXTEND_MODE_CLAMP,
-		&GradientStops1
-		);
-	if ( FAILED( hr ) )
-	{
-		MessageBox( NULL, L"Create GradientStopCollection failed!", Error, 0 );
-		result = false;
-	}
-
-	hr = m_D3D->D3DGC->D2DRenderTarget->CreateLinearGradientBrush(
-		D2D1::LinearGradientBrushProperties(
-		D2D1::Point2F( GradientPos.x, GradientPos.y ),
-		D2D1::Point2F( GradientPos.z, GradientPos.w ) ),
-		GradientStops1,
-		&LinearGradientBrush1
-		);
-	if ( FAILED( hr ) )
-	{
-		MessageBox( NULL, L"Create LinearGradientBrush failed!", Error, 0 );
-		result = false;
-	}
-
-	hr = m_D3D->D3DGC->D2DRenderTarget->CreateSolidColorBrush( D2D1::ColorF(
-		OutlineColor.x,
-		OutlineColor.y,
-		OutlineColor.z,
-		OutlineColor.w ),
-		&SolidBrushOutline1
-		);
-	if ( FAILED( hr ) )
-	{
-		MessageBox( NULL, L"Create SolidColorBrush failed!", Error, 0 );
-		result = false;
-	}
-
-	FontOnTexture->OutlineBrush = SolidBrushOutline1;
-	FontOnTexture->FillBrush = LinearGradientBrush1;
-
-//0
-	FontList.push_back( FontOnTexture );
-// ---------------------     Создаём 1 - й шрифт      --------------------------------
-
-// +++++++++++++++++++++     Создаём 2 - й шрифт      ++++++++++++++++++++++++++++++
-	ID2D1LinearGradientBrush	*LinearGradientBrush2 = nullptr;
-	ID2D1SolidColorBrush		  *SolidBrushOutline2 = nullptr;
-	ID2D1GradientStopCollection		  *GradientStops2 = nullptr;
-	FontOnTexture = new FontOnTextureData;
-
-	FontOnTexture->AliasingMode = D2D1_ANTIALIAS_MODE_PER_PRIMITIVE;// Включаем алиасинг
-	FontOnTexture->FontFaceType = DWRITE_FONT_FACE_TYPE_TRUETYPE;
-
-	FontOnTexture->FontSize = 36.0f;
-	wchar_t *Font2 = L"Fonts/8708_AA_Akashi.ttf"; // 8708_AA_Akashi.ttf // RosewoodStd-Regular.otf
-	FontOnTexture->FontName = Font2;
-
-	FontOnTexture->Outline = true;				// Будет ли в шрифте окантовка
-	FontOnTexture->OutlineWidth = 6.0f;			// Толщина окантовки 0 < 10 
-
-	const int GradientStopAmount2 = 3;
-
-	D2D1_GRADIENT_STOP gradientStops2[GradientStopAmount2];
-	gradientStops2[0].color = D2D1::ColorF( D2D1::ColorF::Turquoise, 1 );
-	gradientStops2[0].position = 0.0f;
-	gradientStops2[1].color = D2D1::ColorF( D2D1::ColorF::RosyBrown, 1 );
-	gradientStops2[1].position = 0.8f;
-	gradientStops2[2].color = D2D1::ColorF( D2D1::ColorF::White, 1 );
-	gradientStops2[2].position = 1.0f;
-
-	GradientPos = { 0.0f, -20.0f, 0.0f, 0.0f };
-	OutlineColor = { 0.0f, 0.0f, 0.0f, 1.0f };
-
-	hr = m_D3D->D3DGC->D2DRenderTarget->CreateGradientStopCollection(
-		gradientStops2,
-		GradientStopAmount2,
-		D2D1_GAMMA_2_2,
-		D2D1_EXTEND_MODE_CLAMP,
-		&GradientStops2
-		);
-	if ( FAILED( hr ) )
-	{
-		MessageBox( NULL, L"Create GradientStopCollection failed!", Error, 0 );
-		result = false;
-	}
-
-	hr = m_D3D->D3DGC->D2DRenderTarget->CreateLinearGradientBrush(
-		D2D1::LinearGradientBrushProperties(
-		D2D1::Point2F( GradientPos.x, GradientPos.y ),
-		D2D1::Point2F( GradientPos.z, GradientPos.w ) ),
-		GradientStops2,
-		&LinearGradientBrush2
-		);
-	if ( FAILED( hr ) )
-	{
-		MessageBox( NULL, L"Create LinearGradientBrush failed!", Error, 0 );
-		result = false;
-	}
-
-	hr = m_D3D->D3DGC->D2DRenderTarget->CreateSolidColorBrush( D2D1::ColorF(
-		OutlineColor.x,
-		OutlineColor.y,
-		OutlineColor.z,
-		OutlineColor.w ),
-		&SolidBrushOutline2
-		);
-	if ( FAILED( hr ) )
-	{
-		MessageBox( NULL, L"Create SolidColorBrush failed!", Error, 0 );
-		result = false;
-	}
-
-	FontOnTexture->OutlineBrush = SolidBrushOutline2;
-	FontOnTexture->FillBrush = LinearGradientBrush2;
-//1
-	FontList.push_back( FontOnTexture );
-
-// +++++++++++++++++++++     Создаём 3 - й шрифт      ++++++++++++++++++++++++++++++
-	ID2D1LinearGradientBrush	*LinearGradientBrush3 = nullptr;
-	ID2D1SolidColorBrush		  *SolidBrushOutline3 = nullptr;
-	ID2D1GradientStopCollection		  *GradientStops3 = nullptr;
-
-	FontOnTexture = new FontOnTextureData;
-
-	FontOnTexture->AliasingMode = D2D1_ANTIALIAS_MODE_PER_PRIMITIVE;// Включаем алиасинг
-	FontOnTexture->FontFaceType = DWRITE_FONT_FACE_TYPE_TRUETYPE;
-
-	FontOnTexture->FontSize = 24.0f;
-	wchar_t *Font3 = L"Fonts/comic.ttf";
-	FontOnTexture->FontName = Font3;
-
-	FontOnTexture->Outline = true;				// Будет ли в шрифте окантовка
-	FontOnTexture->OutlineWidth = 4.0f;			// Толщина окантовки 0 < 10 
-
-	const int GradientStopAmount3 = 3;
-	D2D1_GRADIENT_STOP gradientStops3[GradientStopAmount3];
-	gradientStops3[0].color = D2D1::ColorF( D2D1::ColorF::YellowGreen, 1 );
-	gradientStops3[0].position = 0.0f;
-	gradientStops3[1].color = D2D1::ColorF( D2D1::ColorF::Violet, 1 );
-	gradientStops3[1].position = 0.8f;
-	gradientStops3[2].color = D2D1::ColorF( D2D1::ColorF::White, 1 );
-	gradientStops3[2].position = 1.0f;
-
-	GradientPos = { 0.0f, -10.0f, 0.0f, 0.0f };
-	OutlineColor = { 0.0f, 0.0f, 0.0f, 1.0f };
-
-	hr = m_D3D->D3DGC->D2DRenderTarget->CreateGradientStopCollection(
-		gradientStops3,
-		GradientStopAmount3,
-		D2D1_GAMMA_2_2,
-		D2D1_EXTEND_MODE_CLAMP,
-		&GradientStops3
-		);
-	if ( FAILED( hr ) )
-	{
-		MessageBox( NULL, L"Create GradientStopCollection failed!", Error, 0 );
-		result = false;
-	}
-
-	hr = m_D3D->D3DGC->D2DRenderTarget->CreateLinearGradientBrush(
-		D2D1::LinearGradientBrushProperties(
-		D2D1::Point2F( GradientPos.x, GradientPos.y ),
-		D2D1::Point2F( GradientPos.z, GradientPos.w ) ),
-		GradientStops3,
-		&LinearGradientBrush3
-		);
-	if ( FAILED( hr ) )
-	{
-		MessageBox( NULL, L"Create LinearGradientBrush failed!", Error, 0 );
-		result = false;
-	}
-
-	hr = m_D3D->D3DGC->D2DRenderTarget->CreateSolidColorBrush( D2D1::ColorF(
-		OutlineColor.x,
-		OutlineColor.y,
-		OutlineColor.z,
-		OutlineColor.w ),
-		&SolidBrushOutline3
-		);
-	if ( FAILED( hr ) )
-	{
-		MessageBox( NULL, L"Create SolidColorBrush failed!", Error, 0 );
-		result = false;
-	}
-	FontOnTexture->OutlineBrush = SolidBrushOutline3;
-	FontOnTexture->FillBrush = LinearGradientBrush3;
-//2
-	FontList.push_back( FontOnTexture );
-
-// +++++++++++++++++++++     Создаём 4 - й шрифт      ++++++++++++++++++++++++++++++
-	ID2D1LinearGradientBrush	*LinearGradientBrush4 = nullptr;
-	ID2D1SolidColorBrush		  *SolidBrushOutline4 = nullptr;
-	ID2D1GradientStopCollection		  *GradientStops4 = nullptr;
-
-	FontOnTexture = new FontOnTextureData;
-
-	FontOnTexture->AliasingMode = D2D1_ANTIALIAS_MODE_PER_PRIMITIVE;// Включаем алиасинг
-	FontOnTexture->FontFaceType = DWRITE_FONT_FACE_TYPE_TRUETYPE;
-
-	FontOnTexture->FontSize = 24.0f;
-	wchar_t *Font4 = L"Fonts/BrushScriptStd.ttf"; //BrushScriptStd.otf
-	FontOnTexture->FontName = Font4;
-	FontOnTexture->Outline = true;				// Будет ли в шрифте окантовка
-	FontOnTexture->OutlineWidth = 3.0f;			// Толщина окантовки 0 < 10 
-
-	const int GradientStopAmount4 = 3;
-	D2D1_GRADIENT_STOP gradientStops4[GradientStopAmount4];
-	gradientStops4[0].color = D2D1::ColorF( D2D1::ColorF::Plum, 1 );
-	gradientStops4[0].position = 0.0f;
-	gradientStops4[1].color = D2D1::ColorF( D2D1::ColorF::Chocolate, 1 );
-	gradientStops4[1].position = 0.8f;
-	gradientStops4[2].color = D2D1::ColorF( D2D1::ColorF::Silver, 1 );
-	gradientStops4[2].position = 1.0f;
+	vector < RCube_Font_Style* > FontList;
 	
-	GradientPos = { 0.0f, -10.0f, 0.0f, 0.0f };
-	OutlineColor = { 0.0f, 0.0f, 0.0f, 1.0f };
-
-	hr = m_D3D->D3DGC->D2DRenderTarget->CreateGradientStopCollection(
-		gradientStops4,
-		GradientStopAmount4,
-		D2D1_GAMMA_2_2,
-		D2D1_EXTEND_MODE_CLAMP,
-		&GradientStops4
-		);
-	if ( FAILED( hr ) )
-	{
-		MessageBox( NULL, L"Create GradientStopCollection failed!", Error, 0 );
-		result = false;
-	}
-
-	hr = m_D3D->D3DGC->D2DRenderTarget->CreateLinearGradientBrush(
-		D2D1::LinearGradientBrushProperties(
-		D2D1::Point2F( GradientPos.x, GradientPos.y ),
-		D2D1::Point2F( GradientPos.z, GradientPos.w ) ),
-		GradientStops4,
-		&LinearGradientBrush4
-		);
-	if ( FAILED( hr ) )
-	{
-		MessageBox( NULL, L"Create LinearGradientBrush failed!", Error, 0 );
-		result = false;
-	}
-
-	hr = m_D3D->D3DGC->D2DRenderTarget->CreateSolidColorBrush( D2D1::ColorF(
-		OutlineColor.x,
-		OutlineColor.y,
-		OutlineColor.z,
-		OutlineColor.w ),
-		&SolidBrushOutline4
-		);
-	if ( FAILED( hr ) )
-	{
-		MessageBox( NULL, L"Create SolidColorBrush failed!", Error, 0 );
-		result = false;
-	}
-	FontOnTexture->OutlineBrush = SolidBrushOutline4;
-	FontOnTexture->FillBrush = LinearGradientBrush4;
-//3
-	FontList.push_back( FontOnTexture );
-
-// +++++++++++++++++++++     Создаём 5 - й шрифт      ++++++++++++++++++++++++++++++
-	ID2D1LinearGradientBrush	*LinearGradientBrush5 = nullptr;
-	ID2D1SolidColorBrush		  *SolidBrushOutline5 = nullptr;
-	ID2D1GradientStopCollection		  *GradientStops5 = nullptr;
-
-	FontOnTexture = new FontOnTextureData;
-
-	FontOnTexture->AliasingMode = D2D1_ANTIALIAS_MODE_PER_PRIMITIVE;// Включаем алиасинг
-	FontOnTexture->FontFaceType = DWRITE_FONT_FACE_TYPE_TRUETYPE;
-
-	FontOnTexture->FontSize = 24.0f;
-	wchar_t *Font5 = L"Fonts/RAVIE.TTF";
-	FontOnTexture->FontName = Font5;
-
-	FontOnTexture->Outline = true;				// Будет ли в шрифте окантовка
-	FontOnTexture->OutlineWidth = 2.0f;			// Толщина окантовки 0 < 10 
-
-	const int GradientStopAmount5 = 3;
-	D2D1_GRADIENT_STOP gradientStops5[GradientStopAmount5];
-	gradientStops5[0].color = D2D1::ColorF( D2D1::ColorF::Khaki, 1 );
-	gradientStops5[0].position = 0.0f;
-	gradientStops5[1].color = D2D1::ColorF( D2D1::ColorF::Yellow, 1 );
-	gradientStops5[1].position = 0.8f;
-	gradientStops5[2].color = D2D1::ColorF( D2D1::ColorF::Olive, 1 );
-	gradientStops5[2].position = 1.0f;
-
-	GradientPos = { 0.0f, -10.0f, 0.0f, 0.0f };
-	OutlineColor = { 0.0f, 0.0f, 0.0f, 1.0f };
-
-	hr = m_D3D->D3DGC->D2DRenderTarget->CreateGradientStopCollection(
-		gradientStops5,
-		GradientStopAmount5,
-		D2D1_GAMMA_2_2,
-		D2D1_EXTEND_MODE_CLAMP,
-		&GradientStops5
-		);
-	if ( FAILED( hr ) )
-	{
-		MessageBox( NULL, L"Create GradientStopCollection failed!", Error, 0 );
-		result = false;
-	}
-
-	hr = m_D3D->D3DGC->D2DRenderTarget->CreateLinearGradientBrush(
-		D2D1::LinearGradientBrushProperties(
-		D2D1::Point2F( GradientPos.x, GradientPos.y ),
-		D2D1::Point2F( GradientPos.z, GradientPos.w ) ),
-		GradientStops5,
-		&LinearGradientBrush5
-		);
-	if ( FAILED( hr ) )
-	{
-		MessageBox( NULL, L"Create LinearGradientBrush failed!", Error, 0 );
-		result = false;
-	}
-
-	hr = m_D3D->D3DGC->D2DRenderTarget->CreateSolidColorBrush( D2D1::ColorF(
-		OutlineColor.x,
-		OutlineColor.y,
-		OutlineColor.z,
-		OutlineColor.w ),
-		&SolidBrushOutline5
-		);
-	if ( FAILED( hr ) )
-	{
-		MessageBox( NULL, L"Create SolidColorBrush failed!", Error, 0 );
-		result = false;
-	}
-	FontOnTexture->OutlineBrush = SolidBrushOutline5;
-	FontOnTexture->FillBrush = LinearGradientBrush5;
-//4
-	FontList.push_back( FontOnTexture );
-
-// +++++++++++++++++++++     Создаём 6 - й шрифт      ++++++++++++++++++++++++++++++
-	ID2D1LinearGradientBrush	*LinearGradientBrush6 = nullptr;
-	ID2D1SolidColorBrush		  *SolidBrushOutline6 = nullptr;
-	ID2D1GradientStopCollection		  *GradientStops6 = nullptr;
-
-	FontOnTexture = new FontOnTextureData;
-
-	FontOnTexture->AliasingMode = D2D1_ANTIALIAS_MODE_PER_PRIMITIVE;// Включаем алиасинг
-	FontOnTexture->FontFaceType = DWRITE_FONT_FACE_TYPE_TRUETYPE;
-
-	FontOnTexture->FontSize = 24.0f;
-	wchar_t *Font6 = L"Fonts/times.ttf";
-	FontOnTexture->FontName = Font6;
-	FontOnTexture->Outline = true;				// Будет ли в шрифте окантовка
-	FontOnTexture->OutlineWidth = 2.0f;			// Толщина окантовки 0 < 10 
-
-	const int GradientStopAmount6 = 3;
-	D2D1_GRADIENT_STOP gradientStops6[GradientStopAmount6];
-	gradientStops6[0].color = D2D1::ColorF( D2D1::ColorF::Beige, 1 );
-	gradientStops6[0].position = 0.0f;
-	gradientStops6[1].color = D2D1::ColorF( D2D1::ColorF::Brown, 1 );
-	gradientStops6[1].position = 0.8f;
-	gradientStops6[2].color = D2D1::ColorF( D2D1::ColorF::WhiteSmoke, 1 );
-	gradientStops6[2].position = 1.0f;
-
-	GradientPos = { 0.0f, -10.0f, 0.0f, 0.0f };
-	OutlineColor = { 0.0f, 0.0f, 0.0f, 1.0f };
-
-	hr = m_D3D->D3DGC->D2DRenderTarget->CreateGradientStopCollection(
-		gradientStops6,
-		GradientStopAmount6,
-		D2D1_GAMMA_2_2,
-		D2D1_EXTEND_MODE_CLAMP,
-		&GradientStops6
-		);
-	if ( FAILED( hr ) )
-	{
-		MessageBox( NULL, L"Create GradientStopCollection failed!", Error, 0 );
-		result = false;
-	}
-
-	hr = m_D3D->D3DGC->D2DRenderTarget->CreateLinearGradientBrush(
-		D2D1::LinearGradientBrushProperties(
-		D2D1::Point2F( GradientPos.x, GradientPos.y ),
-		D2D1::Point2F( GradientPos.z, GradientPos.w ) ),
-		GradientStops6,
-		&LinearGradientBrush6
-		);
-	if ( FAILED( hr ) )
-	{
-		MessageBox( NULL, L"Create LinearGradientBrush failed!", Error, 0 );
-		result = false;
-	}
-
-	hr = m_D3D->D3DGC->D2DRenderTarget->CreateSolidColorBrush( D2D1::ColorF(
-		OutlineColor.x,
-		OutlineColor.y,
-		OutlineColor.z,
-		OutlineColor.w ),
-		&SolidBrushOutline6
-		);
-	if ( FAILED( hr ) )
-	{
-		MessageBox( NULL, L"Create SolidColorBrush failed!", Error, 0 );
-		result = false;
-	}
-	FontOnTexture->OutlineBrush = SolidBrushOutline6;
-	FontOnTexture->FillBrush = LinearGradientBrush6;
-//5
-	FontList.push_back( FontOnTexture );
-
+	// Setting Shader for rendering fonts
 	MyManager->TextShaderIndex = MyManager->GetShaderIndexByName ( L"Font" );
 	// Инициализируем систему рисования 
 	RCubeRender = new RenderClass ( m_D3D->D3DGC, MyManager, m_D3D, m_Frustum );
+
+
+	Font_Param* Fparam = new Font_Param;
+
+// Font TYPE 0
+	Fparam->Font_Path_Name = L"Fonts/BuxtonSketch.ttf";
+	Fparam->FontSize = 36.0f;
+	Fparam->Outlined = true;
+	Fparam->OutlineWidth = 3;
+
+	// Про кисти градиентов
+	// https://msdn.microsoft.com/en-us/library/dd368041(v=vs.85).aspx
+	Fparam->gradientStops[0].color = D2D1::ColorF ( 0x00, 0x00, 0x00, 1.0f );
+	Fparam->gradientStops[0].position = 0.0f;
+	Fparam->gradientStops[1].color = D2D1::ColorF ( 0xDC, 0x6A, 0x2E, 1.0f );
+	Fparam->gradientStops[1].position = 0.8f;
+	Fparam->gradientStops[2].color = D2D1::ColorF ( 0x81, 0x20, 0x40, 1.0f );
+	Fparam->gradientStops[2].position = 1.0f;
+	Fparam->GradientPos = { 0.0f, -20.0f, 0.0f, 20.0f };
+	Fparam->OutlineColor = { 0.0f, 1.0f, 0.0f, 1.0f };
+	FontList.push_back ( RCubeRender->Create_RCube_FontStyle ( Fparam ) );
+
+// Font TYPE 1
+	Fparam->Font_Path_Name = L"Fonts/8708_AA_Akashi.ttf";
+	Fparam->FontSize = 36.0f;
+	Fparam->Outlined = true;
+	Fparam->OutlineWidth = 6;
+
+	Fparam->gradientStops[0].color = D2D1::ColorF ( D2D1::ColorF::Turquoise, 1 );
+	Fparam->gradientStops[0].position = 0.0f;
+	Fparam->gradientStops[1].color = D2D1::ColorF ( D2D1::ColorF::RosyBrown, 1 );
+	Fparam->gradientStops[1].position = 0.8f;
+	Fparam->gradientStops[2].color = D2D1::ColorF ( D2D1::ColorF::White, 1 );
+	Fparam->gradientStops[2].position = 1.0f;
+	Fparam->GradientPos = { 0.0f, -20.0f, 0.0f, 0.0f };
+	Fparam->OutlineColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+	FontList.push_back ( RCubeRender->Create_RCube_FontStyle ( Fparam ) );
+
+
+// Font TYPE 2
+	Fparam->Font_Path_Name = L"Fonts/comic.ttf";
+	Fparam->FontSize = 28.0f;
+	Fparam->Outlined = true;
+	Fparam->OutlineWidth = 4;
+
+	Fparam->gradientStops[0].color = D2D1::ColorF ( D2D1::ColorF::YellowGreen, 1 );
+	Fparam->gradientStops[0].position = 0.0f;
+	Fparam->gradientStops[1].color = D2D1::ColorF ( D2D1::ColorF::Violet, 1 );
+	Fparam->gradientStops[1].position = 0.8f;
+	Fparam->gradientStops[2].color = D2D1::ColorF ( D2D1::ColorF::White, 1 );
+	Fparam->gradientStops[2].position = 1.0f;
+	Fparam->GradientPos = { 0.0f, -10.0f, 0.0f, 0.0f };
+	Fparam->OutlineColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+	FontList.push_back ( RCubeRender->Create_RCube_FontStyle ( Fparam ) );
+
+
+// Font TYPE 3
+	Fparam->Font_Path_Name = L"Fonts/BrushScriptStd.ttf";
+	Fparam->FontSize = 24.0f;
+	Fparam->Outlined = true;
+	Fparam->OutlineWidth = 3;
+
+	Fparam->gradientStops[0].color = D2D1::ColorF ( D2D1::ColorF::Plum, 1 );
+	Fparam->gradientStops[0].position = 0.0f;
+	Fparam->gradientStops[1].color = D2D1::ColorF ( D2D1::ColorF::Chocolate, 1 );
+	Fparam->gradientStops[1].position = 0.8f;
+	Fparam->gradientStops[2].color = D2D1::ColorF ( D2D1::ColorF::Silver, 1 );
+	Fparam->gradientStops[2].position = 1.0f;
+	Fparam->GradientPos = { 0.0f, -10.0f, 0.0f, 0.0f };
+	Fparam->OutlineColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+	FontList.push_back ( RCubeRender->Create_RCube_FontStyle ( Fparam ) );
+
+// Font TYPE 4
+	Fparam->Font_Path_Name = L"Fonts/RAVIE.TTF";
+	Fparam->FontSize = 24.0f;
+	Fparam->Outlined = true;
+	Fparam->OutlineWidth = 2;
+
+	Fparam->gradientStops[0].color = D2D1::ColorF ( D2D1::ColorF::Khaki, 1 );
+	Fparam->gradientStops[0].position = 0.0f;
+	Fparam->gradientStops[1].color = D2D1::ColorF ( D2D1::ColorF::Yellow, 1 );
+	Fparam->gradientStops[1].position = 0.8f;
+	Fparam->gradientStops[2].color = D2D1::ColorF ( D2D1::ColorF::Olive, 1 );
+	Fparam->gradientStops[2].position = 1.0f;
+	Fparam->GradientPos = { 0.0f, -20.0f, 0.0f, 0.0f };
+	Fparam->OutlineColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+	FontList.push_back ( RCubeRender->Create_RCube_FontStyle ( Fparam ) );
+
+// Font TYPE 5
+	Fparam->Font_Path_Name = L"Fonts/Tahoma.ttf";
+	Fparam->FontSize = 24.0f;
+	Fparam->Outlined = true;
+	Fparam->OutlineWidth = 2;
+
+	Fparam->gradientStops[0].color = D2D1::ColorF ( D2D1::ColorF::Beige, 1 );
+	Fparam->gradientStops[0].position = 0.0f;
+	Fparam->gradientStops[1].color = D2D1::ColorF ( D2D1::ColorF::Brown, 1 );
+	Fparam->gradientStops[1].position = 0.8f;
+	Fparam->gradientStops[2].color = D2D1::ColorF ( D2D1::ColorF::WhiteSmoke, 1 );
+	Fparam->gradientStops[2].position = 1.0f;
+	Fparam->GradientPos = { 0.0f, -50.0f, 0.0f, -5.0f };
+	Fparam->OutlineColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+	FontList.push_back ( RCubeRender->Create_RCube_FontStyle ( Fparam ) );
+
+	delete Fparam;
 
 	// Новая система шрифтов
 	char* Text = new char [50];
@@ -639,7 +289,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	size_t FontsNumber = FontList.size ();
 	for (size_t i = 0; i < FontsNumber; ++i)
 	{
-		MyManager->RCube_Font.push_back ( RCubeRender->CreateRFont ( FontList[i], CharStr ) );
+		MyManager->AddFont ( RCubeRender->Create_RCube_Font ( FontList[i], CharStr ) );
 /*
 		sprintf_s ( Text, 50, "1MyFont%d.png", (int)i );
 		size_t cSize = strlen ( Text );
@@ -652,43 +302,22 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	RCUBE_ARR_DELETE ( Text );
 	RCUBE_ARR_DELETE ( WText );
 
-
-
-	RCUBE_RELEASE( LinearGradientBrush6 );
-	RCUBE_RELEASE( SolidBrushOutline6 );
-	RCUBE_RELEASE( GradientStops6 );
-
-	RCUBE_RELEASE( LinearGradientBrush5 );
-	RCUBE_RELEASE( SolidBrushOutline5 );
-	RCUBE_RELEASE( GradientStops5 );
-
-	RCUBE_RELEASE( LinearGradientBrush4 );
-	RCUBE_RELEASE( SolidBrushOutline4 );
-	RCUBE_RELEASE( GradientStops4 );
-
-	RCUBE_RELEASE( LinearGradientBrush3 );
-	RCUBE_RELEASE( SolidBrushOutline3 );
-	RCUBE_RELEASE( GradientStops3 );
-
-	RCUBE_RELEASE( LinearGradientBrush2 );
-	RCUBE_RELEASE( SolidBrushOutline2 );
-	RCUBE_RELEASE( GradientStops2 );
-
-	RCUBE_RELEASE( LinearGradientBrush1 );
-	RCUBE_RELEASE( SolidBrushOutline1 );
-	RCUBE_RELEASE( GradientStops1 );
-
-	if(!result)
+	UINT i = 0;
+	UINT j = ( UINT ) FontList.size ();
+	while ( i < j )
 	{
-		MessageBox(hwnd, L"Could not initialize the text object.", Error, MB_OK);
-		return false;
-	}
+		RCUBE_DELETE ( FontList[i] );
+		++i;
+	};
+
+	FontList.clear ();
+
 
 // +++++++++++++++++++++   Custom Cursor   ++++++++++++++++++++++++++++++++++
 	XMFLOAT4 MouseCursorPos = {0.0f, 0.0f, 30.0f, 30.0f};
 	{
 		// Инициализируцем буферы для m_Bitmap
-		int TempIndex = MyManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 4, 6, MyManager->TexturesArr[10]->SRV );
+		int TempIndex = MyManager->Create_Flat_Obj_Buffers ( NO_CPU_ACCESS_BUFFER, 4, 6, MyManager->TexturesArr[10]->SRV );
 		m_Bitmap = new FlatObjectClass;
 		hr = m_Bitmap->Init ( m_D3D->D3DGC->ScreenWidth, m_D3D->D3DGC->ScreenHeight,
 			MouseCursorPos,
@@ -700,7 +329,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	}
 
 
-	m_Bitmap->ShaderIndex = MyManager->FontOnTextureShaderIndex = MyManager->GetShaderIndexByName(L"KF2DObj");
+	m_Bitmap->ShaderIndex = MyManager->Temp_Font_StyleShaderIndex = MyManager->GetShaderIndexByName(L"KF2DObj");
 
 	if (FAILED( hr ))
 	{
@@ -709,87 +338,29 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	}
 // ---------------------   Custom Cursor   ---------------------------------
 
-
-// ++++++++++++++++++++++     РИСУЕМ ТЕКСТОМ НА ТЕКСТУРЕ     +++++++++++++++++++++++++++++++
-	ID2D1LinearGradientBrush	*LinearGradientBrush = nullptr;
-	ID2D1SolidColorBrush		  *SolidBrushOutline = nullptr;
-	ID2D1GradientStopCollection		  *GradientStops = nullptr;
-
-	FontOnTexture = new FontOnTextureData;
-	FontOnTexture->AliasingMode = D2D1_ANTIALIAS_MODE_PER_PRIMITIVE;// Включаем алиасинг
-	FontOnTexture->FontFaceType = DWRITE_FONT_FACE_TYPE_TRUETYPE;
-
-	FontOnTexture->FontSize = 24.0f;								// Размер шрифта
-	wchar_t * Path = L"Fonts/BuxtonSketch.ttf";//9825.otf";// C:\\Windows\\Fonts\\
-
-	FontOnTexture->FontName = Path;
-
-	FontOnTexture->Outline = true;				// Будет ли в шрифте окантовка
-	FontOnTexture->OutlineWidth = 3.0f;
-
-	const int GradientStopAmount = 3;
-
-	D2D1_GRADIENT_STOP gradientStops[GradientStopAmount];
-	gradientStops[0].color = D2D1::ColorF( 0xf0, 0x00, 0x00, 1 );
-	gradientStops[0].position = 0.0f;
-	gradientStops[1].color = D2D1::ColorF( 0xDC, 0x6A, 0x2E, 1 );
-	gradientStops[1].position = 0.8f;
-	gradientStops[2].color = D2D1::ColorF( 0x81, 0x20, 0x40, 1 );
-	gradientStops[2].position = 1.0f;
-
-	GradientPos = { 0.0f, -10.0f, 0.0f, 10.0f };
-	OutlineColor = { 0.0f, 0.0f, 0.0f, 1.0f };
-
-	hr = m_D3D->D3DGC->D2DRenderTarget->CreateGradientStopCollection(
-		gradientStops,
-		GradientStopAmount,
-		D2D1_GAMMA_2_2,
-		D2D1_EXTEND_MODE_CLAMP,
-		&GradientStops
-		);
-	if ( FAILED( hr ) )
-	{
-		MessageBox( NULL, L"Create GradientStopCollection failed!", Error, 0 );
-		result = false;
-	}
-
-	hr = m_D3D->D3DGC->D2DRenderTarget->CreateLinearGradientBrush(
-		D2D1::LinearGradientBrushProperties(
-		D2D1::Point2F( GradientPos.x, GradientPos.y ),
-		D2D1::Point2F( GradientPos.z, GradientPos.w ) ),
-		GradientStops,
-		&LinearGradientBrush
-		);
-	if ( FAILED( hr ) )
-	{
-		MessageBox( NULL, L"Create LinearGradientBrush failed!", Error, 0 );
-		result = false;
-	}
-
-	hr = m_D3D->D3DGC->D2DRenderTarget->CreateSolidColorBrush( D2D1::ColorF(
-		OutlineColor.x,
-		OutlineColor.y,
-		OutlineColor.z,
-		OutlineColor.w ),
-		&SolidBrushOutline
-		);
-	if ( FAILED( hr ) )
-	{
-		MessageBox( NULL, L"Create SolidColorBrush failed!", Error, 0 );
-		result = false;
-	}
-	FontOnTexture->OutlineBrush = SolidBrushOutline;
-	FontOnTexture->FillBrush = LinearGradientBrush;
-
+	UpdateConstantBuffer ();
 
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // ++++++++++++++++++++++++++++++++			РИСУЕМ ТЕКСТОМ на ТЕКСТУРЕ        +++++++++++++++++++++++++++++
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	UpdateConstantBuffer();
+	Fparam = new Font_Param;
+	Fparam->Font_Path_Name = L"Fonts/BuxtonSketch.ttf";
+	Fparam->FontSize = 24.0f;
+	Fparam->Outlined = true;
+	Fparam->OutlineWidth = 3;
+
+	Fparam->gradientStops[0].color = D2D1::ColorF ( 0xf0, 0x00, 0x00, 1 );
+	Fparam->gradientStops[0].position = 0.0f;
+	Fparam->gradientStops[1].color = D2D1::ColorF ( 0xDC, 0x6A, 0x2E, 1 );
+	Fparam->gradientStops[1].position = 0.8f;
+	Fparam->gradientStops[2].color = D2D1::ColorF ( 0x81, 0x20, 0x40, 1 );
+	Fparam->gradientStops[2].position = 1.0f;
+	Fparam->GradientPos = { 0.0f, -10.0f, 0.0f, 10.0f };
+	Fparam->OutlineColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+	RCube_Font_Style* Temp_Font_Style = RCubeRender->Create_RCube_FontStyle ( Fparam );
 
 	m_D3D->TurnOnTextOnTextureBlending();
 	m_D3D->TurnZBufferOff();
-
 	m_D3D->SetCullNoneResterizeState ();
 	m_D3D->D3DGC->DX_deviceContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
 	m_D3D->D3DGC->DX_deviceContext->OMSetRenderTargets( 1, &m_D3D->D3DGC->BackBuffer_ProxyTextureRTV, NULL ); //m_D3D->D3DGC->m_depthStencilView
@@ -797,40 +368,40 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 
 //	Profile->StartTimer();
 
-	RCubeRender->RenderFontOnTexture ( MyManager->TexturesArr[1]->SRV,
-											 Path,
+	RCubeRender->Render_Font_OnTexture ( MyManager->TexturesArr[1]->SRV,
+										 Fparam->Font_Path_Name,
 											 L"Анимация OFF",
-											 FontOnTexture
+											 Temp_Font_Style
 	);
 
-	RCubeRender->RenderFontOnTexture ( MyManager->TexturesArr[7]->SRV,
-											 Path,
+	RCubeRender->Render_Font_OnTexture ( MyManager->TexturesArr[7]->SRV,
+										 Fparam->Font_Path_Name,
 											 L"FXAA ON",
-											 FontOnTexture 
+											 Temp_Font_Style 
 		);
 
-	RCubeRender->RenderFontOnTexture ( MyManager->TexturesArr[6]->SRV,
-											 Path,
+	RCubeRender->Render_Font_OnTexture ( MyManager->TexturesArr[6]->SRV,
+										 Fparam->Font_Path_Name,
 											 L"Shadows ON",
-											 FontOnTexture
+											 Temp_Font_Style
 		);
 
-	RCubeRender->RenderFontOnTexture ( MyManager->TexturesArr[2]->SRV,
-											 Path,
+	RCubeRender->Render_Font_OnTexture ( MyManager->TexturesArr[2]->SRV,
+										 Fparam->Font_Path_Name,
 											 L"Анимация ON",
-											 FontOnTexture 
+											 Temp_Font_Style 
 	);
 
-	RCubeRender->RenderFontOnTexture( MyManager->TexturesArr[4]->SRV,
-											Path,
+	RCubeRender->Render_Font_OnTexture( MyManager->TexturesArr[4]->SRV,
+										Fparam->Font_Path_Name,
 											L"Soft Shadows",
-											FontOnTexture
+											Temp_Font_Style
 	);
 
-	RCubeRender->RenderFontOnTexture(MyManager->TexturesArr[3]->SRV,
-											Path,
+	RCubeRender->Render_Font_OnTexture(MyManager->TexturesArr[3]->SRV,
+										Fparam->Font_Path_Name,
 											L"Text OFF",
-											FontOnTexture 
+											Temp_Font_Style 
 	);
 
 
@@ -840,16 +411,10 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 
 	m_D3D->TurnOffAlphaBlending();
 	m_D3D->TurnZBufferOn();
-// ---------------------			РИСУЕМ ТЕКСТОМ на ТЕКСТУРЕ            -------------------------------
+	RCUBE_DELETE ( Fparam );
+	RCUBE_DELETE ( Temp_Font_Style );
 
-
-	RCUBE_RELEASE( LinearGradientBrush );
-	RCUBE_RELEASE( SolidBrushOutline );
-	RCUBE_RELEASE( GradientStops );
-
-
-	delete FontOnTexture;
-// ------------------------------    Рисуем текстом на текстурах    -------------------------------
+// ------------------------			  РИСУЕМ ТЕКСТОМ на ТЕКСТУРЕ            -------------------------------
 
 
 
@@ -872,7 +437,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Data->ShowType = SHOW;
 	Data->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
 	Data->Render = true;
-	Data->FontType = 5;
+	Data->FontType = 2;
 	Data->Level = INGAME_TEXT;
 	Number = MyManager->AddSentence ( Data, "CPU" );
 
@@ -941,6 +506,8 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Data->MaxLength = 128;
 	Data->PosY = 900;
 	Data->FontType = 3;
+//	Data->ShowType = SHOW_FROM_DIM;
+//	Data->HideType = HIDE_TO_DIM;
 	Number = MyManager->AddSentence(Data, "Keys: W,S,A,D,R,F | 8,9 - Light Rotate | Num key -/+ Sound | P - Exit");
 
 	// 10
@@ -969,7 +536,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Data->PosY = 500;
 	Number = MyManager->AddSentence(Data, "         ");
 
-	// 15 Текст о Видеоплате
+	// 16 Текст о Видеоплате
 	Data->MaxLength = 128;
 	Data->PosY = 310;
 	Data->ShowType = SHOW_SCROLLING;// | SHOW_GLOWING;
@@ -982,36 +549,49 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	strcat_s(Str, 249, " | Clustered Shading with Spotlight shadows DEMO");
 	Number = MyManager->AddSentence(Data, Str);
 
+	// 17
+	Data->ShowType = SHOW;
+	Data->FontType = 5;
+	Data->PosY = 800;
+	Number = MyManager->AddSentence ( Data, "1234567890АаБбВвГгДдЕеЁёЖжЗзИиКкЛлМмНнФф{}ЩщЖжЮю" );
+	// 18
+	Data->FontType = 5;
+	Data->PosY = 750;
+	Number = MyManager->AddSentence ( Data, "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz" );
+
+
 	delete Data;
 
-	SENTENCE_INIT_DATA *Data1, *Data2, *Data3, *Data4, *Data5;
+	SENTENCE_INIT_DATA *Data1, *Data2, *Data3, *Data4, *Data5, *Data6;
 
 	Data1 = new SENTENCE_INIT_DATA;
 	Data2 = new SENTENCE_INIT_DATA;
 	Data3 = new SENTENCE_INIT_DATA;
 	Data4 = new SENTENCE_INIT_DATA;
 	Data5 = new SENTENCE_INIT_DATA;
+	Data6 = new SENTENCE_INIT_DATA;
 
 	ZeroMemory ( Data1, sizeof ( SENTENCE_INIT_DATA ) );
 	ZeroMemory ( Data2, sizeof ( SENTENCE_INIT_DATA ) );
 	ZeroMemory ( Data3, sizeof ( SENTENCE_INIT_DATA ) );
 	ZeroMemory ( Data4, sizeof ( SENTENCE_INIT_DATA ) );
 	ZeroMemory ( Data5, sizeof ( SENTENCE_INIT_DATA ) );
+	ZeroMemory ( Data6, sizeof ( SENTENCE_INIT_DATA ) );
 
 	float x = 150.0f;
 	float y = 50.0f;
 
-	KFButton_Elements Buttons[8];
+	KFButton_Elements Buttons[14];
+
 	Buttons[0]._ObjParam = { 10.0f, 10.0f, x, y };
-	Buttons[0].OsnTextureResource = MyManager->TexturesArr[1]->Resource;
+	Buttons[0].Colour = { 0.0f, 0.0f, 0.0f, 0.0f };	// If button - COLOR
 	Buttons[0].OsnTexture = MyManager->TexturesArr[1]->SRV;
 	Buttons[0].IsClickTexture = MyManager->TexturesArr[19]->SRV;
 	Buttons[0].IsMouseOnButtonTexture = MyManager->TexturesArr[5]->SRV;
 	Buttons[0].IsNotEnalbledTexture = MyManager->TexturesArr[5]->SRV;
-
-	Buttons[0].Data = NULL; // Нет строки в Buttons[0].Label 
+	Buttons[0].Data = NULL;
 	Buttons[0].Label = "";
-	Buttons[0].Type = BUTTON; // Button
+	Buttons[0].Type = BUTTON;
 	Buttons[0].EditType = NULL;
 	Buttons[0].Checked = false;
 	Buttons[0].Enabled = true;
@@ -1021,21 +601,11 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 
 
 	Buttons[1]._ObjParam = { 10.0f, Buttons[0]._ObjParam.y + y + 10.0f , x, y };
-	Buttons[1].OsnTextureResource = MyManager->TexturesArr[2]->Resource;
 	Buttons[1].OsnTexture = MyManager->TexturesArr[2]->SRV;
 	Buttons[1].IsClickTexture = MyManager->TexturesArr[19]->SRV;
 	Buttons[1].IsMouseOnButtonTexture = MyManager->TexturesArr[5]->SRV;
 	Buttons[1].IsNotEnalbledTexture = MyManager->TexturesArr[5]->SRV;
-/*
-	Data1->MaxLength = 0;
-	Data1->PosX = 150;
-	Data1->PosY = 350;
-	Data1->ShowType = 1;
-	Data1->Colour = { 0.0f, 1.0f, 0.0f, 1.0f };
-	Data1->Render = true;
-	Data1->FontType = 0;
-	Data1->Level = 2;
-*/
+
 	Buttons[1].Data = NULL;  // данные для инициализации строки стекстом в Buttons[1].Label далее
 	Buttons[1].Label = "";
 	Buttons[1].Type = BUTTON; // Button
@@ -1048,24 +618,14 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 
 
 	Buttons[2]._ObjParam = { 10.0f, Buttons[1]._ObjParam.y + y + 10.0f, x, y };
-	Buttons[2].OsnTextureResource = MyManager->TexturesArr[3]->Resource;
+
 	Buttons[2].OsnTexture = MyManager->TexturesArr[3]->SRV;
 	Buttons[2].IsClickTexture = MyManager->TexturesArr[19]->SRV;
 	Buttons[2].IsMouseOnButtonTexture = NULL;
 	Buttons[2].IsNotEnalbledTexture = MyManager->TexturesArr[5]->SRV;
-/*
-	Data2->MaxLength = 0;
-	Data2->PosX = 150;
-	Data2->PosY = 380;
-	Data2->ShowType = 1;
-	Data2->Colour = { 0.0f, 1.0f, 0.0f, 1.0f };
-	Data2->Render = true;
-	Data2->FontType = 0;
-	Data2->Level = 2;
-*/
-	Buttons[2].Data = NULL; // данные для инициализации строки стекстом в Buttons[2].Label далее
+	Buttons[2].Data = NULL; 
 	Buttons[2].Label = "";
-	Buttons[2].Type = BUTTON; // Button
+	Buttons[2].Type = BUTTON;
 	Buttons[2].EditType = NULL;
 	Buttons[2].Checked = false;
 	Buttons[2].Enabled = true;
@@ -1074,21 +634,11 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Buttons[2].SecondSlot = true;
 
 	Buttons[3]._ObjParam = { 10.0f, Buttons[2]._ObjParam.y + y + 10.0f, x, y };
-	Buttons[3].OsnTextureResource = MyManager->TexturesArr[4]->Resource;
 	Buttons[3].OsnTexture = MyManager->TexturesArr[4]->SRV;
 	Buttons[3].IsClickTexture = MyManager->TexturesArr[19]->SRV;
 	Buttons[3].IsMouseOnButtonTexture = NULL;
 	Buttons[3].IsNotEnalbledTexture = MyManager->TexturesArr[5]->SRV;
-/*
-	Data3->MaxLength = 0;
-	Data3->PosX = 150;
-	Data3->PosY = 400;
-	Data3->ShowType = 1;
-	Data3->Colour = { 0.0f, 1.0f, 0.0f, 1.0f };
-	Data3->Render = true;
-	Data3->FontType = 0;
-	Data3->Level = 2;
-*/
+
 	Buttons[3].Data = NULL; // данные для инициализации строки стекстом в Buttons[3].Label далее
 	Buttons[3].Label = "";
 	Buttons[3].Type = BUTTON; // Button
@@ -1100,13 +650,12 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Buttons[3].SecondSlot = true;
 
 	Buttons[4]._ObjParam = { 10.0f, Buttons[3]._ObjParam.y + y + 10.0f, x, y };
-	Buttons[4].OsnTextureResource = MyManager->TexturesArr[5]->Resource;
 	Buttons[4].OsnTexture = MyManager->TexturesArr[5]->SRV;
 	Buttons[4].IsClickTexture = MyManager->TexturesArr[19]->SRV;
 	Buttons[4].IsMouseOnButtonTexture = MyManager->TexturesArr[5]->SRV;
 	Buttons[4].IsNotEnalbledTexture = MyManager->TexturesArr[5]->SRV;
 
-	Buttons[4].Data = NULL; // Нет строки в Buttons[4].Label 
+	Buttons[4].Data = NULL; 
 	Buttons[4].Label = "";
 	Buttons[4].Type = BUTTON; // Button
 	Buttons[4].EditType = NULL;
@@ -1155,30 +704,36 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	StringsList1->Enabled = true;
 	StringsList1->ScrollSpeed = 10;
 
-	MainMenu = new MenuControrerClass;
+	MainMenu = new MenuControllerClass;
 	MainMenu->ShaderForDraw = MyManager->GetShaderIndexByName ( L"KF2DObj" );
 
 	MainMenu->Init ( m_D3D->D3DGC,
-					 Buttons, 5, // Buttons and Checkboxes
-					 NULL, 0,	// ScrollBars
+					 Buttons, 5,		// Buttons and Checkboxes
+					 NULL, 0,			// ScrollBars
 					 StringsList1, 1,	// StringsLists
-					 NULL,		// Нет анимации
+					 NULL, 0,			// ColorPickers
+					 NULL,				// Нет анимации
 					 { 112.0f, 84.0f, 800.0f, 600.0f },
-					 MyManager->TexturesArr[18]->SRV,
+					 MyManager->TexturesArr[18]->SRV,	// 18 
 					 MyManager
 					 //m_Text
 					 );
 
 	MyManager->AddMenu ( dynamic_cast<Menu*> (MainMenu) );	// Добавляем меню в список существующих
-	KFScrollBar_Elements Bars[11];
+	ScrollBar_Elements Bars[18];
 	
+
+	Buttons[0]._ObjParam = { 10.0f, 10.0f, x, y };
+	Buttons[1]._ObjParam = { 10.0f, Buttons[0]._ObjParam.y + y + 10.0f , x, y };
+	Buttons[2]._ObjParam = { 10.0f, Buttons[1]._ObjParam.y + y + 10.0f, x, y };
+	Buttons[3]._ObjParam = { 10.0f, Buttons[2]._ObjParam.y + y + 10.0f, x, y };
+
 	Bars[0].Horizontal = false;
 	Bars[0].Values = { 0.0f, 1.0f, 0.5f, 0.01f };
 	Bars[0].ShowButtons = true;
-	Bars[0].ObjParam = { 200.0f, 50.0f, 0.0f, 200.0f };
+	Bars[0].ObjParam = { 200.0f, 50.0f, 24.0f, 240.0f };
 	Bars[0].UpSideDown = true;
 
-	Bars[0].OsnTextureResource = MyManager->TexturesArr[12]->Resource;
 	Bars[0].BodyTexture = MyManager->TexturesArr[12]->SRV;
 	Bars[0].BodyNotEnalbledTexture = NULL;
 	Bars[0].ButtonsTexture = MyManager->TexturesArr[13]->SRV;
@@ -1194,10 +749,9 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[1].Horizontal = false;
 	Bars[1].Values = { 0.00001f, 0.03f, 0.00392f, 0.0001f };
 	Bars[1].ShowButtons = true;
-	Bars[1].ObjParam = { 10.0f, 450.0f, 0.0f, 100.0f };
+	Bars[1].ObjParam = { 10.0f, 430.0f, 24.0f, 140.0f };
 	Bars[1].UpSideDown = true;
 
-	Bars[1].OsnTextureResource = MyManager->TexturesArr[12]->Resource;
 	Bars[1].BodyTexture = MyManager->TexturesArr[12]->SRV;
 	Bars[1].BodyNotEnalbledTexture = NULL;
 	Bars[1].ButtonsTexture = MyManager->TexturesArr[13]->SRV;
@@ -1212,10 +766,9 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[2].Horizontal = false;
 	Bars[2].Values = { -1000.0f, 1000.0f, 1.0f, 1.0f };
 	Bars[2].ShowButtons = true;
-	Bars[2].ObjParam = { 40.0f, 450.0f, 0.0f, 100.0f };
+	Bars[2].ObjParam = { 40.0f, 430.0f, 24.0f, 140.0f };
 	Bars[2].UpSideDown = true;
 
-	Bars[2].OsnTextureResource = MyManager->TexturesArr[12]->Resource;
 	Bars[2].BodyTexture = MyManager->TexturesArr[12]->SRV;
 	Bars[2].BodyNotEnalbledTexture = NULL;
 	Bars[2].ButtonsTexture = MyManager->TexturesArr[13]->SRV;
@@ -1230,10 +783,9 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[3].Horizontal = false;
 	Bars[3].Values = { -1.0f, 1000.0f, 4.0f, 1.0f };
 	Bars[3].ShowButtons = true;
-	Bars[3].ObjParam = { 70.0f, 450.0f, 0.0f, 100.0f };
+	Bars[3].ObjParam = { 70.0f, 430.0f, 24.0f, 140.0f };
 	Bars[3].UpSideDown = true;
 
-	Bars[3].OsnTextureResource = MyManager->TexturesArr[12]->Resource;
 	Bars[3].BodyTexture = MyManager->TexturesArr[12]->SRV;
 	Bars[3].BodyNotEnalbledTexture = NULL;
 	Bars[3].ButtonsTexture = MyManager->TexturesArr[13]->SRV;
@@ -1248,10 +800,9 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[4].Horizontal = false;
 	Bars[4].Values = { 0.5f, 15.0f, 2.5f/*3.3f*/, 0.01f };
 	Bars[4].ShowButtons = true;
-	Bars[4].ObjParam = { 100.0f, 450.0f, 0.0f, 100.0f };
+	Bars[4].ObjParam = { 100.0f, 430.0f, 24.0f, 140.0f };
 	Bars[4].UpSideDown = true;
 
-	Bars[4].OsnTextureResource = MyManager->TexturesArr[12]->Resource;
 	Bars[4].BodyTexture = MyManager->TexturesArr[12]->SRV;
 	Bars[4].BodyNotEnalbledTexture = NULL;
 	Bars[4].ButtonsTexture = MyManager->TexturesArr[13]->SRV;
@@ -1266,10 +817,9 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[5].Horizontal = false;
 	Bars[5].Values = { 0.1f, 10.0f, 1.24f/*1.29f*/, 0.01f };
 	Bars[5].ShowButtons = true;
-	Bars[5].ObjParam = { 130.0f, 450.0f, 0.0f, 100.0f };
+	Bars[5].ObjParam = { 130.0f, 430.0f, 24.0f, 140.0f };
 	Bars[5].UpSideDown = true;
 
-	Bars[5].OsnTextureResource = MyManager->TexturesArr[12]->Resource;
 	Bars[5].BodyTexture = MyManager->TexturesArr[12]->SRV;
 	Bars[5].BodyNotEnalbledTexture = NULL;
 	Bars[5].ButtonsTexture = MyManager->TexturesArr[13]->SRV;
@@ -1284,10 +834,9 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[6].Horizontal = false;
 	Bars[6].Values = { -1.0f, 3.0f, 0.003f, 0.0005f };
 	Bars[6].ShowButtons = true;
-	Bars[6].ObjParam = { 160.0f, 450.0f, 0.0f, 100.0f };
+	Bars[6].ObjParam = { 160.0f, 430.0f, 24.0f, 140.0f };
 	Bars[6].UpSideDown = true;
 
-	Bars[6].OsnTextureResource = MyManager->TexturesArr[12]->Resource;
 	Bars[6].BodyTexture = MyManager->TexturesArr[12]->SRV;
 	Bars[6].BodyNotEnalbledTexture = NULL;
 	Bars[6].ButtonsTexture = MyManager->TexturesArr[13]->SRV;
@@ -1302,10 +851,9 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[7].Horizontal = false;
 	Bars[7].Values = { 1.0f, 8128.0f, 3192.0f, 1.0f };
 	Bars[7].ShowButtons = true;
-	Bars[7].ObjParam = { 190.0f, 450.0f, 0.0f, 100.0f };
+	Bars[7].ObjParam = { 190.0f, 430.0f, 24.0f, 140.0f };
 	Bars[7].UpSideDown = true;
 
-	Bars[7].OsnTextureResource = MyManager->TexturesArr[12]->Resource;
 	Bars[7].BodyTexture = MyManager->TexturesArr[12]->SRV;
 	Bars[7].BodyNotEnalbledTexture = NULL;
 	Bars[7].ButtonsTexture = MyManager->TexturesArr[13]->SRV;
@@ -1321,10 +869,9 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[8].Horizontal = true;
 	Bars[8].Values = { -1.0f, 1.0f, 0.005f, 0.001f };
 	Bars[8].ShowButtons = true;
-	Bars[8].ObjParam = { 35.0f, 700.0f, 100.0f, 25.0f };
+	Bars[8].ObjParam = { 10.0f, 650.0f, 140.0f, 24.0f };
 	Bars[8].UpSideDown = false;
 
-	Bars[8].OsnTextureResource = MyManager->TexturesArr[12]->Resource;
 	Bars[8].BodyTexture = MyManager->TexturesArr[12]->SRV;
 	Bars[8].BodyNotEnalbledTexture = NULL;
 	Bars[8].ButtonsTexture = MyManager->TexturesArr[13]->SRV;
@@ -1336,14 +883,13 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[8].TravellerPressTexture = MyManager->TexturesArr[15]->SRV;
 	Bars[8].MouseOnTravellerTexture = NULL;
 
-	// Active LIghts on Screen
+	// DyffuseZ
 	Bars[9].Horizontal = true;
 	Bars[9].Values = { 1.0f, 3000.0f , 150.0f, 1.0f };
 	Bars[9].ShowButtons = true;
-	Bars[9].ObjParam = { 35.0f, 730.0f, 100.0f, 25.0f };
+	Bars[9].ObjParam = { 10.0f, 680.0f, 140.0f, 24.0f };
 	Bars[9].UpSideDown = false;
 
-	Bars[9].OsnTextureResource = MyManager->TexturesArr[12]->Resource;
 	Bars[9].BodyTexture = MyManager->TexturesArr[12]->SRV;
 	Bars[9].BodyNotEnalbledTexture = NULL;
 	Bars[9].ButtonsTexture = MyManager->TexturesArr[13]->SRV;
@@ -1359,10 +905,9 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Bars[10].Horizontal = true;
 	Bars[10].Values = { 1.0f, 3000.0f , 150.0f, 1.0f };
 	Bars[10].ShowButtons = true;
-	Bars[10].ObjParam = { 35.0f, 760.0f, 100.0f, 25.0f };
+	Bars[10].ObjParam = { 10.0f, 710.0f, 140.0f, 24.0f };
 	Bars[10].UpSideDown = false;
 
-	Bars[10].OsnTextureResource = MyManager->TexturesArr[12]->Resource;
 	Bars[10].BodyTexture = MyManager->TexturesArr[12]->SRV;
 	Bars[10].BodyNotEnalbledTexture = NULL;
 	Bars[10].ButtonsTexture = MyManager->TexturesArr[13]->SRV;
@@ -1381,7 +926,6 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Buttons[2].Type = CHECKBOX; // CheckBox
 	Buttons[2].Checked = m_D3D->D3DGC->ShadowsOn;
 	Buttons[2].Label = "";
-	Buttons[2].OsnTextureResource = MyManager->TexturesArr[5]->Resource;
 	Buttons[2].OsnTexture = MyManager->TexturesArr[5]->SRV;
 	Buttons[2].IsClickTexture = MyManager->TexturesArr[6]->SRV;
 	Buttons[2].Data = NULL;
@@ -1390,20 +934,18 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Buttons[3].Type = CHECKBOX; // CheckBox
 	Buttons[3].Checked = m_D3D->D3DGC->EnableFXAA;
 	Buttons[3].Label = "";
-	Buttons[3].OsnTextureResource = MyManager->TexturesArr[5]->Resource;
 	Buttons[3].OsnTexture = MyManager->TexturesArr[5]->SRV;
 	Buttons[3].IsClickTexture = MyManager->TexturesArr[7]->SRV;
 	Buttons[3].Data = NULL;
 
 
 	Buttons[6]._ObjParam = { 10.0f, Buttons[3]._ObjParam.y + y + 10.0f, x, y };
-	Buttons[6].OsnTextureResource = MyManager->TexturesArr[5]->Resource;
 	Buttons[6].OsnTexture = MyManager->TexturesArr[5]->SRV;
 	Buttons[6].IsClickTexture = MyManager->TexturesArr[4]->SRV;
 	Buttons[6].IsMouseOnButtonTexture = NULL;
 	Buttons[6].IsNotEnalbledTexture = MyManager->TexturesArr[5]->SRV;
 
-	Buttons[6].Data = NULL; // Нет строки в Buttons[4].Label 
+	Buttons[6].Data = NULL;
 	Buttons[6].Label = "";
 	Buttons[6].SentenceIndex = -1;
 	Buttons[6].Type = CHECKBOX; // Button
@@ -1414,8 +956,8 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Buttons[6].VirtualKeyIndex = 0;
 	Buttons[6].SecondSlot = false;
 
-
-	Data4->MaxLength = 16; // Для Edit указывать желаемое количество вводи мых символов + 1
+	// EDIT TEXT
+	Data4->MaxLength = 16; // Для Edit указывать желаемое количество вводимых символов + 1
 	Data4->PosX = 10;
 	Data4->PosY = 330;
 	Data4->ShowType = 1;
@@ -1424,23 +966,23 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Data4->FontType = 0;
 	Data4->Level = MENU;
 
-
-	Buttons[4]._ObjParam = { 10.0f, 330.0f, 0.0f, 0.0f };
-	Buttons[4].OsnTextureResource = MyManager->TexturesArr[11]->Resource;
+	Buttons[4]._ObjParam = { 10.0f, 330.0f, 200.0f, 43.0f };
 	Buttons[4].OsnTexture = MyManager->TexturesArr[11]->SRV;
 	Buttons[4].IsClickTexture = NULL;
 	Buttons[4].IsMouseOnButtonTexture = NULL;
 	Buttons[4].IsNotEnalbledTexture = NULL;
 	Buttons[4].Data = Data4; // Нет строки в Buttons[4].Label 
-	Buttons[4].Label = "Мой текст";
+	Buttons[4].Label = "56";
 	Buttons[4].Type = EDIT; // Edit
-	Buttons[4].EditType = ANYSYMBOL; // Edit
+	Buttons[4].EditType = AS_FLOAT; // Edit
 	Buttons[4].Checked = false;
 	Buttons[4].Enabled = true;
 	Buttons[4].WaitingForKeyPress = false;
 	Buttons[4].VirtualKeyIndex = 0;
 	Buttons[4].SecondSlot = true;
 
+
+	// LABEL  KeyPressed
 	Data5->MaxLength = 32;
 	Data5->PosX = 10;
 	Data5->PosY = 330;
@@ -1450,8 +992,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Data5->FontType = 0;
 	Data5->Level = MENU;
 
-	Buttons[5]._ObjParam = { 10.0f, 380.0f, 0.0f, 0.0f };
-	Buttons[5].OsnTextureResource = MyManager->TexturesArr[11]->Resource;
+	Buttons[5]._ObjParam = { 10.0f, 380.0f, 200.0f, 43.0f };
 	Buttons[5].OsnTexture = MyManager->TexturesArr[11]->SRV;
 	Buttons[5].IsClickTexture = NULL;
 	Buttons[5].IsMouseOnButtonTexture = NULL;
@@ -1468,8 +1009,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Buttons[5].SecondSlot = true;
 
 	// Hide Text
-	Buttons[7]._ObjParam = { 10.0f, 600.0f, 0.0f, 0.0f };
-	Buttons[7].OsnTextureResource = MyManager->TexturesArr[3]->Resource;
+	Buttons[7]._ObjParam = { 10.0f, 580.0f, x, y };
 	Buttons[7].OsnTexture = MyManager->TexturesArr[3]->SRV;
 	Buttons[7].IsClickTexture = MyManager->TexturesArr[19]->SRV;
 	Buttons[7].IsMouseOnButtonTexture = NULL;
@@ -1485,33 +1025,305 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	Buttons[7].VirtualKeyIndex = 0;
 	Buttons[7].SecondSlot = false;
 
+	// Gradient Stops 1
+	Buttons[8]._ObjParam = { 10.0f, 850.0f, 30.0f, 20.0f };
+	Buttons[8].Colour= { 1.0f, 0.0f, 0.0f, 0.0f };
+	Buttons[8].OsnTexture = nullptr;
+	Buttons[8].IsClickTexture = nullptr;
+	Buttons[8].IsMouseOnButtonTexture = NULL;
+	Buttons[8].IsNotEnalbledTexture = NULL;
+	Buttons[8].Data = NULL;
+	Buttons[8].Label = "";
+	Buttons[8].Type = COLOR_PICK;
+	Buttons[8].ActiveStringsList = false;
+	Buttons[8].EditType = NULL;
+	Buttons[8].Checked = false;
+	Buttons[8].Enabled = true;
+	Buttons[8].WaitingForKeyPress = false;
+	Buttons[8].VirtualKeyIndex = 0;
+	Buttons[8].SecondSlot = false;
+	
+
+	// Gradient Stops 1 POSITION
+	Bars[11].Horizontal = true;
+	Bars[11].Values = { -1.0f, 1.0f , 0.0f, 0.02f };
+	Bars[11].ShowButtons = true;
+	Bars[11].ObjParam = { 70.0f, 848.0f, 140.0f, 24.0f };
+	Bars[11].UpSideDown = false;
+
+	Bars[11].BodyTexture = MyManager->TexturesArr[12]->SRV;
+	Bars[11].BodyNotEnalbledTexture = NULL;
+	Bars[11].ButtonsTexture = MyManager->TexturesArr[13]->SRV;
+	Bars[11].ButtonPressTexture = MyManager->TexturesArr[17]->SRV;
+	Bars[11].ButtonNotEnalbledTexture = NULL;
+	Bars[11].MouseOnButtonTexture = MyManager->TexturesArr[16]->SRV;
+	Bars[11].TravellerTexture = MyManager->TexturesArr[14]->SRV;
+	Bars[11].TravellerNotEnalbledTexture = NULL;
+	Bars[11].TravellerPressTexture = MyManager->TexturesArr[15]->SRV;
+	Bars[11].MouseOnTravellerTexture = NULL;
+
+	// Gradient Stops 2
+	Buttons[9]._ObjParam = { 10.0f, 880.0f, 30.0f, 20.0f };
+	Buttons[9].Colour = { 0.0f, 1.0f, 0.0f, 0.0f };
+	Buttons[9].OsnTexture = nullptr;
+	Buttons[9].IsClickTexture = nullptr;
+	Buttons[9].IsMouseOnButtonTexture = NULL;
+	Buttons[9].IsNotEnalbledTexture = NULL;
+	Buttons[9].Data = NULL;
+	Buttons[9].Label = "";
+	Buttons[9].Type = COLOR_PICK;
+	Buttons[9].ActiveStringsList = false;
+	Buttons[9].EditType = NULL;
+	Buttons[9].Checked = false;
+	Buttons[9].Enabled = true;
+	Buttons[9].WaitingForKeyPress = false;
+	Buttons[9].VirtualKeyIndex = 0;
+	Buttons[9].SecondSlot = false;
+
+	// Gradient Stops 2 POSITION
+	Bars[12].Horizontal = true;
+	Bars[12].Values = { -1.0f, 1.0f , 0.8f, 0.02f };
+	Bars[12].ShowButtons = true;
+	Bars[12].ObjParam = { 70.0f, 878.0f, 140.0f, 24.0f };
+	Bars[12].UpSideDown = false;
+
+	Bars[12].BodyTexture = MyManager->TexturesArr[12]->SRV;
+	Bars[12].BodyNotEnalbledTexture = NULL;
+	Bars[12].ButtonsTexture = MyManager->TexturesArr[13]->SRV;
+	Bars[12].ButtonPressTexture = MyManager->TexturesArr[17]->SRV;
+	Bars[12].ButtonNotEnalbledTexture = NULL;
+	Bars[12].MouseOnButtonTexture = MyManager->TexturesArr[16]->SRV;
+	Bars[12].TravellerTexture = MyManager->TexturesArr[14]->SRV;
+	Bars[12].TravellerNotEnalbledTexture = NULL;
+	Bars[12].TravellerPressTexture = MyManager->TexturesArr[15]->SRV;
+	Bars[12].MouseOnTravellerTexture = NULL;
+
+	// Gradient Stops 3
+	Buttons[10]._ObjParam = { 10.0f, 910.0f, 30.0f, 20.0f };
+	Buttons[10].Colour = { 0.0f, 0.0f, 1.0f, 0.0f };
+	Buttons[10].OsnTexture = nullptr;
+	Buttons[10].IsClickTexture = nullptr;
+	Buttons[10].IsMouseOnButtonTexture = NULL;
+	Buttons[10].IsNotEnalbledTexture = NULL;
+	Buttons[10].Data = NULL;
+	Buttons[10].Label = "";
+	Buttons[10].Type = COLOR_PICK;
+	Buttons[10].ActiveStringsList = false;
+	Buttons[10].EditType = NULL;
+	Buttons[10].Checked = false;
+	Buttons[10].Enabled = true;
+	Buttons[10].WaitingForKeyPress = false;
+	Buttons[10].VirtualKeyIndex = 0;
+	Buttons[10].SecondSlot = false;
+
+	// Gradient Stops 3 POSITION
+	Bars[13].Horizontal = true;
+	Bars[13].Values = { -1.0f, 1.0f , 1.0f, 0.02f };
+	Bars[13].ShowButtons = true;
+	Bars[13].ObjParam = { 70.0f, 908.0f, 140.0f, 24.0f };
+	Bars[13].UpSideDown = false;
+
+	Bars[13].BodyTexture = MyManager->TexturesArr[12]->SRV;
+	Bars[13].BodyNotEnalbledTexture = NULL;
+	Bars[13].ButtonsTexture = MyManager->TexturesArr[13]->SRV;
+	Bars[13].ButtonPressTexture = MyManager->TexturesArr[17]->SRV;
+	Bars[13].ButtonNotEnalbledTexture = NULL;
+	Bars[13].MouseOnButtonTexture = MyManager->TexturesArr[16]->SRV;
+	Bars[13].TravellerTexture = MyManager->TexturesArr[14]->SRV;
+	Bars[13].TravellerNotEnalbledTexture = NULL;
+	Bars[13].TravellerPressTexture = MyManager->TexturesArr[15]->SRV;
+	Bars[13].MouseOnTravellerTexture = NULL;
+
+
+	// OUTLINE WIDTH
+	Data6->MaxLength = 4; // Для Edit указывать желаемое количество вводимых символов + 2
+	Data6->PosX = 10;
+	Data6->PosY = 330;
+	Data6->ShowType = 1;
+	Data6->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
+	Data6->Render = true;
+	Data6->FontType = 1;
+	Data6->Level = MENU;
+
+	Buttons[11]._ObjParam = { 10.0f, 940.0f, 50.0f, 45.0f };
+	Buttons[11].OsnTexture = MyManager->TexturesArr[26]->SRV;
+	Buttons[11].IsClickTexture = NULL;
+	Buttons[11].IsMouseOnButtonTexture = NULL;
+	Buttons[11].IsNotEnalbledTexture = NULL;
+	Buttons[11].Data = Data6;
+	Buttons[11].Label = "1";
+	Buttons[11].Type = EDIT; // Edit
+	Buttons[11].EditType = AS_INTEGER; // Edit
+	Buttons[11].Checked = false;
+	Buttons[11].Enabled = true;
+	Buttons[11].WaitingForKeyPress = false;
+	Buttons[11].VirtualKeyIndex = 0;
+	Buttons[11].SecondSlot = false;
+
+	// OUTLINED
+	Buttons[12]._ObjParam = { 10.0f, 1000.0f, 20.0f, 20.0f };
+	Buttons[12].OsnTexture = MyManager->TexturesArr[27]->SRV;
+	Buttons[12].IsClickTexture = MyManager->TexturesArr[28]->SRV;
+	Buttons[12].IsMouseOnButtonTexture = NULL;
+	Buttons[12].IsNotEnalbledTexture = NULL;
+	Buttons[12].Data = NULL; // Нет строки в Buttons[4].Label 
+	Buttons[12].Label = "";
+	Buttons[12].SentenceIndex = -1;
+	Buttons[12].Type = CHECKBOX; // Button
+	Buttons[12].EditType = NULL;
+	Buttons[12].Checked = false;
+	Buttons[12].Enabled = true;
+	Buttons[12].WaitingForKeyPress = false;
+	Buttons[12].VirtualKeyIndex = 0;
+	Buttons[12].SecondSlot = false;
+
+
+	// OUTLINE COLOR
+	Buttons[13].Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
+	Buttons[13]._ObjParam = { 35.0f, 1000.0f, 30.0f, 20.0f };
+	Buttons[13].OsnTexture = NULL;
+	Buttons[13].IsClickTexture = NULL;
+	Buttons[13].IsMouseOnButtonTexture = NULL;
+	Buttons[13].IsNotEnalbledTexture = NULL;
+	Buttons[13].Data = NULL; // Нет строки в Buttons[4].Label 
+	Buttons[13].Label = "";
+	Buttons[13].SentenceIndex = -1;
+	Buttons[13].Type = COLOR_PICK; // Button
+	Buttons[13].EditType = NULL;
+	Buttons[13].Checked = false;
+	Buttons[13].Enabled = true;
+	Buttons[13].WaitingForKeyPress = false;
+	Buttons[13].VirtualKeyIndex = 0;
+	Buttons[13].SecondSlot = false;
+
+/*
+	// APPLY
+	Buttons[14]._ObjParam = { 210.0f, 870.0f, 20.0f, 20.0f };
+	Buttons[14].OsnTextureResource = MyManager->TexturesArr[27]->Resource;;
+	Buttons[14].OsnTexture = MyManager->TexturesArr[27]->SRV;
+	Buttons[14].IsClickTexture = MyManager->TexturesArr[28]->SRV;
+	Buttons[14].IsMouseOnButtonTexture = NULL;
+	Buttons[14].IsNotEnalbledTexture = NULL;
+	Buttons[14].Data = NULL; // Нет строки в Buttons[4].Label 
+	Buttons[14].Label = "";
+	Buttons[14].SentenceIndex = -1;
+	Buttons[14].Type = BUTTON; // Button
+	Buttons[14].EditType = NULL;
+	Buttons[14].Checked = false;
+	Buttons[14].Enabled = true;
+	Buttons[14].WaitingForKeyPress = false;
+	Buttons[14].VirtualKeyIndex = 0;
+	Buttons[14].SecondSlot = false;
+*/
+
+	// Gradient START X POSITION
+	Bars[14].Horizontal = true;
+	Bars[14].Values = { -1.0f, 1.0f , 0.0f, 0.02f };
+	Bars[14].ShowButtons = true;
+	Bars[14].ObjParam = { 100.0f, 940.0f, 140.0f, 22.0f };
+	Bars[14].UpSideDown = false;
+
+	Bars[14].BodyTexture = MyManager->TexturesArr[12]->SRV;
+	Bars[14].BodyNotEnalbledTexture = NULL;
+	Bars[14].ButtonsTexture = MyManager->TexturesArr[13]->SRV;
+	Bars[14].ButtonPressTexture = MyManager->TexturesArr[17]->SRV;
+	Bars[14].ButtonNotEnalbledTexture = NULL;
+	Bars[14].MouseOnButtonTexture = MyManager->TexturesArr[16]->SRV;
+	Bars[14].TravellerTexture = MyManager->TexturesArr[14]->SRV;
+	Bars[14].TravellerNotEnalbledTexture = NULL;
+	Bars[14].TravellerPressTexture = MyManager->TexturesArr[15]->SRV;
+	Bars[14].MouseOnTravellerTexture = NULL;
+
+	// Gradient START Y POSITION
+	Bars[15].Horizontal = true;
+	Bars[15].Values = { -100.0f, 100.0f , -50.0f, 1.0f };
+	Bars[15].ShowButtons = true;
+	Bars[15].ObjParam = { 100.0f, 965.0f, 140.0f, 22.0f };
+	Bars[15].UpSideDown = false;
+
+	Bars[15].BodyTexture = MyManager->TexturesArr[12]->SRV;
+	Bars[15].BodyNotEnalbledTexture = NULL;
+	Bars[15].ButtonsTexture = MyManager->TexturesArr[13]->SRV;
+	Bars[15].ButtonPressTexture = MyManager->TexturesArr[17]->SRV;
+	Bars[15].ButtonNotEnalbledTexture = NULL;
+	Bars[15].MouseOnButtonTexture = MyManager->TexturesArr[16]->SRV;
+	Bars[15].TravellerTexture = MyManager->TexturesArr[14]->SRV;
+	Bars[15].TravellerNotEnalbledTexture = NULL;
+	Bars[15].TravellerPressTexture = MyManager->TexturesArr[15]->SRV;
+	Bars[15].MouseOnTravellerTexture = NULL;
+
+
+	// Gradient STOP X POSITION
+	Bars[16].Horizontal = true;
+	Bars[16].Values = { -1.0f, 1.0f , 0.0f, 0.02f };
+	Bars[16].ShowButtons = true;
+	Bars[16].ObjParam = { 100.0f, 990.0f, 140.0f, 22.0f };
+	Bars[16].UpSideDown = false;
+
+	Bars[16].BodyTexture = MyManager->TexturesArr[12]->SRV;
+	Bars[16].BodyNotEnalbledTexture = NULL;
+	Bars[16].ButtonsTexture = MyManager->TexturesArr[13]->SRV;
+	Bars[16].ButtonPressTexture = MyManager->TexturesArr[17]->SRV;
+	Bars[16].ButtonNotEnalbledTexture = NULL;
+	Bars[16].MouseOnButtonTexture = MyManager->TexturesArr[16]->SRV;
+	Bars[16].TravellerTexture = MyManager->TexturesArr[14]->SRV;
+	Bars[16].TravellerNotEnalbledTexture = NULL;
+	Bars[16].TravellerPressTexture = MyManager->TexturesArr[15]->SRV;
+	Bars[16].MouseOnTravellerTexture = NULL;
+
+
+	// Gradient STOP Y POSITION
+	Bars[17].Horizontal = true;
+	Bars[17].Values = { -100.0f, 100.0f , -5.0f, 1.0f };
+	Bars[17].ShowButtons = true;
+	Bars[17].ObjParam = { 100.0f, 1015.0f, 140.0f, 22.0f };
+	Bars[17].UpSideDown = false;
+
+	Bars[17].BodyTexture = MyManager->TexturesArr[12]->SRV;
+	Bars[17].BodyNotEnalbledTexture = NULL;
+	Bars[17].ButtonsTexture = MyManager->TexturesArr[13]->SRV;
+	Bars[17].ButtonPressTexture = MyManager->TexturesArr[17]->SRV;
+	Bars[17].ButtonNotEnalbledTexture = NULL;
+	Bars[17].MouseOnButtonTexture = MyManager->TexturesArr[16]->SRV;
+	Bars[17].TravellerTexture = MyManager->TexturesArr[14]->SRV;
+	Bars[17].TravellerNotEnalbledTexture = NULL;
+	Bars[17].TravellerPressTexture = MyManager->TexturesArr[15]->SRV;
+	Bars[17].MouseOnTravellerTexture = NULL;
+
+
+	ColorPicker_Elements ColorPicker[1];
+
+	ColorPicker[0].ActiveColorValue = { 0.0f, 1.0f, 0.0f, 1.0f };
+	ColorPicker[0].Horizontal = false;
+	ColorPicker[0].ObjParam = { 10.0f, 740.0f, 160.0f, 100.0f };
+	ColorPicker[0]._Panthon_Alpha_Thickness = 20.0f;
+	ColorPicker[0].PanthonTexture = MyManager->TexturesArr[24]->SRV; // 24
+//	ColorPicker[0].SelectorTexture = MyManager->TexturesArr[26]->SRV; // 26
 
 	// +++++++++++++++++++     Анимация     ++++++++++++++++++++++++++++++
-
 	AnimTexture = new KF2DTextureAnimation;
 	XMFLOAT4 ObjData = { 100.0f, 800.0f, 100.0f, 100.0f };
 	{
-		int TempIndex = MyManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 4, 6, MyManager->TexturesArr[10]->SRV );
 		AnimTexture->Init ( hwnd, m_D3D->D3DGC, 8, 8, MyManager->TexturesArr[8]->SRV,
-			MyManager->GetShaderIndexByName ( L"FireAnimation" ),	// анимация в меню FireAnimation_vs
-			MyManager->GetShaderIndexByName ( L"KF2DObj" ),			// возвращаем KF2DObj_vs
-			MyManager->Get_Flat_ObjectBuffers_ByIndex ( TempIndex ),
-			ObjData );
+			MyManager->GetShaderIndexByName ( L"KF2DObj" ),	// FireAnimation анимация в меню FireAnimation_vs
+			ObjData,
+			MyManager 
+		);
 	}
 	// -------------------     Анимация     ------------------------------
 
 
-	Hud = new MenuControrerClass;
+	Hud = new MenuControllerClass;
 	Hud->ShaderForDraw = MyManager->GetShaderIndexByName ( L"KF2DObj" );
 	Hud->Init(m_D3D->D3DGC,
-		Buttons, 8, 
-		Bars, 11,
-		NULL, 0,	// StringsLists
-		AnimTexture,	// Передаём объект анимации в меню
-		{ float(screenWidth - 250) , 0.0f, 250.0f, float(screenHeight) },
+		Buttons, 14,	// Buttons
+		Bars, 18,		// ScrollBars
+		NULL, 0,		// StringsLists
+		ColorPicker, 1,	// ColorPickers
+		AnimTexture,	// Animation
+		{1670.0f, 0.0f, 250.0f, 1080.0f },
 		MyManager->TexturesArr[18]->SRV,
 		MyManager
-		//m_Text
 		);
 	
 	MyManager->AddMenu ( dynamic_cast<Menu*> (Hud) );	// Добавляем меню в список существующих
@@ -1524,16 +1336,12 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 	// Активируем HUD или Hud->IsMenuActive = true;
 	Hud->IsMenuActive = true;
 	
-//	Hud->SetScrollBarParametors(0, 0.02f, 0.05f, 3.0f, 0.3f, 10);
-//	Hud->SetScrollBarParametors(1, 0.02f, 0.1f, 3.0f, 0.3f, 10);
-//	Hud->SetScrollBarParametors(2, 0.02f, 0.15f, 3.0f, 0.3f, 10);
-//	Hud->SetScrollBarParametors(3, 0.02f, 0.2f, 3.0f, 0.3f, 10);
-
 	delete Data1;
 	delete Data2;
 	delete Data3;
 	delete Data4;
 	delete Data5;
+	delete Data6;
 	// --------------------- это коробка
 	
 	// Создаю CubeMap
@@ -1636,6 +1444,7 @@ bool GraphicsClass::Initialize(HWND hwnd , int& _screenWidth, int& _screenHeight
 
 
 	// All over map
+	// Flying Animated Fire
 	Emitter_Data->Animated = EM_ANIMATED_RANDOM;
 	Emitter_Data->InitPositionDeviation.Fl3 = XMFLOAT3 ( 250.0f, 0.1f, 250.0f );
 	Emitter_Data->InitVelocity = 1.0f;
@@ -2132,7 +1941,14 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 	sprintf_s(Str, 50, "DiffuseZ = %1.5f", angel);
 	MyManager->UpdateSentence(15, Str, 100, 500);
 
-	MyManager->UpdateSentence(16, MyManager->GetSentenceText(16), MyManager->GetPosX(16), MyManager->GetPosY(16));
+
+
+	sprintf_s ( Str, 256, "Color = %x", Hud->ColorPickers[0]->GetSelectedColorCOLREF () );
+	MyManager->UpdateSentence ( 16, Str, 100, 560 );
+//	MyManager->UpdateSentence(16, MyManager->GetSentenceText(16), MyManager->GetPosX(16), MyManager->GetPosY(16));
+//	MyManager->UpdateSentence ( 16, MyManager->GetSentenceText ( 16 ), 100, 760 );
+
+
 
 // +++++++++++++++++++++    РИСУЕМ ОБЪЕКТЫ НА СЦЕНЕ    +++++++++++++++++++++++++++++++++++++++++++
 	MyManager->SetActiveShadersInProgramm( m_D3D->LightShaderForDraw );
@@ -2280,24 +2096,87 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 	// Регулировка частиц
 	Snow->ChangeActiveParticleAmount(3, ( int ) Hud->GetScrollBarValue ( 10 ) );
 
-/*
-	if ( !m_D3D->D3DGC->SoftShadowsOn )
-	{
-//		TempVal1 = Hud->GetScrollBarValue( 2 );
-//		TempVal2 = Hud->GetScrollBarValue( 3 );
 
-		float Val = 1.0f;
-		Hud->SetScrollBarValue( 3, Val );
-		Hud->SetScrollBarValue( 2, Val );
-	}
-	else
+/*
+	if ( ThreadDone )
 	{
-		TempVal1 = -583.0f;
-		TempVal2 = 4.0f;
-		Hud->SetScrollBarValue( 2, TempVal1 );
-		Hud->SetScrollBarValue( 3, TempVal2 );
+		ThreadDone = false;
+		TheradStarted = false;
+		MyManager->DeleteFont ( 5 );
+		MyManager->RCube_Font.erase ( MyManager->RCube_Font.begin () + 5 );
+
+		MyManager->UpdateSentence ( 17, MyManager->GetSentenceText ( 17 ), MyManager->GetPosX ( 17 ), MyManager->GetPosY ( 17 ) );
+		MyManager->UpdateSentence ( 18, MyManager->GetSentenceText ( 18 ), MyManager->GetPosX ( 18 ), MyManager->GetPosY ( 18 ) );
+
 	}
 */
+	if ( Hud->GetEditFinished(  4 )	||		// Font size
+		 Hud->GetEditFinished( 11 ) ||		// Outline size
+		 Hud->GetButtonChanged( 12 )	||		// OUTLINED
+		 Hud->GetButtonState ( 13 ) ||		// OUTLINE Colour
+		 Hud->GetButtonState (  8 ) ||		// GR1 Colour
+		 Hud->GetButtonState (  9 ) ||		// GR2 Colour
+		 Hud->GetButtonState ( 10 ) ||		// GR3 Colour
+		 Hud->GetScrollBarChanged ( 17 ) || // Gradient STOP Y POSITION
+		 Hud->GetScrollBarChanged ( 16 ) || // Gradient STOP X POSITION
+		 Hud->GetScrollBarChanged ( 15 ) || // Gradient START Y POSITION
+		 Hud->GetScrollBarChanged ( 14 ) || // Gradient START X POSITION
+		 Hud->GetScrollBarChanged ( 13 ) || // Gradient Stops 3 POSITION
+		 Hud->GetScrollBarChanged ( 12 ) || // Gradient Stops 2 POSITION
+		 Hud->GetScrollBarChanged ( 11 )    // Gradient Stops 1 POSITION
+		 
+//		 Hud->GetButtonState ( 14 )
+		 )
+	{
+//		if ( !TheradStarted )
+//			RunThread ();
+
+
+//		MyManager->DeleteLastFont ();
+		MyManager->DeleteFont ( 5 );
+
+		RCube_Font_Style* Temp_Font_Style;
+		Font_Param* Fparam = new Font_Param;
+
+		Fparam->Font_Path_Name = L"Fonts/Tahoma.ttf";
+		
+		float Size = Hud->GetButtonTextAsFloat ( 4 );
+
+		Fparam->FontSize = Size;
+		Fparam->Outlined = Hud->GetButtonState ( 12 );
+		Fparam->OutlineWidth = Hud->GetButtonTextAsInt ( 11 );
+
+		XMFLOAT4 TempColor = Hud->GetButtonColour ( 8 );
+		Fparam->gradientStops[0].color = D2D1::ColorF ( TempColor.x, TempColor.y, TempColor.z, 1 );
+		Fparam->gradientStops[0].position = Hud->GetScrollBarValue ( 11 );
+		
+		TempColor = Hud->GetButtonColour ( 9 );
+		Fparam->gradientStops[1].color = D2D1::ColorF ( TempColor.x, TempColor.y, TempColor.z, 1 );
+		Fparam->gradientStops[1].position = Hud->GetScrollBarValue ( 12 );
+
+		TempColor = Hud->GetButtonColour ( 10 );
+		Fparam->gradientStops[2].color = D2D1::ColorF ( TempColor.x, TempColor.y, TempColor.z, 1 );
+		Fparam->gradientStops[2].position = Hud->GetScrollBarValue ( 13 );
+
+		Fparam->GradientPos = {
+			Hud->GetScrollBarValue ( 14 ),
+			Hud->GetScrollBarValue ( 15 ),
+			Hud->GetScrollBarValue ( 16 ),
+			Hud->GetScrollBarValue ( 17 )
+		};
+
+		Fparam->OutlineColor = Hud->GetButtonColour ( 13 );
+
+		Temp_Font_Style = RCubeRender->Create_RCube_FontStyle ( Fparam );
+		delete Fparam;
+		MyManager->AddFont ( RCubeRender->Create_RCube_Font ( Temp_Font_Style, CharStr ) );
+		delete Temp_Font_Style;
+
+		MyManager->UpdateSentence ( 17, MyManager->GetSentenceText ( 17 ), MyManager->GetPosX ( 17 ), MyManager->GetPosY ( 17 ) );
+		MyManager->UpdateSentence ( 18, MyManager->GetSentenceText ( 18 ), MyManager->GetPosX ( 18 ), MyManager->GetPosY ( 18 ) );
+
+
+	}
 
 // ++++++++++++++++++++++++     Рисуем текст в HUD     +++++++++++++++++++++++++++++
 
@@ -2323,9 +2202,9 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 // ++++++++++++++++++++++++     Рисуем текст для меню     +++++++++++++++++++++++++++++
 
 		// Рисуем мышкин курсор
-		MyManager->SetActiveShadersInProgramm( m_Bitmap->ShaderIndex );
-		m_Bitmap->ChangeMousePosition( mouseX, mouseY );
-		RCubeRender->RenderFlatObject ( MyManager->Get_Flat_ObjectBuffers_ByIndex ( m_Bitmap->BuffersIndex ) );
+//		MyManager->SetActiveShadersInProgramm( m_Bitmap->ShaderIndex );
+//		m_Bitmap->ChangeMousePosition( mouseX, mouseY );
+//		RCubeRender->RenderFlatObject ( MyManager->Get_Flat_ObjectBuffers_ByIndex ( m_Bitmap->BuffersIndex ) );
 		// Рисуем мышкин курсор
 
 	m_D3D->SetBackBufferRenderTarget();
@@ -2389,7 +2268,65 @@ void GraphicsClass::GetWindowPos ( HWND hWnd, int &x, int &y )
 }
 
 
-void GraphicsClass::SnowThread( FPSTimers& fpstimers )
+DWORD WINAPI GraphicsClass::ThreadFunc ( LPVOID me )
 {
-	Snow->Frame( );
+	reinterpret_cast< GraphicsClass* >( me )->RunThread2();
+
+	return 0;
+}
+
+
+void GraphicsClass::RunThread2 ()
+{
+	RCube_Font_Style* Temp_Font_Style;
+	Font_Param* Fparam = new Font_Param;
+
+	Fparam->Font_Path_Name = L"Fonts/Tahoma.ttf";
+
+	float Size = Hud->GetButtonTextAsFloat ( 4 );
+
+	Fparam->FontSize = Size;
+	Fparam->Outlined = Hud->GetButtonState ( 12 );
+	Fparam->OutlineWidth = Hud->GetButtonTextAsInt ( 11 );
+
+	XMFLOAT4 TempColor = Hud->GetButtonColour ( 8 );
+	Fparam->gradientStops[0].color = D2D1::ColorF ( TempColor.x, TempColor.y, TempColor.z, 1 );
+	Fparam->gradientStops[0].position = Hud->GetScrollBarValue ( 11 );
+
+	TempColor = Hud->GetButtonColour ( 9 );
+	Fparam->gradientStops[1].color = D2D1::ColorF ( TempColor.x, TempColor.y, TempColor.z, 1 );
+	Fparam->gradientStops[1].position = Hud->GetScrollBarValue ( 12 );
+
+	TempColor = Hud->GetButtonColour ( 10 );
+	Fparam->gradientStops[2].color = D2D1::ColorF ( TempColor.x, TempColor.y, TempColor.z, 1 );
+	Fparam->gradientStops[2].position = Hud->GetScrollBarValue ( 13 );
+
+	Fparam->GradientPos = {
+		Hud->GetScrollBarValue ( 14 ),
+		Hud->GetScrollBarValue ( 15 ),
+		Hud->GetScrollBarValue ( 16 ),
+		Hud->GetScrollBarValue ( 17 )
+	};
+
+	Fparam->OutlineColor = Hud->GetButtonColour ( 13 );
+
+	Temp_Font_Style = RCubeRender->Create_RCube_FontStyle ( Fparam );
+	delete Fparam;
+	MyManager->AddFont ( RCubeRender->Create_RCube_Font ( Temp_Font_Style, CharStr ) );
+	delete Temp_Font_Style;
+
+	ThreadDone = true;
+	TheradStarted = false;
+}
+
+
+void  GraphicsClass::RunThread ()
+{
+	HANDLE hThread;
+	DWORD idThread;
+
+	hThread = CreateThread ( NULL, 0, ThreadFunc, this, 0, &idThread );
+
+	TheradStarted = true;
+	ThreadDone = false;
 }

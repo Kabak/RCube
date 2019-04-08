@@ -11,7 +11,7 @@
 
 class ResourceManager;
 
-class StringsListClass : public FlatObjectClass
+class StringsListClass
 {
 
 public:
@@ -25,8 +25,6 @@ public:
 
 	bool Enabled;
 
-	// ѕараметры экрана
-	XMFLOAT4 ScreenCoords;
 	// ѕараметры родительской формы
 	XMFLOAT4 FormCoord;
 
@@ -42,22 +40,21 @@ public:
 
 	int MaxVisibleIndex;	// —колько строк рисовать из общего списка
 
-	Flat_Obj_Buffers* Buffers;
+	FlatObjectClass* StringListObj;
+
 	// —татический имеет ограничени€ по количеству элементов - строк в списке. 
 	// но рисуетс€ быстрее. «а счЄт того, что строки рисуютс€ на текстуре один раз без возможности обновлени€ 
 	HRESULT Init( D3DGlobalContext* D3DGC,
-			   XMFLOAT4& _ScreenCoords,
 			   XMFLOAT4& _FormCoord,
 			   StringsList_Elements& StringsListInit,
-			   ResourceManager * _GlobalResourceManager,
-			   Flat_Obj_Buffers* _Buffers
+			   ResourceManager * _GlobalResourceManager
 			 );
 																	
 	bool SaveTextureToPNG( ID3D11ShaderResourceView* );
 
 	void UpdateABSElementAll();
 
-	void SetStringsListParam();
+	void UpdateBodyPos();	// Calkulate body - vertex position on the screen
 
 	// ¬озвращает номер элемента с которым были изменени€
 	int Frame( DXINPUTSTRUCT& InputClass, FPSTimers& fpstimers, bool &ObjectBUSY );
@@ -67,14 +64,17 @@ public:
 	// —двигаем все строки вниз
 	void ScrollDown();
 
-//	void InitDynamicStringsList( vector <char*> StringsList ); // ƒинамический StringsList
-
 	int SentencesIndex;			// »ндекс группы текстовых строк в списке всех строк резервируетс€ дл€ конкретнго StringsList, чтобы все строки дл€ конкретного StringsList рисовались одновременно
 
 private:
 	
 	D3DGlobalContext* Local_D3DGC;
 	ResourceManager* ResManager;
+
+	XMFLOAT4 ObjOriginalParam;
+	XMFLOAT4 ObjParam;
+
+	int StringListObjBufferIndex;
 
 	vector <char*> Strings;	// ћассив строк подлежащих отрисовке
 
@@ -109,10 +109,10 @@ vector <int> SentencesResIndex;// —писок индексов предложений зарезервированных 
 	XMFLOAT2 FirstStringOffset; // —двиг строк текста относительно угла
 
 	//  оординаты в текстуре дл€ отображени€ куска
-	XMFLOAT2 TextureLeftTop;
-	XMFLOAT2 TextureRightBottom;
-	XMFLOAT2 TextureLeftBottom;
-	XMFLOAT2 TextureRightTop;
+	XMFLOAT4 TextureLeftTop;
+	XMFLOAT4 TextureRightBottom;
+	XMFLOAT4 TextureLeftBottom;
+	XMFLOAT4 TextureRightTop;
 
 	XMFLOAT4 StrList_Frame_pos;			// ѕозици€ окна в текстуре где мы рисуем строки текста ( дл€ вырезани€ этого куска в реальное окно )
 

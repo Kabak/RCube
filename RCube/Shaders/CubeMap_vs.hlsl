@@ -22,6 +22,7 @@ struct Input_VS
 {
 	float4 inPos		: POSITION;
 	float4 inTexCoord	: TEXCOORD;
+	float4 color		: OMGCOLOR;
 };
 
 struct SKYMAP_VS_OUTPUT	

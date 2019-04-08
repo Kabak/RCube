@@ -16,7 +16,8 @@ cbuffer PerFrameBuffer
 struct VertexInputType
 {
 	float4 position			: POSITION;
-	float4 tex				: TEXCOORD0;
+	float4 tex				: TEXCOORD0;	// only x,y,w used     z - free to use 
+	float4 color			: OMGCOLOR;		// Free to use  ( used in KF2OBJ for ColorPicker Color )
 };
 
 
@@ -25,7 +26,8 @@ struct PixelInputType
 	float4 position			: SV_POSITION;
 	float2 tex				: TEXCOORD0;
 
-	float4 color			: COLOR;
+	float4 TextControl		: Control;
+//	float4 color2			: COLOR;
 };
 
 
@@ -42,7 +44,9 @@ PixelInputType FontVertexShader(VertexInputType input)
 	// Store the texture coordinates for the pixel shader.
 	output.tex = input.tex.xy;
 
-	output.color = input.tex.w;
+	output.TextControl = input.tex.w;	// Apply Glow effect if used
+
+//	output.color2 = input.color;
 
 	return output;
 }

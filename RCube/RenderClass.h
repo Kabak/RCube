@@ -50,19 +50,21 @@ public:
 
 // + Font Works
 
-	FontClass* CreateRFont ( FontOnTextureData* FOTData1, WCHAR* SymbolsString);
+	FontClass* Create_RCube_Font ( RCube_Font_Style* FOTData1, WCHAR* SymbolsString);
+	RCube_Font_Style* Create_RCube_FontStyle ( Font_Param* Fparam );
+
 
 	bool CreateTextureFontFromFontFile ( WCHAR* FontNameFullPath,
-		FontOnTextureData *FOTData,
+		RCube_Font_Style *FOTData,
 		FontClass* NewFont,
 		bool fontTextureOut,
 		bool fontTextDescOut );
 
 	// Рисуем любым шрифтом TTF на текстуре
-	bool RenderFontOnTexture ( ID3D11ShaderResourceView* textureForDraw,
+	bool Render_Font_OnTexture ( ID3D11ShaderResourceView* textureForDraw,
 		WCHAR* FontNameFullPath,
 		WCHAR* text,
-		FontOnTextureData *FOTData
+		RCube_Font_Style *FOTData
 		);
 
 	// Копируем текстуру с текстом на нужную текстуру
@@ -86,7 +88,7 @@ public:
 	int CalkNoSpaceAmount ( const WCHAR* String );
 
 	// Коррекция позиций символов после обрезания текстуры
-	void RenderClass::CorrectSymbolsDim ( float OutlineSize, int NewTextureWidth, UINT _SymbolAmount, _Symbol_Dim* _Symbols );
+	void RenderClass::CorrectSymbolsDim ( int OutlineSize, int NewTextureWidth, UINT _SymbolAmount, _Symbol_Dim* _Symbols );
 
 // - Font Works
 
@@ -94,7 +96,7 @@ public:
 
 private:
 	HRESULT hr;
-	const WCHAR *Error = L"Render Error";
+	const WCHAR *Error = L"RenderClass Error";
 
 	ResourceManager* ResManager;
 	D3DGlobalContext* Local_D3DGC;
@@ -104,8 +106,10 @@ private:
 
 // + Font Works
 	void RenderSentence ( SentenceType* );
-	void ShowGlowing ( int Number );
-	void ShowScrolling ( int Number );
+	void ShowGlowing	( int Number );
+	void ShowScrolling  ( int Number );
+	void ShowFromDim	( int i );
+	void HideToDim		( int i );
 // - Font Works
 
 	IDWriteFactory* DWriteFactory;

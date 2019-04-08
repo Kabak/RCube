@@ -476,7 +476,9 @@ float4 ClusteredPS(GeometryVSOut input) : SV_Target
 	// Излучающая поверхность
 	float illum = 0.0f;
 // Подмешиваем Ambient по умолчанию в финальный свет текстур
-	float3 lit = ambientColor.rgb * Ka * surface.albedo.rgb;
+	float4 lit = 1.0f;
+	
+	lit.rgb = ambientColor.rgb * Ka * surface.albedo.rgb;
 
 	float2 screenPosition = input.position.xy / mFramebufferDimensions.xy;
 	float zPosition = (surface.positionView.z - mCameraNearFar.x) / (mCameraNearFar.y - mCameraNearFar.x);
@@ -500,9 +502,9 @@ float4 ClusteredPS(GeometryVSOut input) : SV_Target
 		Light light = gLight[lightIndex];
 // Если свет не используется, то и не пытаемся его рисовать
 		if ( light.Dummy > -1 )
-		AccumulateBRDF(surface, light, lit);
+		AccumulateBRDF(surface, light, lit.rgb );
 	}
-	return float4(saturate(lit), 1.0f);
+	return saturate ( lit );
 }
 
 /*

@@ -4,31 +4,27 @@
 
 #ifdef _DEBUG
 #ifdef _WIN64
-#pragma comment(lib, "PhysX3DEBUG_x64.lib")
-//#pragma comment(lib, "PhysX3GpuDEBUG_x64.lib")  
-//#pragma comment(lib, "PxCudaContextManagerDEBUG_x64.lib")
-#pragma comment(lib, "PhysX3CommonDEBUG_x64.lib")
-#pragma comment(lib, "PhysX3CookingDEBUG_x64.lib")
-#pragma comment(lib, "PhysX3ExtensionsDEBUG.lib")    //PhysX extended library 
-//#pragma comment(lib, "PxCudaContextManager_x64.lib") //For PVD only 
-#pragma comment(lib, "PhysX3CharacterKinematicDEBUG_x64.lib")
-#pragma comment(lib, "PxFoundationDEBUG_x64.lib")
-#pragma comment(lib, "PxPvdSDKDEBUG_x64.lib")
-#pragma comment(lib, "PxTaskDEBUG_x64.lib")
+#pragma comment(lib, "PhysX_64.lib")
+//#pragma comment(lib, "PhysXGpu_64.lib")  
+#pragma comment(lib, "PhysXCommon_64.lib")
+#pragma comment(lib, "PhysXCooking_64.lib")
+#pragma comment(lib, "PhysXExtensions_static_64.lib")    //PhysX extended library 
+#pragma comment(lib, "PhysXCharacterKinematic_static_64.lib")
+#pragma comment(lib, "PhysXFoundation_64.lib")
+#pragma comment(lib, "PhysXPvdSDK_static_64.lib")
+#pragma comment(lib, "PhysXTask_static_64.lib")
 #endif
 #else
 #ifdef _WIN64
-#pragma comment(lib, "PhysX3_x64.lib")
+#pragma comment(lib, "PhysX_64.lib")
 //#pragma comment(lib, "PhysX3Gpu_x64.lib")  
-//#pragma comment(lib, "PxCudaContextManager_x64.lib")
-#pragma comment(lib, "PhysX3Common_x64.lib")
-#pragma comment(lib, "PhysX3Cooking_x64.lib")
-#pragma comment(lib, "PhysX3Extensions.lib")    //PhysX extended library 
-//#pragma comment(lib, "PxCudaContextManager_x64.lib") //For PVD only 
-#pragma comment(lib, "PhysX3CharacterKinematic_x64.lib")
-#pragma comment(lib, "PxFoundation_x64.lib")
-#pragma comment(lib, "PxPvdSDK_x64.lib")
-#pragma comment(lib, "PxTask_x64.lib")
+#pragma comment(lib, "PhysXCommon_64.lib")
+#pragma comment(lib, "PhysXCooking_64.lib")
+#pragma comment(lib, "PhysXExtensions_static_64.lib")    //PhysX extended library 
+#pragma comment(lib, "PhysXCharacterKinematic_static_64.lib")
+#pragma comment(lib, "PhysXFoundation_64.lib")
+#pragma comment(lib, "PhysXPvdSDK_static_64.lib")
+#pragma comment(lib, "PhysXTask_static_64.lib")
 #endif
 #endif
 
@@ -46,7 +42,7 @@ PhysXControler::PhysXControler (){
 		   gPhysics = nullptr;
 gCudaContextManager = nullptr;
 		gDispatcher = nullptr;
-	  GPUDispatcher = nullptr;
+//	  GPUDispatcher = nullptr;
 
 #ifdef _DEBUG
 		  transport = nullptr;
@@ -167,18 +163,11 @@ PxErrorCallback& getSampleErrorCallback(  ) //PxErrorCode::Enum code, const char
 
 void PhysXControler::Init(HWND * g_hwnd , D3DGlobalContext *D3DGC )
 {
-
-//	PxErrorCode::Enum code = PxErrorCode::Enum::eABORT;
-//	const char* message = "1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111";
-//	const char* file= "1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111";
-//	int line = 0;
-
 	g_Hwnd = *g_hwnd;
-//	MyManager = ResourceManager;
 
 // !!! allocator должен быть объявлен именно так. Иначе неправильно инициализируется Foundation и не работает PhysX
 	PxDefaultAllocator *allocator = &gDefaultAllocatorCallback;
-	gFoundation = PxCreateFoundation( PX_FOUNDATION_VERSION, *allocator , getSampleErrorCallback() ); //code, message,  file, line
+	gFoundation = PxCreateFoundation( PX_PHYSICS_VERSION, *allocator , getSampleErrorCallback() ); //code, message,  file, line
 	if ( !gFoundation )
 		MessageBox(0, L"PxCreateFoundation failed!", L"Error",0);
 // ----------------------------------------------------------------------------------------------------------------
@@ -241,10 +230,6 @@ void PhysXControler::Init(HWND * g_hwnd , D3DGlobalContext *D3DGC )
 	PxCookingParams cp = PxCookingParams(gPhysics->getTolerancesScale());
 	cp.buildGPUData = true;
 	theCooking = PxCreateCooking(PX_PHYSICS_VERSION, gPhysics->getFoundation(), PxCookingParams(cp));
-	// Включаем работу HeightFields для Terrain
-		PxRegisterUnifiedHeightFields( *gPhysics );
-	// Включаем работу частиц
-		PxRegisterParticles( *gPhysics );
 
 	PxSceneDesc desc(gPhysics->getTolerancesScale());
 
@@ -254,29 +239,27 @@ void PhysXControler::Init(HWND * g_hwnd , D3DGlobalContext *D3DGC )
 	desc.filterShader = PxDefaultSimulationFilterShader;
 	desc.gravity = PxVec3(0.0f, -9.8f, 0.0f);
 	
-//	desc.gpuDynamicsConfig.constraintBufferCapacity = 64;
-//	desc.gpuDynamicsConfig.contactBufferCapacity = 64;
-//	desc.gpuDynamicsConfig.tempBufferCapacity = 64;
 
+/*
 	if ( gCudaContextManager )	
 		GPUDispatcher = gCudaContextManager->getGpuDispatcher();
 	// Включаем расчёт RigidBoby на GPU	
 	// file:///C:/PhysX-3.4-master/PhysX_3.4/Documentation/PhysXGuide/Manual/GPURigidBodies.html?highlight=pxcreatecudacontextmanager
 	if ( GPUDispatcher )		
 	{
-		desc.gpuDispatcher = GPUDispatcher;
+//		desc.gpuDispatcher = GPUDispatcher;
 		// file:///C:/PhysX-3.4-master/PhysX_3.4/Documentation/PhysXGuide/Manual/BestPractices.html?highlight=eenable_gpu_dynamics
 		desc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
 		desc.flags |= PxSceneFlag::eENABLE_PCM;
 		desc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
 		// Для мониторинга есть ли движущиеся объекты
 		desc.flags |= PxSceneFlag::eENABLE_ACTIVE_ACTORS; // Для мониторинга есть ли движущиеся объекты
-		desc.flags |= PxSceneFlag::eENABLE_ACTIVETRANSFORMS; //
+//		desc.flags |= PxSceneFlag::eENABLE_ACTIVETRANSFORMS; //
 //		desc.flags |= PxSceneFlag::eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS; // Выключаем киниматических актёров
 
 		desc.broadPhaseType = PxBroadPhaseType::eGPU;//eSAP;//eMBP;//
 		desc.gpuMaxNumPartitions = 8;
-/*		desc.gpuDynamicsConfig.constraintBufferCapacity = (32 * 1024 * 1024);
+		desc.gpuDynamicsConfig.constraintBufferCapacity = (32 * 1024 * 1024);
 		desc.gpuDynamicsConfig.contactBufferCapacity = (24 * 1024 * 1024);
 		desc.gpuDynamicsConfig.tempBufferCapacity = (16 * 1024 * 1024);
 		desc.gpuDynamicsConfig.contactStreamSize = (6 * 1024 * 1024);
@@ -284,9 +267,9 @@ void PhysXControler::Init(HWND * g_hwnd , D3DGlobalContext *D3DGC )
 		desc.gpuDynamicsConfig.forceStreamCapacity = (1 * 1024 * 1024);
 		desc.gpuDynamicsConfig.heapCapacity = (64 * 1024 * 1024);
 		desc.gpuDynamicsConfig.foundLostPairsCapacity = (256 * 1024);
-*/
-	}
 
+	}
+*/
 	gScene = gPhysics->createScene(desc);
 
 #ifdef _DEBUG
@@ -373,7 +356,7 @@ void PhysXControler::CreateHeildHield( Terrain* TerrainObject, std::wstring file
 	hfDesc.nbColumns = numCols;
 	hfDesc.nbRows = numRows;
 	hfDesc.samples.data = hfSamples;
-	hfDesc.thickness = -10.0f; // user-specified heightfield thickness
+//	hfDesc.thickness = -10.0f; // user-specified heightfield thickness
 	hfDesc.flags = PxHeightFieldFlags();
 	hfDesc.samples.stride = sizeof(PxU32);
 	/*

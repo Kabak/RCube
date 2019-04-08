@@ -222,6 +222,9 @@
     <ClInclude Include="ParticleSystemController.h">
       <Filter>Particles</Filter>
     </ClInclude>
+    <ClInclude Include="ColorPickerClass.h">
+      <Filter>Menu</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -355,6 +358,9 @@
     </ClCompile>
     <ClCompile Include="ParticleSystemController.cpp">
       <Filter>Particles</Filter>
+    </ClCompile>
+    <ClCompile Include="ColorPickerClass.cpp">
+      <Filter>Menu</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

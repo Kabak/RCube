@@ -57,51 +57,57 @@ void RenderClass::RenderMenu (int Index)
 	
 	Menu *TempMenu = ResManager->Menus[Index];
 
+	Flat_Obj_Buffers* FlatObject;
+
 	if (Index < c)
 	{
 		// Если есть фон, рисуем его
 		if (TempMenu->Background)
 		{
-			Flat_Obj_Buffers* FlatObject = ResManager->Get_Flat_ObjectBuffers_ByIndex ( TempMenu->Background->Buffers->ThisBufferIndex );
+			FlatObject = ResManager->Get_Flat_ObjectBuffers_ByIndex ( TempMenu->Background->Buffers->ThisBufferIndex );
 			RenderFlatObject ( FlatObject );
 		}
 
 		// Если есть анимация в меню, то рисуем её
 		if (TempMenu->Animation != nullptr && TempMenu->Animation->Enabled )
 		{
-			Flat_Obj_Buffers* FlatObject = ResManager->Get_Flat_ObjectBuffers_ByIndex ( TempMenu->Animation->AnimeTextures->Buffers->ThisBufferIndex );
+			FlatObject = ResManager->Get_Flat_ObjectBuffers_ByIndex ( TempMenu->Animation->AnimeTexture->Buffers->ThisBufferIndex );
 			// Устанавливаем специфический шейдер для анимации
-			ResManager->SetActiveShadersInProgramm ( TempMenu->Animation->ShaderForDraw );
+//			ResManager->SetActiveShadersInProgramm ( TempMenu->Animation->ShaderForDraw );
 			RenderFlatObject ( FlatObject );
 			// Возвращаем шейдер для отрисовки остальных элементов меню
-			ResManager->SetActiveShadersInProgramm ( TempMenu->Animation->ShaderReturnTo );
+//			ResManager->SetActiveShadersInProgramm ( TempMenu->Animation->ShaderReturnTo );
 		}
 		// Buttons
 		int c = 0;
-		while (c < TempMenu->g_NumOfButtons)
+		while ( c < TempMenu->g_NumOfButtons )
 		{
-			Flat_Obj_Buffers* FlatObject = ResManager->Get_Flat_ObjectBuffers_ByIndex ( TempMenu->Buttons[c]->Buffers->ThisBufferIndex );
+//			KFButton* Button = TempMenu->Buttons[c];
+
+			FlatObject = ResManager->Get_Flat_ObjectBuffers_ByIndex ( TempMenu->Buttons[c]->Buffers->ThisBufferIndex );
 			RenderFlatObject ( FlatObject );
+
 			++c;
 		}
 		// Scrollbars
 		c = 0;
 		while (c < TempMenu->g_NumOfScrollBars)
 		{
-			Flat_Obj_Buffers* FlatObject;
 
-			FlatObject = ResManager->Get_Flat_ObjectBuffers_ByIndex ( TempMenu->ScrollBars[c]->Body->Buffers->ThisBufferIndex );
+			ScrollBarClass* ScrollBar = TempMenu->ScrollBars[c];
+
+			FlatObject = ResManager->Get_Flat_ObjectBuffers_ByIndex ( ScrollBar->Body->Buffers->ThisBufferIndex );
 			RenderFlatObject ( FlatObject );
 			// исуем три кнопки от скролбара
-			if (TempMenu->ScrollBars[c]->MinMixButtonsShow)
+			if ( ScrollBar->MinMaxButtonsShow)
 			{
-				FlatObject = ResManager->Get_Flat_ObjectBuffers_ByIndex ( TempMenu->ScrollBars[c]->MinButton->Buffers->ThisBufferIndex );
+				FlatObject = ResManager->Get_Flat_ObjectBuffers_ByIndex ( ScrollBar->MinButton->Buffers->ThisBufferIndex );
 				RenderFlatObject ( FlatObject );
-				FlatObject = ResManager->Get_Flat_ObjectBuffers_ByIndex ( TempMenu->ScrollBars[c]->MaxButton->Buffers->ThisBufferIndex );
+				FlatObject = ResManager->Get_Flat_ObjectBuffers_ByIndex ( ScrollBar->MaxButton->Buffers->ThisBufferIndex );
 				RenderFlatObject ( FlatObject );
 			}
 
-			FlatObject = ResManager->Get_Flat_ObjectBuffers_ByIndex ( TempMenu->ScrollBars[c]->Traveller->Buffers->ThisBufferIndex );
+			FlatObject = ResManager->Get_Flat_ObjectBuffers_ByIndex ( ScrollBar->Traveller->Buffers->ThisBufferIndex );
 			RenderFlatObject ( FlatObject );
 			++c;
 		}
@@ -109,18 +115,63 @@ void RenderClass::RenderMenu (int Index)
 		c = 0;
 		while (c < TempMenu->g_NumOfStringsLists)
 		{
+
+			StringsListClass* Strings = TempMenu->StringsList[c];
+
+			// Setting the temporary texture for drawing text strings
 			Local_D3DGC->DX_deviceContext->ClearRenderTargetView ( Local_D3DGC->BackBuffer_ProxyTextureRTV, Local_D3DGC->ZeroColor );
 			Local_D3DGC->DX_deviceContext->OMSetRenderTargets ( 1, &Local_D3DGC->BackBuffer_ProxyTextureRTV, NULL );
-
 			// Рисуем строки в текстуру для скролинга
-			RenderText ( TempMenu->StringsList[c]->SentencesIndex );
+			RenderText ( Strings->SentencesIndex );
 
 			// Сохраняем в файл для визуальной отладки
-			//	SaveTextureToPNG( StrList_SRV );
+			//	Local_D3D->SaveTextureToPNG( Local_D3DGC->BackBuffer_ProxyTextureSRV );
 
 			Local_D3DGC->DX_deviceContext->OMSetRenderTargets ( 1, &Local_D3DGC->BackBuffer_RTV, Local_D3DGC->m_depthStencilView );
 
-			Flat_Obj_Buffers* FlatObject = ResManager->Get_Flat_ObjectBuffers_ByIndex ( TempMenu->StringsList[c]->Buffers->ThisBufferIndex );
+			FlatObject = ResManager->Get_Flat_ObjectBuffers_ByIndex ( Strings->StringListObj->Buffers->ThisBufferIndex );
+			RenderFlatObject ( FlatObject );
+			++c;
+		}
+		// ColorPickers
+		c = 0;
+		while ( c < TempMenu->g_NumOfColorPickers )
+		{
+
+			ColorPickerClass* ColorPickers = TempMenu->ColorPickers[c];
+
+//			Local_D3DGC->DX_deviceContext->OMSetRenderTargets ( 1, &Local_D3DGC->BackBuffer_ProxyTextureRTV, NULL );
+
+			unsigned int stride;
+			unsigned int offset;
+
+			// Set vertex buffer stride and offset.
+			stride = sizeof ( Vertex_FlatObject );
+			offset = 0;
+			// Render ColorPicker Texture
+//			FlatObject = ResManager->Get_Flat_ObjectBuffers_ByIndex ( ColorPickers->ColorPicker->Buffers->ThisBufferIndex );
+//			Local_D3DGC->DX_deviceContext->IASetVertexBuffers ( 0, 1, &FlatObject->FlatObjectVB->Buffer, &stride, &offset );
+//			Local_D3DGC->DX_deviceContext->IASetIndexBuffer ( FlatObject->IndexBs->Buffer, DXGI_FORMAT_R32_UINT, 0 );
+//			Local_D3DGC->DX_deviceContext->IASetInputLayout ( ResManager->Layouts[FLATOBJECT] );
+//			Local_D3DGC->DX_deviceContext->DrawIndexed ( 6, 0, 0 );
+
+//			Local_D3D->SaveTextureToPNG ( Local_D3DGC->BackBuffer_ProxyTextureSRV );
+
+			// Render AlphaPicker Texture
+//			FlatObject = ResManager->Get_Flat_ObjectBuffers_ByIndex ( ColorPickers->AlphaPicker->Buffers->ThisBufferIndex );
+//			Local_D3DGC->DX_deviceContext->IASetVertexBuffers ( 0, 1, &FlatObject->FlatObjectVB->Buffer, &stride, &offset );
+//			Local_D3DGC->DX_deviceContext->DrawIndexed ( 6, 0, 0 );
+
+//			Local_D3D->SaveTextureToPNG( Local_D3DGC->BackBuffer_ProxyTextureSRV );
+
+			// Render All components on the screen
+//			Local_D3DGC->DX_deviceContext->OMSetRenderTargets ( 1, &Local_D3DGC->BackBuffer_RTV, Local_D3DGC->m_depthStencilView );
+
+			FlatObject = ResManager->Get_Flat_ObjectBuffers_ByIndex ( ColorPickers->Panthon->Buffers->ThisBufferIndex );
+			RenderFlatObject ( FlatObject );
+			FlatObject = ResManager->Get_Flat_ObjectBuffers_ByIndex ( ColorPickers->ColorPicker->Buffers->ThisBufferIndex );
+			RenderFlatObject ( FlatObject );
+			FlatObject = ResManager->Get_Flat_ObjectBuffers_ByIndex ( ColorPickers->AlphaPicker->Buffers->ThisBufferIndex );
 			RenderFlatObject ( FlatObject );
 			++c;
 		}
@@ -246,7 +297,7 @@ int RenderClass::CalkNoSpaceAmount (const WCHAR* String )
 }
 
 
-void RenderClass::CorrectSymbolsDim ( float OutlineSize, int NewTextureWidth, UINT SymbolAmount, _Symbol_Dim* Symbols )
+void RenderClass::CorrectSymbolsDim ( int OutlineSize, int NewTextureWidth, UINT SymbolAmount, _Symbol_Dim* Symbols )
 {
 	double OnePixelLength = 1 / (double)(NewTextureWidth); // Берём ширину текстуры которая будет сохраняться в файл
 	OnePixelLength *= 1000000000;
@@ -255,7 +306,7 @@ void RenderClass::CorrectSymbolsDim ( float OutlineSize, int NewTextureWidth, UI
 
 	float OnePixL = (float)OnePixelLength;
 
-	int Correction = (int)OutlineSize / 2;
+	int Correction = OutlineSize / 2;
 
 	for (UINT i = 0; i < SymbolAmount; ++i)
 	{
@@ -361,10 +412,10 @@ void RenderClass::CalcFTextureDimention ( UINT FonColour )
 }
 
 
-bool RenderClass::RenderFontOnTexture ( ID3D11ShaderResourceView* textureForDraw,
+bool RenderClass::Render_Font_OnTexture ( ID3D11ShaderResourceView* textureForDraw,
 	WCHAR* FontNameFullPath,
 	WCHAR* text,
-	FontOnTextureData*FOTData
+	RCube_Font_Style*FOTData
 )
 {
 	bool result = true; // если всё классно, функция 
@@ -486,7 +537,7 @@ bool RenderClass::RenderFontOnTexture ( ID3D11ShaderResourceView* textureForDraw
 	if (FOTData->Outline)
 	{
 		// Draw text outline
-		D2DRenderTarget->DrawGeometry ( pPathGeometry, FOTData->OutlineBrush, FOTData->OutlineWidth );
+		D2DRenderTarget->DrawGeometry ( pPathGeometry, FOTData->OutlineBrush, (float)FOTData->OutlineWidth );
 	}
 
 	// Draw text body
@@ -506,16 +557,15 @@ bool RenderClass::RenderFontOnTexture ( ID3D11ShaderResourceView* textureForDraw
 	//Use the D3D11 Device
 	keyedMutex11->AcquireSync ( 1, 0 );
 
-	int Res1 = ResManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 4, 6, nullptr );
-	int Res2 = ResManager->Create_Flat_Obj_Buffers ( D3D11_USAGE_DEFAULT, 4, 6, nullptr );
+	int Res1 = ResManager->Create_Flat_Obj_Buffers ( NO_CPU_ACCESS_BUFFER, 4, 6, nullptr );
+	int Res2 = ResManager->Create_Flat_Obj_Buffers ( NO_CPU_ACCESS_BUFFER, 4, 6, nullptr );
 
-	ResManager->SetActiveShadersInProgramm ( ResManager->FontOnTextureShaderIndex );
+	ResManager->SetActiveShadersInProgramm ( ResManager->Temp_Font_StyleShaderIndex );
 
 	// Наносим текстуру с текстом на нужною нам текстуру
 	CopyTextTextureOnTexture ( textureForDraw, 
 		ResManager->Get_Flat_ObjectBuffers_ByIndex ( Res1 ),
 		ResManager->Get_Flat_ObjectBuffers_ByIndex ( Res2 ) );
-	//	CopyTextTextureOnTexture_OLD ( textureForDraw );
 
 	ResManager->Delete_Flat_ObjectBuffers ( Res2 );
 	ResManager->Delete_Flat_ObjectBuffers ( Res1 );
@@ -719,8 +769,7 @@ bool RenderClass::CopyTextTextureOnTexture ( ID3D11ShaderResourceView* textureFo
 }
 
 
-
-FontClass* RenderClass::CreateRFont ( FontOnTextureData* FOTData1, WCHAR* SymbolsString )
+FontClass* RenderClass::Create_RCube_Font ( RCube_Font_Style* FOTData1, WCHAR* SymbolsString )
 {
 	bool SaveFont = false;		// Если нужно сохранить текстуру шрифта
 	bool SaveFontData = false;	// Если нужно сохранить данные к текстуре шрифта
@@ -731,18 +780,13 @@ FontClass* RenderClass::CreateRFont ( FontOnTextureData* FOTData1, WCHAR* Symbol
 
 //	ResManager->m_Font.push_back ( NewFont );	// Сохраняем шрифт в списке
 
-	if (FOTData1->OutlineWidth > 10.0f)
-		FOTData1->OutlineWidth = 10.0f;
-	else if (FOTData1->OutlineWidth < 0.0f)
-		FOTData1->OutlineWidth = 0.0f;
+	FOTData1->OutlineWidth > 10 ? FOTData1->OutlineWidth = 10 : FOTData1->OutlineWidth;
+	FOTData1->OutlineWidth < 0 ? FOTData1->OutlineWidth = 0 : FOTData1->OutlineWidth;
 	// Если нет Outline, то и корректору указываем что не нужно бодавлять пиксели к буквам
-	if (FOTData1->Outline == false)
-		FOTData1->OutlineWidth = 0.0f;
+	FOTData1->Outline == false ? FOTData1->OutlineWidth = 0 : FOTData1->OutlineWidth;
 
-	if (FOTData1->FontSize > 74.0f)
-		FOTData1->FontSize = 74.0f;
-	if (FOTData1->FontSize < 0.0f)
-		FOTData1->FontSize = 8.0f;
+	FOTData1->FontSize > 74.0f ? FOTData1->FontSize = 74.0f : FOTData1->FontSize;
+	FOTData1->FontSize < 0.0f ? FOTData1->FontSize = 8.0f : FOTData1->FontSize;
 
 	NewFont->FontSize = FOTData1->FontSize;
 
@@ -870,7 +914,7 @@ FontClass* RenderClass::CreateRFont ( FontOnTextureData* FOTData1, WCHAR* Symbol
 }
 
 
-bool RenderClass::CreateTextureFontFromFontFile ( WCHAR* FontNameFullPath, FontOnTextureData *FOTData, FontClass* NewFont, bool fontTextureOut, bool fontTextDescOut )
+bool RenderClass::CreateTextureFontFromFontFile ( WCHAR* FontNameFullPath, RCube_Font_Style *FOTData, FontClass* NewFont, bool fontTextureOut, bool fontTextDescOut )
 {
 
 	bool result = true; // если всё классно, функция 
@@ -992,13 +1036,10 @@ bool RenderClass::CreateTextureFontFromFontFile ( WCHAR* FontNameFullPath, FontO
 		ZeroMemory ( pCodePoints, sizeof ( UINT ) * L );
 		ZeroMemory ( pGlyphIndices, sizeof ( UINT16 ) * L );
 
-		//	memcpy( pCodePoints, text, sizeof ( UINT ) * L );
-
 		UINT *Dest = &pCodePoints[0];
 		wchar_t *Source = &NewFont->Str[0];
 		for (UINT i = 0; i < L; ++i)
 		{
-			//		pCodePoints[i] = text[i];
 			*Dest = *Source;
 			++Dest;
 			++Source;
@@ -1219,13 +1260,10 @@ bool RenderClass::CreateTextureFontFromFontFile ( WCHAR* FontNameFullPath, FontO
 	ZeroMemory ( pCodePoints, sizeof ( UINT ) * L );
 	ZeroMemory ( pGlyphIndices, sizeof ( UINT16 ) * L );
 
-	//	memcpy( pCodePoints, text, sizeof ( UINT ) * L );
-
 	UINT *Dest = &pCodePoints[0];
 	wchar_t *Source = &NewFont->Str[0];
 	for (UINT i = 0; i < L; ++i)
 	{
-		//		pCodePoints[i] = text[i];
 		*Dest = *Source;
 		++Dest;
 		++Source;
@@ -1303,7 +1341,7 @@ bool RenderClass::CreateTextureFontFromFontFile ( WCHAR* FontNameFullPath, FontO
 	if (FOTData->Outline)
 	{
 		// Draw text outline
-		D2DRenderTarget->DrawGeometry ( pPathGeometry, FOTData->OutlineBrush, FOTData->OutlineWidth );
+		D2DRenderTarget->DrawGeometry ( pPathGeometry, FOTData->OutlineBrush, (float)FOTData->OutlineWidth );
 	}
 
 	// Draw text body
@@ -1430,6 +1468,78 @@ EXIT:
 }
 
 
+RCube_Font_Style* RenderClass::Create_RCube_FontStyle ( Font_Param* Fparam )
+{
+	HRESULT result;
+	ID2D1LinearGradientBrush	*LinearGradientBrush = nullptr;
+	ID2D1SolidColorBrush		  *SolidBrushOutline = nullptr;
+	ID2D1GradientStopCollection		  *GradientStops = nullptr;
+
+	RCube_Font_Style* Temp_Font_Style = new RCube_Font_Style;
+
+	Temp_Font_Style->AliasingMode = D2D1_ANTIALIAS_MODE_PER_PRIMITIVE;// Включаем алиасинг
+	Temp_Font_Style->FontFaceType = DWRITE_FONT_FACE_TYPE_TRUETYPE;
+
+	Temp_Font_Style->FontSize = Fparam->FontSize * Local_D3DGC->ScreenScale.w; // Apply Scale according to screen resolution
+	Temp_Font_Style->FontSize < 6 ? Temp_Font_Style->FontSize = 6 : Temp_Font_Style->FontSize;
+
+	int Namesize = lstrlenW ( Fparam->Font_Path_Name );
+	wchar_t *NamePointer = new wchar_t[Namesize + 1];
+	Temp_Font_Style->FontName = NamePointer;
+	lstrcpyW ( NamePointer, Fparam->Font_Path_Name );
+
+	Temp_Font_Style->Outline = Fparam->Outlined;
+	Temp_Font_Style->OutlineWidth = Fparam->OutlineWidth;
+
+	hr = Local_D3DGC->D2DRenderTarget->CreateGradientStopCollection (
+		&Fparam->gradientStops[0],
+		3,
+		D2D1_GAMMA_2_2,
+		D2D1_EXTEND_MODE_CLAMP,
+		&GradientStops
+	);
+	if ( FAILED ( hr ) )
+	{
+		MessageBox ( NULL, L"Create GradientStopCollection failed!", Error, 0 );
+		result = false;
+	}
+
+	hr = Local_D3DGC->D2DRenderTarget->CreateLinearGradientBrush (
+		D2D1::LinearGradientBrushProperties (
+		D2D1::Point2F ( Fparam->GradientPos.x, Fparam->GradientPos.y ),
+		D2D1::Point2F ( Fparam->GradientPos.z, Fparam->GradientPos.w ) ),
+		GradientStops,
+		&LinearGradientBrush
+	);
+	if ( FAILED ( hr ) )
+	{
+		MessageBox ( NULL, L"Create LinearGradientBrush failed!", Error, 0 );
+		result = false;
+	}
+
+	hr = Local_D3DGC->D2DRenderTarget->CreateSolidColorBrush ( D2D1::ColorF (
+		Fparam->OutlineColor.x,
+		Fparam->OutlineColor.y,
+		Fparam->OutlineColor.z,
+		Fparam->OutlineColor.w ),
+		&SolidBrushOutline
+	);
+	if ( FAILED ( hr ) )
+	{
+		MessageBox ( NULL, L"Create SolidColorBrush failed!", Error, 0 );
+		result = false;
+	}
+
+	Temp_Font_Style->OutlineBrush = SolidBrushOutline;
+	Temp_Font_Style->FillBrush = LinearGradientBrush;
+	RCUBE_RELEASE ( GradientStops );
+
+
+	return Temp_Font_Style;
+
+}
+
+
 void RenderClass::RenderSentence ( SentenceType* sentence )
 {
 	unsigned int stride, offset;
@@ -1439,9 +1549,7 @@ void RenderClass::RenderSentence ( SentenceType* sentence )
 
 	Local_D3DGC->DX_deviceContext->IASetVertexBuffers ( 0, 1, &ResManager->FlatObjectBuffers[sentence->VertexBufferIndex]->FlatObjectVB->Buffer, &stride, &offset );
 
-	ID3D11ShaderResourceView* texture = ResManager->TexturesArr[ResManager->RCube_Font[sentence->FontType]->FontTextureIndex]->SRV;
-
-	Local_D3DGC->DX_deviceContext->PSSetShaderResources ( 0, 1, &texture );
+	Local_D3DGC->DX_deviceContext->PSSetShaderResources ( 0, 1, &ResManager->TexturesArr[ResManager->RCube_Font[sentence->FontType]->FontTextureIndex]->SRV );
 
 	Local_D3DGC->DX_deviceContext->Draw ( sentence->vertexCount, 0 );
 
@@ -1453,27 +1561,62 @@ void RenderClass::ShowGlowing ( int i )
 	RCube_VecFloat234 TextV34;
 
 	SentenceType* Source = ResManager->RCube_Sentences[i];
-	if (Source->ShowGoOn == false)
+	
+	if ( Source->ShowGoOn == false )
 	{
-		Source->TempValShow = 0.0f;
-		Source->ShowGoOn = true;
+		if ( Source->Colour.w > 0.0f )
+			Source->Colour.w -= fpstimers.FrameTime * 2.0f; // How fast to glow
+		else
+			Source->ShowGoOn = true;
 	}
 	else
 	{
-		if ( fpstimers.FrameTime < 1.0f )
-			Source->TempValShow += fpstimers.FrameTime;
-
-		if (Source->TempValShow > ( 1.0f / 1.0f ) ) // How fast to glow
-		{
+		if ( Source->Colour.w < 1.0f )
+			Source->Colour.w += fpstimers.FrameTime * 2.0f; // How fast to glow
+		else
 			Source->ShowGoOn = false;
-		}
+	}
+}
 
-		if (Source->ShowGoOn == true)
+
+void RenderClass::ShowFromDim ( int i )
+{
+	RCube_VecFloat234 TextV34;
+
+	SentenceType* Source = ResManager->RCube_Sentences[i];
+	if ( Source->FromDim == false )
+	{
+		if ( Source->Colour.w < 1.0f )
+			Source->Colour.w += fpstimers.FrameTime * 1.0f; // How fast to light string
+
+		Source->Colour.w > 1.0f ? Source->Colour.w = 1.0f : Source->Colour.w;
+	}
+	else
+	{
+		if ( Source->Colour.w > 0.0f )
+			Source->Colour.w -= fpstimers.FrameTime * 1.0f; // How fast to light string
+
+		Source->Colour.w < 0.0f ? Source->Colour.w = 0.0f : Source->Colour.w;
+	}
+}
+
+
+void RenderClass::HideToDim ( int i )
+{
+	RCube_VecFloat234 TextV34;
+
+	SentenceType* Source = ResManager->RCube_Sentences[i];
+	if ( Source->ShowGoOn == true )
+	{
+		if ( Source->Colour.w > 0.0f )
 		{
-			if (Source->Colour.w > 0.0f)
-				Source->Colour.w -= fpstimers.FrameTime * 1.0f; // How fast to glow
-			else
-				Source->Colour.w = 1.0f;
+			Source->Colour.w -= fpstimers.FrameTime * 1.0f; // How fast to light string
+		}
+		else
+		{
+			Source->Colour.w = 0.0f;
+//			Source->ShowGoOn = false;	// Stop apply effect
+			Source->Render = false;		// Stop render sentence
 		}
 	}
 }
@@ -1512,22 +1655,33 @@ void RenderClass::RenderText ( int Level )
 {
 	bool GLOW = false;
 	bool SCROLL = false;
+	bool FROMDIM = false;
+	bool HIDETODIM = false;
 
 //	Local_D3DGC->DX_deviceContext->IASetPrimitiveTopology ( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
-
-	for (UINT i = 0, j = (UINT)ResManager->RCube_Sentences.size (); i < j; ++i)
+	UINT size = ( UINT ) ResManager->RCube_Sentences.size ();
+	for (UINT i = 0, j = size; i < j; ++i)
 	{
 		SentenceType* Sentence = ResManager->RCube_Sentences[i];
 		if (Sentence->Render == true && Sentence->Level == Level)
 		{
 			Sentence->ShowType & SHOW_GLOWING ? GLOW = true : GLOW = false;
 			Sentence->ShowType & SHOW_SCROLLING ? SCROLL = true : SCROLL = false;
+			Sentence->ShowType & SHOW_FROM_DIM ? FROMDIM = true : FROMDIM = false;
+			Sentence->ShowType & HIDE_TO_DIM ? HIDETODIM = true : HIDETODIM = false;
+
 
 			if ( GLOW )
 				ShowGlowing ( i );
 
 			if ( SCROLL )
 				ShowScrolling ( i );
+
+			if ( FROMDIM )
+				ShowFromDim ( i );
+
+			if ( HIDETODIM )
+				ShowFromDim ( i );
 	
 			RenderSentence ( ResManager->RCube_Sentences[i] );
 		}
@@ -1752,14 +1906,9 @@ void RenderClass::RenderSpotLightsSadowMaps ( std::vector <int>* SpotLightsWithS
 	{
 
 		// Для скорости убрал всё что не меняется в глобальную инициализацию
-		if ( Local_D3DGC->MSAAQualityCount > 1 )
-		{
-			DSD2.Texture2DMSArray.FirstArraySlice = i;
-		}
-		else
-		{
-			DSD2.Texture2DArray.FirstArraySlice = i;
-		}
+		Local_D3DGC->MSAAQualityCount > 1 ?	DSD2.Texture2DMSArray.FirstArraySlice = i
+										  : DSD2.Texture2DArray.FirstArraySlice   = i;
+		
 
 		res = Local_D3DGC->DX_device->CreateDepthStencilView ( Local_D3D->ShadowMap3D, &DSD2, &Local_D3DGC->DSV_ShadowMap3D );
 		//if (FAILED(res))
