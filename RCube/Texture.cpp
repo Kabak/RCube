@@ -16,6 +16,9 @@ Texture::Texture ()
 	Texture1D = nullptr;
 	Texture2D = nullptr;
 	Texture3D = nullptr;
+	   Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	    Usage = D3D11_USAGE_DEFAULT;
+		 Type = _2D;
 }
 
 

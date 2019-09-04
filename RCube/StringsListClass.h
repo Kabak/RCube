@@ -11,7 +11,7 @@
 
 class ResourceManager;
 
-class StringsListClass
+class StringsListClass : public AboutMenuElement
 {
 
 public:

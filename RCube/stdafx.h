@@ -27,6 +27,13 @@ using namespace Microsoft::WRL::Wrappers;
 
 using namespace DirectX;
 
+struct RCube_XY_POS
+{
+	RCube_XY_POS () {};
+	int X;
+	int Y;
+};
+
 union RCube_VecFloat234
 {
 	RCube_VecFloat234(){}; //MyData.Vec = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -51,6 +58,11 @@ union RCubeMatrix
 #define	RCUBE_DELETE(x)		if( x != nullptr ){ delete x; x = nullptr; }
 #define	RCUBE_ARR_DELETE(x)	if( x != nullptr ){ delete [] x; x = nullptr; }
 #define	PXSAFE_RELEASE(x)	if( x != nullptr ){ x->release(); x = nullptr; }
+
+#define RCUBE_VECTOR_DELETE(x) { size_t c = 0; while ( c < x.size() ){ RCUBE_DELETE ( x[c] ); ++c; } x.clear (); }
+#define RCUBE_VECTOR_RELEASE(x) { size_t c = 0; while ( c < x.size() ){ RCUBE_RELEASE ( x[c] ); ++c; } x.clear (); }
+#define RCUBE_VECTOR_ARR_DELETE(x) { size_t c = 0; while ( c < x.size() ){ RCUBE_ARR_DELETE ( x[c] ); ++c; } x.clear (); }
+
 
 #define KF_MAX_MODEL_ARR_SIZE 10000	// Максимальное количество моделей на сцене
 

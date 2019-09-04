@@ -84,7 +84,7 @@ void RenderClass::RenderMenu (int Index)
 		{
 //			KFButton* Button = TempMenu->Buttons[c];
 
-			FlatObject = ResManager->Get_Flat_ObjectBuffers_ByIndex ( TempMenu->Buttons[c]->Buffers->ThisBufferIndex );
+			FlatObject = ResManager->Get_Flat_ObjectBuffers_ByIndex ( TempMenu->Buttons[c]->Body->Buffers->ThisBufferIndex );
 			RenderFlatObject ( FlatObject );
 
 			++c;
@@ -1470,7 +1470,6 @@ EXIT:
 
 RCube_Font_Style* RenderClass::Create_RCube_FontStyle ( Font_Param* Fparam )
 {
-	HRESULT result;
 	ID2D1LinearGradientBrush	*LinearGradientBrush = nullptr;
 	ID2D1SolidColorBrush		  *SolidBrushOutline = nullptr;
 	ID2D1GradientStopCollection		  *GradientStops = nullptr;
@@ -1501,7 +1500,6 @@ RCube_Font_Style* RenderClass::Create_RCube_FontStyle ( Font_Param* Fparam )
 	if ( FAILED ( hr ) )
 	{
 		MessageBox ( NULL, L"Create GradientStopCollection failed!", Error, 0 );
-		result = false;
 	}
 
 	hr = Local_D3DGC->D2DRenderTarget->CreateLinearGradientBrush (
@@ -1514,7 +1512,6 @@ RCube_Font_Style* RenderClass::Create_RCube_FontStyle ( Font_Param* Fparam )
 	if ( FAILED ( hr ) )
 	{
 		MessageBox ( NULL, L"Create LinearGradientBrush failed!", Error, 0 );
-		result = false;
 	}
 
 	hr = Local_D3DGC->D2DRenderTarget->CreateSolidColorBrush ( D2D1::ColorF (
@@ -1527,7 +1524,6 @@ RCube_Font_Style* RenderClass::Create_RCube_FontStyle ( Font_Param* Fparam )
 	if ( FAILED ( hr ) )
 	{
 		MessageBox ( NULL, L"Create SolidColorBrush failed!", Error, 0 );
-		result = false;
 	}
 
 	Temp_Font_Style->OutlineBrush = SolidBrushOutline;
@@ -1556,12 +1552,10 @@ void RenderClass::RenderSentence ( SentenceType* sentence )
 }
 
 
-void RenderClass::ShowGlowing ( int i )
+void RenderClass::ShowGlowing ( SentenceType* Source )
 {
 	RCube_VecFloat234 TextV34;
 
-	SentenceType* Source = ResManager->RCube_Sentences[i];
-	
 	if ( Source->ShowGoOn == false )
 	{
 		if ( Source->Colour.w > 0.0f )
@@ -1579,11 +1573,10 @@ void RenderClass::ShowGlowing ( int i )
 }
 
 
-void RenderClass::ShowFromDim ( int i )
+void RenderClass::ShowFromDim ( SentenceType* Source )
 {
 	RCube_VecFloat234 TextV34;
 
-	SentenceType* Source = ResManager->RCube_Sentences[i];
 	if ( Source->FromDim == false )
 	{
 		if ( Source->Colour.w < 1.0f )
@@ -1601,11 +1594,10 @@ void RenderClass::ShowFromDim ( int i )
 }
 
 
-void RenderClass::HideToDim ( int i )
+void RenderClass::HideToDim ( SentenceType* Source )
 {
 	RCube_VecFloat234 TextV34;
 
-	SentenceType* Source = ResManager->RCube_Sentences[i];
 	if ( Source->ShowGoOn == true )
 	{
 		if ( Source->Colour.w > 0.0f )
@@ -1622,9 +1614,8 @@ void RenderClass::HideToDim ( int i )
 }
 
 
-void RenderClass::ShowScrolling ( int i )
+void RenderClass::ShowScrolling ( SentenceType* Source )
 {
-	SentenceType* Source = ResManager->RCube_Sentences[i];
 
 	if (Source->ScrollGoOn == false)
 	{
@@ -1662,28 +1653,28 @@ void RenderClass::RenderText ( int Level )
 	UINT size = ( UINT ) ResManager->RCube_Sentences.size ();
 	for (UINT i = 0, j = size; i < j; ++i)
 	{
-		SentenceType* Sentence = ResManager->RCube_Sentences[i];
-		if (Sentence->Render == true && Sentence->Level == Level)
+		SentenceType* Source = ResManager->RCube_Sentences[i];
+		if (Source->Render == true && Source->Level == Level)
 		{
-			Sentence->ShowType & SHOW_GLOWING ? GLOW = true : GLOW = false;
-			Sentence->ShowType & SHOW_SCROLLING ? SCROLL = true : SCROLL = false;
-			Sentence->ShowType & SHOW_FROM_DIM ? FROMDIM = true : FROMDIM = false;
-			Sentence->ShowType & HIDE_TO_DIM ? HIDETODIM = true : HIDETODIM = false;
+			Source->ShowType & SHOW_GLOWING ? GLOW = true : GLOW = false;
+			Source->ShowType & SHOW_SCROLLING ? SCROLL = true : SCROLL = false;
+			Source->ShowType & SHOW_FROM_DIM ? FROMDIM = true : FROMDIM = false;
+			Source->ShowType & HIDE_TO_DIM ? HIDETODIM = true : HIDETODIM = false;
 
 
 			if ( GLOW )
-				ShowGlowing ( i );
+				ShowGlowing ( Source );
 
 			if ( SCROLL )
-				ShowScrolling ( i );
+				ShowScrolling ( Source );
 
 			if ( FROMDIM )
-				ShowFromDim ( i );
+				ShowFromDim ( Source );
 
 			if ( HIDETODIM )
-				ShowFromDim ( i );
+				ShowFromDim ( Source );
 	
-			RenderSentence ( ResManager->RCube_Sentences[i] );
+			RenderSentence ( Source );
 		}
 	}
 

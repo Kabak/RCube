@@ -197,8 +197,8 @@ public:
 	int Add_3D_Object ( wstring FileNameKFO, int InstCout );
 	_3DModel* Get3D_Object_Pointer ( int ModelIndex );	// Получить указатель на объект 3D модели из списка по индексу
 	_3D_Obj_Buffers* Get_Mesh_Buffers_By_Index ( int ObjectIndex );// Получить буферы мешаж
-	int Delete_3D_Object ( int ObjectIndex );
-	int Delete_3D_Object_Meshes_Buffers ( int ObjectIndex );
+	int Delete_3D_Object ( size_t ObjectIndex );
+	int Delete_3D_Object_Meshes_Buffers ( size_t ObjectIndex );
 
 	int Create_3D_Obj_Mesh_Buffers (
 //		UINT ModelType,			// Тип объекта из возможных в RCube для рисования по LayoutTypes объекта
@@ -250,8 +250,8 @@ public:
 	int Get_New_Terrain_Index ( Terrain* TerrainObj );// Получить свободный индекс Terrain в массиве Terrain
 	int Get_Terrain_VB_Index ( _3D_Obj_Buffers* NewBuffer );
 
-	int Delete_Terrain ( int ObjectIndex );
-	int Delete_Terrain_Buffers ( int ObjectIndex );
+	int Delete_Terrain ( size_t ObjectIndex );
+	int Delete_Terrain_Buffers ( size_t ObjectIndex );
 	int Delete_Terrain_Clusters ( Terrain* TerrainObj );	// Удаление кластеров Terrain
 
 	int Create_Terrain_Mesh_Buffer ( Terrain* TerrainObj, bool StaticBuffers );	// Создание буфера вертексов Terrain
@@ -316,7 +316,7 @@ public :
 
 	// Обновляет текст и позицию предложения на экране
 	void UpdateSentence ( int SentenceNumber, char* text, int positionX, int positionY );// , float RenderFontSize = 36.0f );
-	
+	void UpdateSentence (int SentenceNumber, char* text);
 	// Получить максимальную длинну предложения
 	int GetSentenceMaxLength ( int SentenceNumber );
 	
@@ -326,8 +326,11 @@ public :
 	// Получить высоту текстуры шрифта в пикселях
 	int GetFontHeightInPixels ( int FontNumber );
 
-	int GetPosX ( int SentenceNumber );
-	int GetPosY ( int SentenceNumber );
+	int GetSentencePosX ( int SentenceNumber );
+	int GetSentencePosY ( int SentenceNumber );
+
+	void GetSentencePos ( int SentenceNumber, RCube_XY_POS* XY_Position );
+
 	// Получить указатель на строку
 	char* GetSentenceText ( int SentenceNumber );
 
@@ -345,6 +348,10 @@ public :
 	bool DeleteTexture ( int Index );
 
 	int CreateTexture ( TextureData& _Data ); // Создание текстуры
+
+	int Create2DTexture ( UINT Width, UINT Height ); // Create 2D texture + ShaderResource
+
+	int CreateCopy2DTexture ( int CopiedTextureIndex ); // Copy 2D Texture
 
 	// Возвращает индекс созданной текстуры,
 	// или -2, если Source создана как STAGING, 
@@ -366,7 +373,7 @@ public :
 	bool CreateLayouts ();	// Создаются все нужные Layout для шейдеров по умолчанию
 
 	int Create_Flat_Obj_Buffers (
-		 int CPUAccess,			// способ обновления буферы  
+		 int CPUAccess,			// способ обновления буферов  
 		UINT InstanceAmount,	// Сколько Instance в модели
 		UINT IndexAmount,		// Есть ли индексный массив для меша модели ( 0 - нет или количество индексов в IndexBuffer - IB )
 		DXTextureSRV* Texture	// Основная текстура
@@ -414,6 +421,23 @@ private:
 
 	HRESULT hr;
 	const WCHAR *Error = L"ResourceManager Error";
+		  WCHAR *Prefix = L"Can't create ";
+		  WCHAR *InitOneShader_str = L" in InitOneShader.";
+		  WCHAR *InitShader = L" in InitShaders";
+		  WCHAR *InitTexture = L" in InitTextures";
+		  WCHAR *InitSound = L" in InitSound";
+		  WCHAR *CreateLayout = L" in CreateLayouts";
+		  WCHAR *CreateTexture_str = L" in CreateTexture";
+		  WCHAR *VS_str = L"Vertex Shader ";
+		  WCHAR *PS_str = L"Pixel Shader ";
+		  WCHAR *GS_str = L"Geometry Shader ";
+		  WCHAR *HS_str = L"Hull Shader ";
+		  WCHAR *DS_str = L"Domain Shader ";
+		  WCHAR *CS_str = L"Compute Shader ";
+
+		  WCHAR *ErrorMessage;
+		  void RCUBE_ErrorMessageShow ( WCHAR* Prefix, WCHAR* String, WCHAR* Postfix );
+
 	int TexturesNum;
 	int ShadersNum; // общее количество шейдеров в файле
 	void decodeFile(unsigned char ** DestBuff, WCHAR * kafFilename , HWND hwnd);

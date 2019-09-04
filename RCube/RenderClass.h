@@ -106,10 +106,10 @@ private:
 
 // + Font Works
 	void RenderSentence ( SentenceType* );
-	void ShowGlowing	( int Number );
-	void ShowScrolling  ( int Number );
-	void ShowFromDim	( int i );
-	void HideToDim		( int i );
+	void ShowGlowing	( SentenceType* );
+	void ShowScrolling  ( SentenceType* );
+	void ShowFromDim	( SentenceType* );
+	void HideToDim		( SentenceType* );
 // - Font Works
 
 	IDWriteFactory* DWriteFactory;

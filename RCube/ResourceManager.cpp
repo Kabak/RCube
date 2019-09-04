@@ -19,7 +19,7 @@ ResourceManager::~ResourceManager()
 
 void ResourceManager::ShutDown()
 {
-	int c = 0;
+	size_t c = 0;
 	size_t i = 0;
 // CUBEMAPS
 	c = 0;
@@ -80,99 +80,39 @@ void ResourceManager::ShutDown()
 	UnusedSentenceIndex.clear ();
 
 // FONTS
-	c = 0;
-	i = RCube_Font.size ();
-	while (c < i)
-	{
-		RCUBE_DELETE ( RCube_Font[c] );									// Удаляем сам шрифт
-		++c;
-	}
-	RCube_Font.clear ();
-	UnusedFontIndex.clear ();
+	RCUBE_VECTOR_DELETE ( RCube_Font );
+	UnusedFontIndex.clear ();			// Delete free font indexes
 
 // TEXTURES
-	c = 0;
-	i = TexturesArr.size ();
-	while ( c < i )
-	{
-		RCUBE_DELETE ( TexturesArr[c] );
-		++c;
-	}
-	TexturesArr.clear ();
-	UnusedTexturesIndex.clear ();		// Удаляем свободные индексы текстур
+	RCUBE_VECTOR_DELETE ( TexturesArr );
+	UnusedTexturesIndex.clear ();		// Delete free texture indexes
 
 // VERTEX Shaders
-	c = 0;
-	while ( c < VertShaderArr.size() )
-	{
-		RCUBE_RELEASE( VertShaderArr[c] );
-		++c;
-	}
-	VertShaderArr.clear();
+	RCUBE_VECTOR_RELEASE ( VertShaderArr );
 
 // PIXEL Shaders
-	c = 0;
-	while ( c < PixShaderArr.size() )
-	{
-		RCUBE_RELEASE( PixShaderArr[c] );
-		++c;
-	}
-	PixShaderArr.clear();
+	RCUBE_VECTOR_RELEASE ( PixShaderArr )
 
 // BLOBS
-	c = 0;
-	while ( c < BlobsArr.size() )
-	{
-		RCUBE_RELEASE( BlobsArr[c] );
-		++c;
-	}
-	BlobsArr.clear();
-
+	RCUBE_VECTOR_RELEASE ( BlobsArr );
+	
 // COMPUTE Shaders
-	c = 0;
-	while ( c < ComeputeShaderArr.size() )
-	{
-		RCUBE_RELEASE( ComeputeShaderArr[c] );
-		++c;
-	}
-	ComeputeShaderArr.clear();
+	RCUBE_VECTOR_RELEASE ( ComeputeShaderArr );
 
 // GEOMETRY Shaders
-	c = 0;
-	while ( c < GeomShaderArr.size() )
-	{
-		RCUBE_RELEASE( GeomShaderArr[c] );
-		++c;
-	}
-	GeomShaderArr.clear();
+	RCUBE_VECTOR_RELEASE ( GeomShaderArr );
 
 // HULL Shaders
-	c = 0;
-	while ( c < HullShderArr.size() )
-	{
-		RCUBE_RELEASE( HullShderArr[c] );
-		++c;
-	}
-	HullShderArr.clear();
-
+	RCUBE_VECTOR_RELEASE (HullShderArr );
 
 // DOMAIN Shaders
-	c = 0;
-	while (c < DomainShderArr.size ())
-	{
-		RCUBE_RELEASE ( DomainShderArr[c] );
-		++c;
-	}
-	DomainShderArr.clear ();
+	RCUBE_VECTOR_RELEASE ( DomainShderArr );
+
+// Compute Shaders Names
+	RCUBE_VECTOR_ARR_DELETE ( ComeputeShaderNames );
 
 // LAYOUTS
-	c = 0;
-	while (c < Layouts.size ())
-	{
-		RCUBE_RELEASE ( Layouts[c] );
-		++c;
-	}
-	Layouts.clear ();
+	RCUBE_VECTOR_RELEASE ( Layouts );
 
 // SHADERS BUNCHES
 	c = 0;
@@ -183,29 +123,37 @@ void ResourceManager::ShutDown()
 	}
 	BunchArr.clear();
 
-// Compute Shaders Names
-	c = 0;
-	while (c < ComeputeShaderNames.size())
-	{
-		RCUBE_ARR_DELETE(ComeputeShaderNames[c]);
-		++c;
-	}
-	ComeputeShaderNames.clear();
-
 // Flat Objects
-	c = 0;
-	while (c < FlatObjectBuffers.size ())
-	{
-		RCUBE_DELETE ( FlatObjectBuffers[c] );
-		++c;
-	}
-	FlatObjectBuffers.clear ();
-
-
+	RCUBE_VECTOR_DELETE ( FlatObjectBuffers );
 	UnusedFlatObjBuffersIndex.clear ();	// Удаляем свободные индексы буферов
 
 	Menus.clear ();					// Удаляем меню
 }
+
+
+void ResourceManager::RCUBE_ErrorMessageShow ( WCHAR* Prefix, WCHAR* Middle, WCHAR* Postfix )
+{
+	size_t PrefixLenght		= 0;
+	size_t PostfixLenght	= 0;
+	size_t MiddleLenght		= 0;
+
+	Prefix  != nullptr ? PrefixLenght  = wcslen ( Prefix )  : PrefixLenght  = 0;
+	Postfix != nullptr ? PostfixLenght = wcslen ( Postfix ) : PostfixLenght = 0;
+	Middle  != nullptr ? MiddleLenght  = wcslen ( Middle )  : MiddleLenght  = 0;
+
+	size_t Length = PrefixLenght + PostfixLenght + MiddleLenght + sizeof(WCHAR);
+
+	wchar_t *Message = new wchar_t [ Length ];
+
+	wcscat_s (Message, Length, Prefix);
+	wcscat_s (Message, Length, Middle);
+	wcscat_s (Message, Length, Postfix );
+
+	MessageBox(0, Message, Error, MB_OK);
+
+	delete [] Message;
+}
+
 
 int ResourceManager::GetNewTextureIndex ( Texture* NewTexture )
 {
@@ -246,8 +194,9 @@ HRESULT ResourceManager::InitTextures(WCHAR * kafFilename){
 	memcpy(IsKaf, temp, 4);
 	temp += 4;
 
-	if (IsKaf[0] != ' ' && IsKaf[1] != 'K' && IsKaf[2] != 'A' && IsKaf[3] != 'F'){
-		MessageBox(0, L"Данный файл не является kaf файлом.", Error, MB_OK);
+	if (IsKaf[0] != ' ' && IsKaf[1] != 'K' && IsKaf[2] != 'A' && IsKaf[3] != 'F')
+	{
+		RCUBE_ErrorMessageShow ( nullptr, L"Texture .kaf file currupted.", InitTexture );
 		return E_FAIL;
 	}
 
@@ -308,15 +257,29 @@ HRESULT ResourceManager::InitTextures(WCHAR * kafFilename){
 
 		if ( FAILED( hr ) )
 		{
-			MessageBox( 0, L"Файл записаный в KAF поврежден.", Error, MB_OK );
+			RCUBE_ErrorMessageShow ( Prefix, L"texture form .kaf file.", InitTexture );
 			return E_FAIL;
 		}
 		else
 		{
-
+			D3D11_TEXTURE2D_DESC* InputTextureDesc = new D3D11_TEXTURE2D_DESC;
+			ID3D11Texture2D* InputTexture;
 			Texture* NewTexture = new Texture;
+
+			LoadedTextureRes->QueryInterface<ID3D11Texture2D> ( &InputTexture );
+			InputTexture->GetDesc ( InputTextureDesc );
+
+			NewTexture->Width = InputTextureDesc->Width;
+			NewTexture->Height = InputTextureDesc->Height;
 			NewTexture->Resource = LoadedTextureRes;
 			NewTexture->SRV = ShaderRes;
+//			NewTexture->Type = _2D;
+//			NewTexture->Format = InputTextureDesc->Format;
+	
+			RCUBE_RELEASE ( InputTexture );
+			delete InputTextureDesc;
+
+			ShaderRes ? NewTexture->ShaderResource = true : NewTexture->ShaderResource = false;
 
 			GetNewTextureIndex ( NewTexture );
 
@@ -349,8 +312,9 @@ HRESULT ResourceManager::InitShaders( WCHAR * kafFilename) {
 	memcpy(IsKaf, temp, 4);
 	temp += 4;
 
-	if (IsKaf[0] != ' ' && IsKaf[1] != 'K' && IsKaf[2] != 'A' && IsKaf[3] != 'F') {
-		MessageBox(0, L"Данный файл не является kaf файлом.", L"ResourceManager Error", MB_OK);
+	if (IsKaf[0] != ' ' && IsKaf[1] != 'K' && IsKaf[2] != 'A' && IsKaf[3] != 'F') 
+	{
+		RCUBE_ErrorMessageShow ( nullptr, L"Texture .kaf file currupted.", InitShader );
 		return E_FAIL;
 	}
 
@@ -381,7 +345,7 @@ HRESULT ResourceManager::InitShaders( WCHAR * kafFilename) {
 		hr = D3DCreateBlob(readFileSize, &Blob);
 		if ( FAILED( hr ) )
 		{
-			MessageBox(0, L"Неизвестная ошибка при созданиие блоба.", Error, MB_OK);
+			RCUBE_ErrorMessageShow ( Prefix, L"BLOB.", InitShader );
 			return hr;
 		}
 
@@ -397,7 +361,7 @@ HRESULT ResourceManager::InitShaders( WCHAR * kafFilename) {
 			hr = Local_D3DGC->DX_device->CreateVertexShader(Blob->GetBufferPointer(), Blob->GetBufferSize(), NULL, &m_vertexShader);
 			if (FAILED( hr ))
 			{
-				MessageBox(0, L"Ошибка в создании VS шейдера.", Error, MB_OK);
+				RCUBE_ErrorMessageShow ( Prefix, VS_str, InitShader );
 				return hr;
 			}
 
@@ -419,7 +383,7 @@ HRESULT ResourceManager::InitShaders( WCHAR * kafFilename) {
 			hr = Local_D3DGC->DX_device->CreatePixelShader(Blob->GetBufferPointer(), Blob->GetBufferSize(), NULL, &m_pixelShader);
 			if (FAILED( hr ))
 			{
-				MessageBox(0, L"Ошибка в создании PS шейдера.", Error, MB_OK);
+				RCUBE_ErrorMessageShow ( Prefix, PS_str, InitShader );
 				return hr;
 			}
 
@@ -434,7 +398,7 @@ HRESULT ResourceManager::InitShaders( WCHAR * kafFilename) {
 			hr = Local_D3DGC->DX_device->CreateGeometryShader(Blob->GetBufferPointer(), Blob->GetBufferSize(), NULL, &m_geomShader);
 			if (FAILED( hr ))
 			{
-				MessageBox(0, L"Ошибка в создании GS шейдера.", Error, MB_OK);
+				RCUBE_ErrorMessageShow ( Prefix, GS_str, InitShader );
 				return hr;
 			}
 
@@ -450,7 +414,7 @@ HRESULT ResourceManager::InitShaders( WCHAR * kafFilename) {
 			hr = Local_D3DGC->DX_device->CreateHullShader(Blob->GetBufferPointer(), Blob->GetBufferSize(), NULL, &m_hullShader);
 			if (FAILED( hr ))
 			{
-				MessageBox(0, L"Ошибка в создании HS шейдера.", Error, MB_OK);
+				RCUBE_ErrorMessageShow ( Prefix, HS_str, InitShader );
 				return hr;
 			}
 
@@ -466,7 +430,7 @@ HRESULT ResourceManager::InitShaders( WCHAR * kafFilename) {
 			hr = Local_D3DGC->DX_device->CreateDomainShader ( Blob->GetBufferPointer (), Blob->GetBufferSize (), NULL, &m_domainShader );
 			if (FAILED ( hr ))
 			{
-				MessageBox ( 0, L"Ошибка в создании DS шейдера.", Error, MB_OK );
+				RCUBE_ErrorMessageShow ( Prefix, DS_str, InitShader );
 				return hr;
 			}
 
@@ -482,7 +446,7 @@ HRESULT ResourceManager::InitShaders( WCHAR * kafFilename) {
 			hr = Local_D3DGC->DX_device->CreateComputeShader(Blob->GetBufferPointer(), Blob->GetBufferSize(), NULL, &m_ComputeShader );
 			if (FAILED( hr ))
 			{
-				MessageBox(0, L"Ошибка при создании CS шейдера.", Error, MB_OK);
+				RCUBE_ErrorMessageShow ( Prefix, CS_str, InitShader );
 				return hr;
 			}
 
@@ -583,7 +547,7 @@ bool ResourceManager::CreateLayouts ()
 		TempBlob->GetBufferSize (), &TempLayout );
 	if (FAILED ( hr ))
 	{
-		MessageBox ( Local_D3DGC->hwnd, L"Model3D_Layout ошибка в создании лайаута.", L"Error", MB_OK );
+		RCUBE_ErrorMessageShow ( Prefix, L"Model3D_Layout", CreateLayout );
 		return 0;
 	}
 
@@ -598,7 +562,7 @@ bool ResourceManager::CreateLayouts ()
 		TempBlob->GetBufferSize (), &TempLayout );
 	if (FAILED ( hr ))
 	{
-		MessageBox ( Local_D3DGC->hwnd, L"FlatObject_Layout ошибка в создании лайаута.", L"Error", MB_OK );
+		RCUBE_ErrorMessageShow ( Prefix, L"FlatObject_Layout", CreateLayout );
 		return 0;
 	}
 
@@ -615,7 +579,7 @@ bool ResourceManager::CreateLayouts ()
 		TempBlob->GetBufferSize (), &TempLayout );
 	if (FAILED ( hr ))
 	{
-		MessageBox ( Local_D3DGC->hwnd, L"BB_Particle_Instance_Layout ошибка в создании лайаута.", L"Error", MB_OK );
+		RCUBE_ErrorMessageShow ( Prefix, L"BB_Particle_Instance_Layout", CreateLayout );
 		return 0;
 	}
 
@@ -741,8 +705,8 @@ int ResourceManager::InitOneShader( WCHAR * CSOFileName) {
 	std::basic_ifstream<unsigned char> Readfile(CSOFileName, std::ios::in | std::ios::binary);
 	if (!Readfile) {
 
-		MessageBox(0, L"ResourceManager. не могу найти шейдер.", Error, MB_OK);
-		return hr;
+		RCUBE_ErrorMessageShow ( Prefix, L"find shader .CSO file", InitOneShader_str );
+		return -1;
 	}
 
 	int IndexShader = 0;
@@ -751,12 +715,12 @@ int ResourceManager::InitOneShader( WCHAR * CSOFileName) {
 	int readNowFileSize = (int)Readfile.tellg();
 	Readfile.seekg(0, std::ios::beg);
 
-	ID3D10Blob * Blob;
+	ID3D10Blob* Blob;
 	
 	hr = D3DCreateBlob(readNowFileSize, &Blob);
 	if ( FAILED( hr ) ) {
-		MessageBox(0, L"неизвестная ошибка присозданиие блоба.ResourceManager", Error, MB_OK);
-		return hr;
+		RCUBE_ErrorMessageShow ( Prefix, L"Blob", InitOneShader_str );
+		return -1;
 	}
 
 	Readfile.read(reinterpret_cast<unsigned char*>(Blob->GetBufferPointer()), readNowFileSize);
@@ -776,8 +740,8 @@ int ResourceManager::InitOneShader( WCHAR * CSOFileName) {
 		hr = Local_D3DGC->DX_device->CreateVertexShader(Blob->GetBufferPointer(), Blob->GetBufferSize(), NULL, &m_vertexShader);
 		if ( FAILED( hr ) )
 		{
-			MessageBox(0, L"ResourceManager. ошибка в создании вертексного шейдера.", Error, MB_OK);
-			return hr;
+			RCUBE_ErrorMessageShow ( Prefix, VS_str, InitOneShader_str );
+			return -1;
 		}
 
 		VertShaderArr.push_back(m_vertexShader);
@@ -795,8 +759,8 @@ int ResourceManager::InitOneShader( WCHAR * CSOFileName) {
 		hr = Local_D3DGC->DX_device->CreatePixelShader(Blob->GetBufferPointer(), Blob->GetBufferSize(), NULL, &m_pixelShader);
 		if ( FAILED( hr ) )
 		{
-			MessageBox(0, L"ResourceManager. ошибка в создании пиксельного шейдера.", Error, MB_OK);
-			return hr;
+			RCUBE_ErrorMessageShow ( Prefix, PS_str, InitOneShader_str );
+			return -1;
 		}
 
 		PixShaderArr.push_back(m_pixelShader);
@@ -814,8 +778,8 @@ int ResourceManager::InitOneShader( WCHAR * CSOFileName) {
 		hr = Local_D3DGC->DX_device->CreateGeometryShader(Blob->GetBufferPointer(), Blob->GetBufferSize(), NULL, &m_geomShader);
 		if ( FAILED( hr ) )
 		{
-			MessageBox(0, L"ResourceManager. ошибка в создании геометрического шнйдера шейдера.", Error, MB_OK);
-			return hr;
+			RCUBE_ErrorMessageShow ( Prefix, GS_str, InitOneShader_str );
+			return -1;
 		}
 
 		GeomShaderArr.push_back(m_geomShader);
@@ -833,8 +797,8 @@ int ResourceManager::InitOneShader( WCHAR * CSOFileName) {
 		hr = Local_D3DGC->DX_device->CreateHullShader(Blob->GetBufferPointer(), Blob->GetBufferSize(), NULL, &m_hullShader);
 		if ( FAILED( hr ) )
 		{
-			MessageBox(0, L"ResourceManager. ошибка в создании халл шейдера.", Error, MB_OK);
-			return hr;
+			RCUBE_ErrorMessageShow ( Prefix, HS_str, InitOneShader_str );
+			return -1;
 		}
 
 		HullShderArr.push_back(m_hullShader);
@@ -852,8 +816,8 @@ int ResourceManager::InitOneShader( WCHAR * CSOFileName) {
 		hr = Local_D3DGC->DX_device->CreateDomainShader ( Blob->GetBufferPointer (), Blob->GetBufferSize (), NULL, &m_domainShader );
 		if (FAILED ( hr ))
 		{
-			MessageBox ( 0, L"ResourceManager. ошибка в создании домаин шейдера.", Error, MB_OK );
-			return hr;
+			RCUBE_ErrorMessageShow ( Prefix, DS_str, InitOneShader_str );
+			return -1;
 		}
 
 		DomainShderArr.push_back ( m_domainShader );
@@ -871,8 +835,8 @@ int ResourceManager::InitOneShader( WCHAR * CSOFileName) {
 		hr = Local_D3DGC->DX_device->CreateComputeShader(Blob->GetBufferPointer(), Blob->GetBufferSize(), NULL, &m_ComShader);
 		if ( FAILED( hr ) )
 		{
-			MessageBox(0, L"ResourceManager. ошибка в создании расчетного шейдера шейдера.", Error, MB_OK);
-			return hr;
+			RCUBE_ErrorMessageShow ( Prefix, CS_str, InitOneShader_str );
+			return -1;
 		}
 
 		ComeputeShaderArr.push_back(m_ComShader);
@@ -902,7 +866,7 @@ int ResourceManager::InitOneTexture( WCHAR * TextureFilename) {
 
 		hr = DirectX::CreateWICTextureFromFile(Local_D3DGC->DX_device, TextureFilename, &NewTexture->Resource, &NewTexture->SRV, NULL);
 		if ( FAILED( hr ) ) {
-			MessageBox(0, L"файл поврежден.ResourceManager", Error, MB_OK);
+			RCUBE_ErrorMessageShow ( nullptr, L"WIC Texture file currupted.", nullptr );
 			goto ERROR_END;
 		}
 
@@ -912,7 +876,7 @@ int ResourceManager::InitOneTexture( WCHAR * TextureFilename) {
 
 		hr = DirectX::CreateDDSTextureFromFile(Local_D3DGC->DX_device, TextureFilename, &NewTexture->Resource, &NewTexture->SRV, NULL);
 		if ( FAILED( hr ) ) {
-			MessageBox(0, L"файл поврежден.ResourceManager", Error, MB_OK);
+			RCUBE_ErrorMessageShow ( nullptr, L"DDS Texture file currupted.", nullptr );
 			goto ERROR_END;
 		}
 
@@ -932,8 +896,9 @@ void ResourceManager::decodeFile(unsigned char ** DestBuff , WCHAR * kafFilename
 	std::basic_ifstream<unsigned char> Readfile(kafFilename, std::ios::in | std::ios::binary);
 
 
-	if (!Readfile) {
-		MessageBox(hwnd, L"не найдено файла по задонному адресу.ResourceManager", Error, MB_OK);
+	if (!Readfile) 
+	{
+		RCUBE_ErrorMessageShow ( nullptr, L"No File found.", nullptr );
 	}
 
 	Readfile.seekg(0, std::ios::end);
@@ -983,7 +948,7 @@ HRESULT ResourceManager::InitSounds( WCHAR * kafFilename, SoundClass * ActiveSou
 
 	if (IsKaf[0] != ' ' && IsKaf[1] != 'K' && IsKaf[2] != 'A' && IsKaf[3] != 'F') 
 	{
-		MessageBox(0, L"данныйй файл не является kaf файлом.ResourceManager", Error, MB_OK);
+		RCUBE_ErrorMessageShow ( nullptr, L"Texture .kaf file currupted.", InitSound );
 		return E_FAIL;
 	}
 
@@ -1297,7 +1262,7 @@ int ResourceManager::CreateTexture ( TextureData& _Data )
 		hr = Local_D3DGC->DX_device->CreateTexture2D ( &sharedTexDesc, NULL, &NewTexture->Texture2D );
 		if (FAILED ( hr ))
 		{
-			MessageBox ( Local_D3DGC->hwnd, L"Could not create 2DTexture.", Error, MB_OK );
+			RCUBE_ErrorMessageShow ( Prefix, L"2D Texture", CreateTexture_str );
 			goto ERROR_END;
 		}
 
@@ -1310,7 +1275,7 @@ int ResourceManager::CreateTexture ( TextureData& _Data )
 		hr = Local_D3DGC->DX_device->CreateShaderResourceView ( NewTexture->Resource, NULL, &NewTexture->SRV );
 		if (FAILED ( hr ))
 		{
-			MessageBox ( Local_D3DGC->hwnd, L"Could not create ShaderResourceView", Error, MB_OK );
+			RCUBE_ErrorMessageShow ( Prefix, L"ShaderResourceView", CreateTexture_str );
 			goto ERROR_END;
 		}
 
@@ -1321,7 +1286,7 @@ int ResourceManager::CreateTexture ( TextureData& _Data )
 		hr = Local_D3DGC->DX_device->CreateRenderTargetView ( NewTexture->Resource, NULL, &NewTexture->RTV );
 		if (FAILED ( hr ))
 		{
-			MessageBox ( Local_D3DGC->hwnd, L"Could not create RenderTargetView", Error, MB_OK );
+			RCUBE_ErrorMessageShow ( Prefix, L"RenderTargetView", CreateTexture_str );
 			goto ERROR_END;
 		}
 
@@ -1332,7 +1297,7 @@ int ResourceManager::CreateTexture ( TextureData& _Data )
 		hr = Local_D3DGC->DX_device->CreateDepthStencilView ( NewTexture->Resource, NULL, &NewTexture->DSV );
 		if (FAILED ( hr ))
 		{
-			MessageBox ( Local_D3DGC->hwnd, L"Could not create DepthStencilView", Error, MB_OK );
+			RCUBE_ErrorMessageShow ( Prefix, L" DepthStencilView", CreateTexture_str );
 			goto ERROR_END;
 		}
 
@@ -1343,7 +1308,7 @@ int ResourceManager::CreateTexture ( TextureData& _Data )
 		hr = Local_D3DGC->DX_device->CreateUnorderedAccessView ( NewTexture->Resource, NULL, &NewTexture->UAV );
 		if (FAILED ( hr ))
 		{
-			MessageBox ( Local_D3DGC->hwnd, L"Could not create UnorderedAccessView", Error, MB_OK );
+			RCUBE_ErrorMessageShow ( Prefix, L" UnorderedAccessView", CreateTexture_str );
 			goto ERROR_END;
 		}
 
@@ -1382,7 +1347,7 @@ int ResourceManager::CloneTextureStaging ( int Source )
 	size_t i = TexturesArr.size ();
 	if (Source < i )
 	{
-		// Проверяем создани ли текстура как STAGING
+		// Проверяем создана ли текстура как STAGING
 		if (TexturesArr[Source]->Usage == D3D11_USAGE_STAGING)
 			return -2;	// Текстура создана как STAGING
 
@@ -1546,13 +1511,12 @@ void  ResourceManager::BuildSentanceVertexArray ( BuildSentanceData* BuildData)
 	return;
 }
 
+
 int ResourceManager::GetNewSentenceIndex ( SentenceType* NewSentence )	// Получить свободный индекс предложения в системе
 {
-	int Index = -1;
-
-	return Index = GetObjectBuffer <vector<SentenceType*>, vector<UINT>, SentenceType* > ( RCube_Sentences, UnusedSentenceIndex, NewSentence );
-
+	return GetObjectBuffer <vector<SentenceType*>, vector<UINT>, SentenceType* > ( RCube_Sentences, UnusedSentenceIndex, NewSentence );
 }
+
 
 bool ResourceManager::InitializeSentence ( SentenceType* sentence, int& maxLength )
 {
@@ -1568,8 +1532,18 @@ bool ResourceManager::InitializeSentence ( SentenceType* sentence, int& maxLengt
 }
 
 
+void ResourceManager::UpdateSentence (int SentenceNumber, char* text)
+{
+	UpdateSentence (SentenceNumber, text, RCube_Sentences[SentenceNumber]->PosX, RCube_Sentences[SentenceNumber]->PosY);
+}
+
+
 void ResourceManager::UpdateSentence ( int SentenceNumber, char* text, int positionX, int positionY )// , float RenderFontSize )
 {
+	// Checking sentence index in range
+//	if ( !(SentenceNumber < (int)RCube_Sentences.size ()) )
+//		return;
+
 	int numLetters;
 	Vertex_FlatObject* vertices;
 
@@ -1621,7 +1595,7 @@ void ResourceManager::UpdateSentence ( int SentenceNumber, char* text, int posit
 
 	RCUBE_DELETE ( BuildData );
 	// Release the vertex array as it is no longer needed.
-	RCUBE_DELETE( vertices);
+	RCUBE_ARR_DELETE ( vertices );
 
 }
 
@@ -1662,13 +1636,13 @@ int ResourceManager::AddSentence ( SENTENCE_INIT_DATA* data, char* String )
 	Source->ShowType = data->ShowType;
 	Source->HideType = data->HideType;
 	Source->Level = data->Level;
-	Source->Height = RCube_Font[data->FontType]->FontHeightInPixel;
+	Source->Height = ( UINT ) (RCube_Font[data->FontType]->FontHeightInPixel * Local_D3DGC->ScreenScale.w);
 
 	if (data->ScrollSpeed == 0)	Source->ScrollSpeed = 30.0f;
 
 	strcpy_s ( Source->Text, Source->MaxLength, String );
 
-	UpdateSentence ( Num, Source->Text, data->PosX, data->PosY );
+	UpdateSentence ( Num, Source->Text, Source->PosX, Source->PosY);
 
 	return Num;
 }
@@ -1708,13 +1682,20 @@ void ResourceManager::DeleteAllSentences ()
 }
 
 
-int ResourceManager::GetPosX ( int SentenceNumber )
+void ResourceManager::GetSentencePos (int SentenceNumber, RCube_XY_POS* XY_Position)
+{
+	XY_Position->X = RCube_Sentences[SentenceNumber]->PosX;
+	XY_Position->Y = RCube_Sentences[SentenceNumber]->PosY;
+}
+
+
+int ResourceManager::GetSentencePosX ( int SentenceNumber )
 {
 	return RCube_Sentences[SentenceNumber]->PosX;
 }
 
 
-int ResourceManager::GetPosY ( int SentenceNumber )
+int ResourceManager::GetSentencePosY ( int SentenceNumber )
 {
 	return RCube_Sentences[SentenceNumber]->PosY;
 }
@@ -1890,25 +1871,13 @@ bool ResourceManager::LoadKFObject ( std::wstring FileName, _3DModel* New_3D_Mod
 
 int ResourceManager::GetNew3D_Obj_Index ( _3DModel* NewModel )
 {
-	int Index = -1;
-
-	Index = GetObjectBuffer <vector < _3DModel* >, vector<UINT>, _3DModel* > ( _3DModels, Unused3DModelsIndex, NewModel );
-
-	NewModel->_3D_Obj_Index = Index;
-
-	return  Index;
+	return NewModel->_3D_Obj_Index = GetObjectBuffer <vector < _3DModel* >, vector<UINT>, _3DModel* > ( _3DModels, Unused3DModelsIndex, NewModel );
 }
 
 
 int ResourceManager::GetNew3D_Obj_Mesh_Buffer_Index ( _3D_Obj_Buffers* NewBuffer )
 {
-	int Index = -1;
-
-	Index = GetObjectBuffer <vector < _3D_Obj_Buffers* >, vector<UINT>, _3D_Obj_Buffers* > ( _3DModelsMeshBuffers, Unused3DModelsMeshBuffersIndex, NewBuffer );
-
-	NewBuffer->ThisBufferIndex = Index;
-
-	return  Index;
+	return NewBuffer->ThisBufferIndex = GetObjectBuffer <vector < _3D_Obj_Buffers* >, vector<UINT>, _3D_Obj_Buffers* > ( _3DModelsMeshBuffers, Unused3DModelsMeshBuffersIndex, NewBuffer );
 }
 
 
@@ -1953,7 +1922,7 @@ int ResourceManager::Add_3D_Object ( std::wstring FileNameKFO, int InstCount = 1
 }
 
 
-int ResourceManager::Delete_3D_Object_Meshes_Buffers ( int ObjectIndex )
+int ResourceManager::Delete_3D_Object_Meshes_Buffers ( size_t ObjectIndex )
 {
 	size_t i = _3DModels.size ();
 
@@ -1982,7 +1951,7 @@ int ResourceManager::Delete_3D_Object_Meshes_Buffers ( int ObjectIndex )
 }
 
 
-int ResourceManager::Delete_3D_Object ( int ObjectIndex )
+int ResourceManager::Delete_3D_Object ( size_t ObjectIndex )
 {
 	size_t i = _3DModels.size ();
 
@@ -2702,13 +2671,13 @@ void ResourceManager::FrustumTerrain ( FrustumClass* Frustum, Terrain* TerrainOb
 }
 
 
-int ResourceManager::Delete_Terrain_Buffers ( int BufferIndex )
+int ResourceManager::Delete_Terrain_Buffers ( size_t BufferIndex )
 {
 	size_t i = TerrainVertexBuffers.size ();
 	if ( BufferIndex < i )
 	{
 		// Сохраняем освободившийся индекс Terrain
-		UnusedTerrainsBuffersIndex.push_back ( BufferIndex );
+		UnusedTerrainsBuffersIndex.push_back ( (UINT)BufferIndex );
 		// Удаляем буферы
 		RCUBE_DELETE ( TerrainVertexBuffers[BufferIndex] );
 		return 0;
@@ -2733,7 +2702,7 @@ int ResourceManager::Delete_Terrain_Clusters ( Terrain* TerrainObj )
 }
 
 
-int ResourceManager::Delete_Terrain ( int ObjectIndex )
+int ResourceManager::Delete_Terrain ( size_t ObjectIndex )
 {
 	size_t i = Terrains.size ();
 
@@ -2757,25 +2726,13 @@ int ResourceManager::Delete_Terrain ( int ObjectIndex )
 
 int ResourceManager::Get_New_Terrain_Index ( Terrain* TerrainObj )
 {
-	int Index = -1;
-
-	Index = GetObjectBuffer <vector < Terrain* >, vector<UINT>, Terrain* > ( Terrains, UnusedTerrainsIndex, TerrainObj );
-
-	TerrainObj->Terrain_Object_Index = Index;
-
-	return  Index;
+	return TerrainObj->Terrain_Object_Index = GetObjectBuffer <vector < Terrain* >, vector<UINT>, Terrain* > ( Terrains, UnusedTerrainsIndex, TerrainObj );
 }
 
 
 int ResourceManager::Get_Terrain_VB_Index ( _3D_Obj_Buffers* NewBuffer )
 {
-	int Index = -1;
-
-	Index = GetObjectBuffer <vector <_3D_Obj_Buffers* >, vector<UINT>, _3D_Obj_Buffers* > ( TerrainVertexBuffers, UnusedTerrainsBuffersIndex, NewBuffer );
-
-	NewBuffer->ThisBufferIndex = Index;
-
-	return  Index;
+	return NewBuffer->ThisBufferIndex = GetObjectBuffer <vector <_3D_Obj_Buffers* >, vector<UINT>, _3D_Obj_Buffers* > ( TerrainVertexBuffers, UnusedTerrainsBuffersIndex, NewBuffer );
 }
 
 
@@ -3479,13 +3436,7 @@ bool ResourceManager::Delete_Emitter_BB_Buffer ( int BufferIndex )
 
 int ResourceManager::GetNewEmitter_BB_Buffers_Index ( BB_Particles_Buffers* NewBuffer )
 {
-	int Index = -1;
-
-	Index = GetObjectBuffer <vector < BB_Particles_Buffers* >, vector<UINT>, BB_Particles_Buffers* > ( BB_ParticleSystems_Buffers, Unused_BB_BuffersIndex, NewBuffer );
-
-	NewBuffer->ThisBufferIndex = Index;
-
-	return  Index;
+	return  NewBuffer->ThisBufferIndex = GetObjectBuffer <vector < BB_Particles_Buffers* >, vector<UINT>, BB_Particles_Buffers* > ( BB_ParticleSystems_Buffers, Unused_BB_BuffersIndex, NewBuffer );
 }
 
 
@@ -3538,13 +3489,7 @@ int ResourceManager::Create_Emitter_BB_Buffers ( int CPUAccess, UINT InstanceAmo
 
 int ResourceManager::AddParticleSystem ( ParticleSystem* ParticleSys )
 {
-	int Index = -1;
-
-	Index = GetObjectBuffer <vector < ParticleSystem* >, vector<UINT>, ParticleSystem* > ( ParticleSystems, UnusedParticleSystemIndex, ParticleSys );
-
-	ParticleSys->ParticleSystem_Object_Index = Index;
-
-	return  Index;
+	return ParticleSys->ParticleSystem_Object_Index = GetObjectBuffer <vector < ParticleSystem* >, vector<UINT>, ParticleSystem* > ( ParticleSystems, UnusedParticleSystemIndex, ParticleSys );
 }
 
 
@@ -3627,6 +3572,62 @@ void ResourceManager::GetTextureParam ( ID3D11ShaderResourceView * Texture, XMFL
 	RCUBE_RELEASE ( MyRes );
 	RCUBE_RELEASE ( InputTexture );
 	delete InputTextureDesc;
+}
+
+
+int ResourceManager::Create2DTexture ( UINT Width, UINT Height )
+{
+	TextureData* TempData = new TextureData;
+	TempData->Width = Width;
+	TempData->Height = Height;
+	TempData->SampleDesc.Count = 1;
+	TempData->SampleDesc.Quality = 0;
+
+	int Index = CreateTexture ( *TempData );
+
+	if ( Index == -1 )
+		MessageBox ( NULL, L"Can't create 2D Texture", Error, MB_OK );
+
+	return Index;
+}
+
+
+int ResourceManager::CreateCopy2DTexture ( int CopiedTextureIndex )
+{
+	int NewTextureIndex = -1;
+
+	int i = ( int ) TexturesArr.size ();
+	if ( CopiedTextureIndex < i )
+	{
+		TextureData NewTexture;
+		NewTexture.Format = TexturesArr[CopiedTextureIndex]->Format;
+		NewTexture.Height = TexturesArr[CopiedTextureIndex]->Height;
+		NewTexture.Width = TexturesArr[CopiedTextureIndex]->Width;
+		NewTexture.Depth = 0;
+		NewTexture.ArraySize = 1;
+		NewTexture.MipMapLevels = 1;
+		NewTexture.Type = TexturesArr[CopiedTextureIndex]->Type;
+		NewTexture.SampleDesc.Count = 1;
+		NewTexture.SampleDesc.Quality = 0;
+		NewTexture.Usage = TexturesArr[CopiedTextureIndex]->Usage;
+		NewTexture.Shared_KeyMutex = TexturesArr[CopiedTextureIndex]->Shared_KeyMutex;
+		NewTexture.DepthStensil = TexturesArr[CopiedTextureIndex]->DepthStensil;
+		NewTexture.GenerateMipMaps = false;
+		NewTexture.RenderTarget = TexturesArr[CopiedTextureIndex]->RenderTarget;
+		NewTexture.ShaderResource = TexturesArr[CopiedTextureIndex]->ShaderResource;
+		NewTexture.TextureCube = TexturesArr[CopiedTextureIndex]->TextureCube;
+		NewTexture.Unordered_Access = TexturesArr[CopiedTextureIndex]->Unordered_Access;
+
+		NewTextureIndex = CreateTexture ( NewTexture );
+	}
+	if ( NewTextureIndex == -1 )
+	{
+		MessageBox ( NULL, L"Can't copy 2D Texture", Error, MB_OK );
+	}
+	
+	Local_D3DGC->DX_deviceContext->CopyResource ( TexturesArr[NewTextureIndex]->Resource, TexturesArr[CopiedTextureIndex]->Resource );
+
+	return NewTextureIndex;
 }
 
 

@@ -35,11 +35,13 @@ public:
 	int g_NumOfStringsLists;
 	int g_NumOfColorPickers;
 
+	// String that display info about menu element if mouse pointer set on it
+	int AboutStringIndex = -1;
 	// јктивно ли меню - в нЄм работают кнопки и его рисуем
 	bool IsMenuActive = 0;
 	// –исовать ли меню
 	bool IsMenuDraw = 0;
-
+	// Index of the Shader that used for drawing Menu 
 	int ShaderForDraw = -1;
 
 private:

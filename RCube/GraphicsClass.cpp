@@ -423,7 +423,7 @@ bool GraphicsClass::Initialize(HWND hwnd , XMFLOAT4& _SCR_SCALE, int& WindowPosX
 	int Number;
 	Data->MaxLength = 128;
 	Data->PosX = 100;
-	Data->PosY = 90;
+	Data->PosY = 10;
 	Data->ShowType = SHOW;
 	Data->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
 	Data->Render = true;
@@ -433,7 +433,7 @@ bool GraphicsClass::Initialize(HWND hwnd , XMFLOAT4& _SCR_SCALE, int& WindowPosX
 
 	Data->MaxLength = 128;
 	Data->PosX = 100;
-	Data->PosY = 90;
+	Data->PosY = 60;
 	Data->ShowType = SHOW;
 	Data->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
 	Data->Render = true;
@@ -444,7 +444,7 @@ bool GraphicsClass::Initialize(HWND hwnd , XMFLOAT4& _SCR_SCALE, int& WindowPosX
 
 	Data->MaxLength = 128;
 	Data->PosX = 100;
-	Data->PosY = 90;
+	Data->PosY = 110;
 	Data->ShowType = SHOW;
 	Data->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
 	Data->Render = true;
@@ -453,7 +453,7 @@ bool GraphicsClass::Initialize(HWND hwnd , XMFLOAT4& _SCR_SCALE, int& WindowPosX
 	Number = MyManager->AddSentence(Data, "W - ¬перЄд, S - Ќазад");
 
 	Data->MaxLength = 128;
-	Data->PosY = 130;
+	Data->PosY = 160;
 	Data->ShowType = SHOW;
 	Data->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
 	Data->Render = true;
@@ -461,7 +461,7 @@ bool GraphicsClass::Initialize(HWND hwnd , XMFLOAT4& _SCR_SCALE, int& WindowPosX
 	Number = MyManager->AddSentence(Data, "R - ¬верх, F - вниз");
 
 	Data->MaxLength = 128;
-	Data->PosY = 160;
+	Data->PosY = 210;
 	Data->ShowType = SHOW;
 	Data->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
 	Data->Render = true;
@@ -469,7 +469,7 @@ bool GraphicsClass::Initialize(HWND hwnd , XMFLOAT4& _SCR_SCALE, int& WindowPosX
 	Number = MyManager->AddSentence(Data, "A - ¬лево, D - вправо");
 
 	Data->MaxLength = 128;
-	Data->PosY = 190;
+	Data->PosY = 260;
 	Data->ShowType = SHOW;
 	Data->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
 	Data->Render = true;
@@ -477,7 +477,7 @@ bool GraphicsClass::Initialize(HWND hwnd , XMFLOAT4& _SCR_SCALE, int& WindowPosX
 	Number = MyManager->AddSentence(Data, "Ёто тест Scrolling строки.");
 
 	Data->MaxLength = 128;
-	Data->PosY = 190;
+	Data->PosY = 310;
 	Data->ShowType = SHOW;
 	Data->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
 	Data->Render = true;
@@ -486,7 +486,7 @@ bool GraphicsClass::Initialize(HWND hwnd , XMFLOAT4& _SCR_SCALE, int& WindowPosX
 	Number = MyManager->AddSentence(Data, m_D3D->GetVideoCardString());
 
 	Data->MaxLength = 128;
-	Data->PosY = 190;
+	Data->PosY = 360;
 	Data->ShowType = SHOW;
 	Data->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
 	Data->Render = true;
@@ -495,7 +495,7 @@ bool GraphicsClass::Initialize(HWND hwnd , XMFLOAT4& _SCR_SCALE, int& WindowPosX
 	Number = MyManager->AddSentence( Data, m_D3D->GetVideoCardString() );
 
 	Data->MaxLength = 128;
-	Data->PosY = 190;
+	Data->PosY = 410;
 	Data->ShowType = SHOW;
 	Data->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
 	Data->Render = true;
@@ -504,7 +504,7 @@ bool GraphicsClass::Initialize(HWND hwnd , XMFLOAT4& _SCR_SCALE, int& WindowPosX
 	Number = MyManager->AddSentence( Data, m_D3D->GetVideoCardString() );
 	// 9
 	Data->MaxLength = 128;
-	Data->PosY = 900;
+	Data->PosY = 1000;
 	Data->FontType = 3;
 //	Data->ShowType = SHOW_FROM_DIM;
 //	Data->HideType = HIDE_TO_DIM;
@@ -513,33 +513,33 @@ bool GraphicsClass::Initialize(HWND hwnd , XMFLOAT4& _SCR_SCALE, int& WindowPosX
 	// 10
 	Data->FontType = 2;
 	Data->MaxLength = 128;
-	Data->PosY = 370;
+	Data->PosY = 460;
 	Data->ShowType = SHOW;
 	Number = MyManager->AddSentence( Data, "         " );
 	// 11
-	Data->PosY = 400;
+	Data->PosY = 510;
 	Number = MyManager->AddSentence( Data, "         " );
 	// 12
-	Data->PosY = 430;
+	Data->PosY = 560;
 	Number = MyManager->AddSentence( Data, "         " );
 	// 13
-	Data->PosY = 400;
+	Data->PosY = 610;
 	Number = MyManager->AddSentence(Data, "         ");
 
 	// 14
 	Data->FontType = 0;
-	Data->PosY = 470;
+	Data->PosY = 660;
 	Number = MyManager->AddSentence(Data, "         ");
 
 	// 15
 	Data->FontType = 0;
-	Data->PosY = 500;
+	Data->PosY = 710;
 	Number = MyManager->AddSentence(Data, "         ");
 
 	// 16 “екст о ¬идеоплате
 	Data->MaxLength = 128;
-	Data->PosY = 310;
-	Data->ShowType = SHOW_SCROLLING;// | SHOW_GLOWING;
+	Data->PosY = 760;
+	Data->ShowType = SHOW;// SHOW_SCROLLING;// | SHOW_GLOWING;
 	Data->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
 	Data->Render = true;
 	Data->FontType = 2;
@@ -552,11 +552,11 @@ bool GraphicsClass::Initialize(HWND hwnd , XMFLOAT4& _SCR_SCALE, int& WindowPosX
 	// 17
 	Data->ShowType = SHOW;
 	Data->FontType = 5;
-	Data->PosY = 800;
+	Data->PosY = 810;
 	Number = MyManager->AddSentence ( Data, "1234567890јаЅб¬в√гƒд≈е®Є∆ж«з»и кЋлћмЌн‘ф{}ўщ∆жёю" );
 	// 18
 	Data->FontType = 5;
-	Data->PosY = 750;
+	Data->PosY = 860;
 	Number = MyManager->AddSentence ( Data, "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz" );
 
 
@@ -590,6 +590,7 @@ bool GraphicsClass::Initialize(HWND hwnd , XMFLOAT4& _SCR_SCALE, int& WindowPosX
 	Buttons[0].IsMouseOnButtonTexture = MyManager->TexturesArr[5]->SRV;
 	Buttons[0].IsNotEnalbledTexture = MyManager->TexturesArr[5]->SRV;
 	Buttons[0].Data = NULL;
+	Buttons[0].TextLabel = nullptr;
 	Buttons[0].Label = "";
 	Buttons[0].Type = BUTTON;
 	Buttons[0].EditType = NULL;
@@ -1734,8 +1735,6 @@ bool GraphicsClass::Frame( FPSTimers &Counters, DXINPUTSTRUCT& InputStruct1)
 {
 	bool result = true;
 	
-//	char Str1[STRMAXLENGTH];
-
 	++ShadowFrameCounts;
 	fpstimers = Counters;
 // делаем доступ к скоросити компьютера дл€ текста. „тобы отрисовывать его синхронно с FPS системы
@@ -1743,10 +1742,11 @@ bool GraphicsClass::Frame( FPSTimers &Counters, DXINPUTSTRUCT& InputStruct1)
 	RCubeRender->fpstimers = Counters;
 
 	sprintf_s ( Str1, STRMAXLENGTH, "Fps : %d", Counters.FpsRate );
-	MyManager->UpdateSentence ( 0, Str1, 20, 20 );
+	
+	MyManager->UpdateSentence ( 0, Str1);
 
 	sprintf_s ( Str1, STRMAXLENGTH, "»—ѕќЋ№«ќ¬јЌ»≈ ѕ–ќ÷≈——ќ–ј: %d %%", Counters.CpuVal );
-	MyManager->UpdateSentence ( 1, Str1, 20, 50 );
+	MyManager->UpdateSentence ( 1, Str1);
 
 // ++++++++++++++++++++     ¬ращаем свет     ++++++++++++++++++++++++++++++++++++
 /*
@@ -1790,12 +1790,12 @@ bool GraphicsClass::Frame( FPSTimers &Counters, DXINPUTSTRUCT& InputStruct1)
 //	_beginthreadex(NULL,0, reinterpret_cast<_beginthreadex_proc_type>(SnowThread), &fpstimers , CREATE_SUSPENDED , &ThreadAdr );
 
 
-//	MyManager->->UpdateSentence( 4, Str, 100, 160 );
+//	MyManager->->UpdateSentence( 4, Str, MyManager->GetSentencePosX (4), MyManager->GetSentencePosY (4) );
 
 	TorchFire->Frame( Counters );
 	// »змер€ем быстродействие
 //	Profile->StopTimer(Str);
-//	MyManager->->UpdateSentence(5, Str, 100, 160);
+//	MyManager->->UpdateSentence(5, Str, MyManager->GetSentencePosX (5), MyManager->GetSentencePosY (5));
 	// »змер€ем быстродействие
 // --------------------------------------------------  PARTICLE SYSTEM  -----------------------------
 
@@ -1815,7 +1815,7 @@ bool GraphicsClass::Frame( FPSTimers &Counters, DXINPUTSTRUCT& InputStruct1)
 	}
 	// »змер€ем быстродействие
 //		Profile->StopTimer(Str);
-//		MyManager->->UpdateSentence(5, Str, MyManager->GetPosX(5), MyManager->GetPosY(5));
+//		MyManager->->UpdateSentence(5, Str, MyManager->GetSentencePosX(5), MyManager->GetSentencePosY(5));
 	// »змер€ем быстродействие
 
 // ++++++++++++++  FRUSTUM +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1853,7 +1853,7 @@ bool GraphicsClass::Frame( FPSTimers &Counters, DXINPUTSTRUCT& InputStruct1)
 
 	strcpy_s(Str1, STRMAXLENGTH, "Particles Frame : ");
 	strcat_s(Str1, STRMAXLENGTH, Str);
-	MyManager->UpdateSentence(13, Str1, MyManager->GetPosX( 13 ), MyManager->GetPosY( 13 ) );
+	MyManager->UpdateSentence(13, Str1);
 // »змер€ем быстродействие
 
 
@@ -1884,13 +1884,13 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 	char Str[STRMAXLENGTH];
 	char Str1[STRMAXLENGTH];
 //	sprintf_s(Str, 50, "Spec Power = %8.5f", m_Light->GetSpecularPower());
-//	MyManager->UpdateSentence(4, Str, 100, 160);
+//	MyManager->UpdateSentence(4, Str, MyManager->GetSentencePosX (4), MyManager->GetSentencePosY (4));
 
 //	sprintf_s(Str, 70, "Cam pos: X: %4.2f , Y: %4.2f , Z: %4.2f", m_D3D->D3DGC->CameraPosition.x, m_D3D->D3DGC->CameraPosition.y, m_D3D->D3DGC->CameraPosition.z );
 //	MyManager->UpdateSentence(3, Str, 100, 130);
 	float angel = Hud->GetScrollBarValue( 2 );
 	sprintf_s( Str, 70, "DepthBias : %4.2f", angel );
-	MyManager->UpdateSentence( 3, Str, 100, 130 );
+	MyManager->UpdateSentence( 3, Str);
 
 //	float angel = atan2(0.0f - m_D3D->D3DGC->CameraPosition.x, 0.0f - m_D3D->D3DGC->CameraPosition.z) * 57.29578049f;
 
@@ -1899,16 +1899,16 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 //	MyManager->UpdateSentence( 2, Str, 100, 100 );
 	angel = Hud->GetScrollBarValue( 3 );
 	sprintf_s(Str, 70, "SlopeScaledDepthBias : %4.2f", angel );
-	MyManager->UpdateSentence(2, Str, 100, 100);
+	MyManager->UpdateSentence(2, Str);
 
 	angel = Hud->GetScrollBarValue ( 1 );
 	sprintf_s ( Str, 50, "DiffuseX = %6.5f", angel );
   //	sprintf_s( Str, 50, "Active P = %i", m_ParticleSystem->GetActiveParticleAmmount() );
-	MyManager->UpdateSentence ( 4, Str, 100, 160 );
+	MyManager->UpdateSentence ( 4, Str);
 
 	angel = Hud->GetScrollBarValue( 4 );
 	sprintf_s( Str, 50, "PCF_Amount = %4.2f", angel );
-	MyManager->UpdateSentence( 5, Str, 100, 190 );
+	MyManager->UpdateSentence( 5, Str);
 
 	angel = Hud->GetScrollBarValue( 5 );
 	sprintf_s( Str, 50, "PCF_Step = %4.2f", angel );
@@ -1920,32 +1920,32 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 //	sprintf_s( Str, 50, "ShadowCLAMP = %1.4f", angel );
 //	MyManager->UpdateSentence( 7, Str, 100, 250 );
 	sprintf_s ( Str1, STRMAXLENGTH - 1, "¬рем€ рисовани€ всех строк текста : %s", Global );
-	MyManager->UpdateSentence ( 7, Str1, 100, 250 );
+	MyManager->UpdateSentence ( 7, Str1);
 
 	angel = Hud->GetScrollBarValue( 7 );
 	sprintf_s( Str, 50, "Shadow Divider = %4.1f", angel );
-	MyManager->UpdateSentence( 8, Str, 100, 280 );
+	MyManager->UpdateSentence( 8, Str);
 
 // LightInfo
 	sprintf_s( Str, 50, "Active Lights = %d", m_D3D->mActiveLights );
-	MyManager->UpdateSentence( 11, Str, 100, 310 );
+	MyManager->UpdateSentence( 11, Str);
 
 	sprintf_s( Str, 50, "Visible Lights = %d", m_D3D->mVisibleLights );
-	MyManager->UpdateSentence( 12, Str, 100, 340 );
+	MyManager->UpdateSentence( 12, Str);
 
 	angel = Hud->GetScrollBarValue(8);
 	sprintf_s(Str, 50, "DiffuseY = %1.5f", angel);
-	MyManager->UpdateSentence(14, Str, 100, 470);
+	MyManager->UpdateSentence(14, Str);
 
 	angel = Hud->GetScrollBarValue(9);
 	sprintf_s(Str, 50, "DiffuseZ = %1.5f", angel);
-	MyManager->UpdateSentence(15, Str, 100, 500);
+	MyManager->UpdateSentence(15, Str);
 
 
 
-	sprintf_s ( Str, 256, "Color = %x", Hud->ColorPickers[0]->GetSelectedColorCOLREF () );
-	MyManager->UpdateSentence ( 16, Str, 100, 560 );
-//	MyManager->UpdateSentence(16, MyManager->GetSentenceText(16), MyManager->GetPosX(16), MyManager->GetPosY(16));
+//	sprintf_s ( Str, 256, "Color = %x", Hud->ColorPickers[0]->GetSelectedColorCOLREF () );
+	MyManager->UpdateSentence ( 16, MyManager->GetSentenceText(16));
+//	MyManager->UpdateSentence(16, MyManager->GetSentenceText(16), MyManager->GetSentencePosX(16), MyManager->GetSentencePosY(16));
 //	MyManager->UpdateSentence ( 16, MyManager->GetSentenceText ( 16 ), 100, 760 );
 
 
@@ -1972,7 +1972,7 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 	
 	strcpy_s(Str1, STRMAXLENGTH, "Frustum объектам : ");
 	strcat_s(Str1, STRMAXLENGTH, Str);
-	MyManager->UpdateSentence(10, Str1, MyManager->GetPosX( 10 ), MyManager->GetPosY( 10 ) );
+	MyManager->UpdateSentence(10, Str1);
 	
 	m_D3D->TurnOffAlphaBlending();
 
@@ -1980,7 +1980,7 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 
 	// »змер€ем быстродействие
 //	Profile->StopTimer(Str);
-//	MyManager->UpdateSentence(4, Str, 100, 160);
+//	MyManager->UpdateSentence(4, Str,MyManager->GetSentencePosX (4), MyManager->GetSentencePosY (4));
 	// »змер€ем быстродействие
 
 	// ќб€зательно дл€ систем частиц
@@ -1997,7 +1997,7 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 	// ++++++++    FXAA    +++++++++++	
 	// »змер€ем быстродействие
 //			Profile->StopTimer(Str);
-//			MyManager->UpdateSentence(4, Str, 100, 160);
+//			MyManager->UpdateSentence(4, Str, MyManager->GetSentencePosX (4), MyManager->GetSentencePosY (4));
 	// »змер€ем быстродействие
 
 //	m_D3D->TurnOnAlphaBlending();
@@ -2012,7 +2012,7 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 	RCubeRender->RenderParticleSystem ( 0 );
 
 //	Profile->StopTimer( Str );
-//	MyManager->UpdateSentence( 5, Str, 100, 160 );
+//	MyManager->UpdateSentence( 5, Str, MyManager->GetSentencePosX (5), MyManager->GetSentencePosY (5));
 
 	// TorchFire ‘акел, костЄр
 	// »змер€ем быстродействие
@@ -2023,7 +2023,7 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 	MyManager->SetActiveShadersInProgramm( TorchFire->ShaderForDraw );
 	TorchFire->Render();
 //	Profile->StopTimer( Str );
-//	MyManager->UpdateSentence( 4, Str, 100, 160 );
+//	MyManager->UpdateSentence( 4, Str, MyManager->GetSentencePosX (4), MyManager->GetSentencePosY (4) );
 
 	// »змер€ем быстродействие
 	m_D3D->TurnZBufferOn();
@@ -2078,7 +2078,7 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 //		Hud->Draw();
 		// »змер€ем быстродействие
 		//	Profile->StopTimer(Str);
-		//	MyManager->UpdateSentence(4, Str, 100, 160);
+		//	MyManager->UpdateSentence(4, Str, MyManager->GetSentencePosX (4), MyManager->GetSentencePosY (4));
 		// »змер€ем быстродействие
 		MyManager->SetActiveShadersInProgramm( MyManager->TextShaderIndex );
 		RCubeRender->RenderText( 2 ); // –исуем текст дл€ HUD
@@ -2105,8 +2105,8 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 		MyManager->DeleteFont ( 5 );
 		MyManager->RCube_Font.erase ( MyManager->RCube_Font.begin () + 5 );
 
-		MyManager->UpdateSentence ( 17, MyManager->GetSentenceText ( 17 ), MyManager->GetPosX ( 17 ), MyManager->GetPosY ( 17 ) );
-		MyManager->UpdateSentence ( 18, MyManager->GetSentenceText ( 18 ), MyManager->GetPosX ( 18 ), MyManager->GetPosY ( 18 ) );
+		MyManager->UpdateSentence ( 17, MyManager->GetSentenceText ( 17 ) );
+		MyManager->UpdateSentence ( 18, MyManager->GetSentenceText ( 18 ) );
 
 	}
 */
@@ -2171,9 +2171,8 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 		delete Fparam;
 		MyManager->AddFont ( RCubeRender->Create_RCube_Font ( Temp_Font_Style, CharStr ) );
 		delete Temp_Font_Style;
-
-		MyManager->UpdateSentence ( 17, MyManager->GetSentenceText ( 17 ), MyManager->GetPosX ( 17 ), MyManager->GetPosY ( 17 ) );
-		MyManager->UpdateSentence ( 18, MyManager->GetSentenceText ( 18 ), MyManager->GetPosX ( 18 ), MyManager->GetPosY ( 18 ) );
+		MyManager->UpdateSentence ( 17, MyManager->GetSentenceText ( 17 ));
+		MyManager->UpdateSentence ( 18, MyManager->GetSentenceText ( 18 ));
 
 
 	}
@@ -2191,7 +2190,7 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 		m_D3D->BlurScene(MyManager->GetComputeShader( m_D3D->BlureHorizComputeShaderIndex ), MyManager->GetComputeShader( m_D3D->BlureVertComputeShaderIndex ), 2);
 		// »змер€ем быстродействие
 //			Profile->StopTimer(Str);
-//			MyManager->UpdateSentence(13, Str, MyManager->GetPosX( 13 ), MyManager->GetPosY( 13 ) );
+//			MyManager->UpdateSentence(13, Str);
 		MyManager->SetActiveShadersInProgramm ( MainMenu->ShaderForDraw );
 		RCubeRender->RenderMenu ( 0 );
 //		MainMenu->Draw();

@@ -4,8 +4,10 @@
 
 Menu::Menu ()
 {
-
-
+	AboutStringIndex	= -1;
+	IsMenuActive		= 0;
+	IsMenuDraw			= 0;
+	ShaderForDraw		= -1;
 }
 
 

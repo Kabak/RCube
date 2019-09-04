@@ -246,7 +246,6 @@ for ( int c = 0; c < NumOfColorPickers; ++c )
 		TempButton = new KFButton ;
 		Buttons.emplace_back (TempButton);
 		KFButton_Elements* ButtonInitData = &ButtonsData[c];
-		TempButton->BuffersIndex = GlobalResourceManager->Create_Flat_Obj_Buffers ( NO_CPU_ACCESS_BUFFER, 4, 6, ButtonsData[c].OsnTexture );
 
 		// Если к Button присоединен текст, то смотрим его длинну для создания текстовой строки
 		// Которая будет рисоваться поверх кнопки
@@ -275,7 +274,6 @@ for ( int c = 0; c < NumOfColorPickers; ++c )
 			ScrCoords, 
 			BackGroundCoord,
 			*ButtonInitData,
-			GlobalResourceManager->Get_Flat_ObjectBuffers_ByIndex( TempButton->BuffersIndex ),
 			GlobalResourceManager
 			);
 
@@ -370,7 +368,7 @@ MenuControllerClass::~MenuControllerClass()
 void MenuControllerClass::UpdateObjectText ( KFButton* TempButton, char* Str )
 {
 	int YPos;
-	// Получаем высоту текста в пикселях, чтобы можно было его выровнять поцентру объекта содержащего строку
+	// Получаем высоту текста в пикселях, чтобы можно было его выровнять по центру объекта содержащего строку
 	long TextHight = ( long )GlobalResourceManager->GetSentenceHeight ( TempButton->SentenceIndex );
 
 	if ( TempButton->ABSolute_Height > TextHight )

@@ -7,6 +7,7 @@
 #ifdef RCube_DX11
 #include <d3d11.h>
 #include "DX11Buffers.h"
+#include "AboutMenuElement.h"
 #endif //RCube_DX11
 
 #include <d2d1.h>
@@ -338,6 +339,8 @@ enum {
 
 
 	struct KFButton_Elements {
+	
+		char *TextLabel;// Text string displayed when mouse is on the body of this menu element
 	XMFLOAT4 _ObjParam;	// Координаты объекта X,Y, и размеры Z - Width, W - Height
 						// Если Z или W = 0.0f , то берутся размеры текстуры для начального размера
 	XMFLOAT4 Colour;	// If the button is COLOR square type

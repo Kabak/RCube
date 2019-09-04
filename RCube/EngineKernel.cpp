@@ -1066,7 +1066,7 @@ void EngineKernel::InitializeWindows(int& screenWidth, int& screenHeight, int& W
 	{
 		// If windowed then set it to 800x600 resolution.====================================================================
 //		screenWidth = 1366;// 1366;// 800;
-//		screenHeight = 1024;// 1024;// 600;
+//		screenHeight = 768;// 1024;// 600;
 
 		// Place the window in the middle of the screen.
 		posX = (GetSystemMetrics(SM_CXSCREEN) - screenWidth) / 2;

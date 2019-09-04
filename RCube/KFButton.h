@@ -22,7 +22,7 @@ struct ButtonState{
 	bool    IsMouseOnButton;// Mouse was on button body last engine Frame
 };
 
-class KFButton : public FlatObjectClass{
+class KFButton : public AboutMenuElement{
 
 private :
 		      ResourceManager* ResManager;
@@ -35,6 +35,10 @@ private :
 	ID3D11ShaderResourceView*	IsMouseOnButtonTexture;
 	ID3D11ShaderResourceView*	NotEnalbledTexture;
 	
+	int BodyBufferIndex;
+
+	void ConstructBody ( XMFLOAT4 &BodyPos ); // Set the button on correct menu place
+
 	XMFLOAT4 Colour;	// Color if the button should draw like color square
 
 	// Для проверки, что клик и отпускание клика было на конкретном элементе меню
@@ -43,7 +47,8 @@ private :
 	int NeedReleaseOnObject; 
 
 	// Обновление координат для вертексов
-	void UpdateBodyPos ();	// Calkulate body - vertex position on the screen
+//	void UpdateBodyPos ();	// Calkulate body - vertex position on the screen
+//	void ConstuctBoby ();
 
 	// В принципе включена для манипуляций
 	bool Enabled;
@@ -74,6 +79,11 @@ public :
 	// Параметры родительской формы
 	XMFLOAT4 FormCoord;
 
+	XMFLOAT4 ObjOriginalParam;
+	XMFLOAT4 ObjParam;
+
+	FlatObjectClass *Body;
+
 	// Абсолютные координаты для проверки нахождения мыши на объекте
 	long ABSoluteX;		// Абсолютная экранная позиция по X
 	long ABSoluteY;		// Абсолютная экранная позиция по Y
@@ -102,7 +112,7 @@ public :
 				XMFLOAT4& ScreenCoords,
 				XMFLOAT4& FormCoord,
 	   KFButton_Elements& ButtonInitData,
-		Flat_Obj_Buffers* _Buffers,
+//		Flat_Obj_Buffers* _Buffers,
 		ResourceManager * _GlobalResourceManager
 		);
 

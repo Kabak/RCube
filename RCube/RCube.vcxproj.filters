@@ -225,6 +225,9 @@
     <ClInclude Include="ColorPickerClass.h">
       <Filter>Menu</Filter>
     </ClInclude>
+    <ClInclude Include="AboutMenuElement.h">
+      <Filter>Menu</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -360,6 +363,9 @@
       <Filter>Particles</Filter>
     </ClCompile>
     <ClCompile Include="ColorPickerClass.cpp">
+      <Filter>Menu</Filter>
+    </ClCompile>
+    <ClCompile Include="AboutMenuElement.cpp">
       <Filter>Menu</Filter>
     </ClCompile>
   </ItemGroup>

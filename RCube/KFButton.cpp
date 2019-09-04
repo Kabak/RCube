@@ -10,7 +10,7 @@ KFButton::KFButton()
 		  IsMouseOnButtonTexture = nullptr;
 			  NotEnalbledTexture = nullptr;
 			    OsnButtontexture = nullptr;
-						 Buffers = nullptr;
+							Body = nullptr;
 						 Checked = false;
 					  ObjectType = 0;
 					  EditType	 = 0;
@@ -24,18 +24,24 @@ KFButton::KFButton()
 					     Changed = false;
 }
 
+
+KFButton::~KFButton ()
+{
+	ResManager->Delete_Flat_ObjectBuffers ( BodyBufferIndex );
+	RCUBE_DELETE ( Body );
+}
+
+
 HRESULT KFButton::Init(
 	D3DGlobalContext* D3DGC,
 			XMFLOAT4& _ScreenCoords,
 			XMFLOAT4& _FormCoord,
    KFButton_Elements& ButtonInitData,
-	Flat_Obj_Buffers* _Buffers,
 	ResourceManager * _GlobalResourceManager
 		  ) 
 	{
 	HRESULT Result = S_OK ;
 	ResManager = _GlobalResourceManager;
-	   Buffers = _Buffers;
 	Checked    = ButtonInitData.Checked;
 	ObjectType = ButtonInitData.Type;
 	EditType   = ButtonInitData.EditType;
@@ -50,7 +56,8 @@ HRESULT KFButton::Init(
 			 FormCoord = _FormCoord;
 
 			  ObjParam = ButtonInitData._ObjParam;
-	
+	  ObjOriginalParam = ObjParam;	// Save default demention & position  
+
 	  OsnButtontexture = ButtonInitData.OsnTexture;
 	
 	// определение размеров текстуры
@@ -77,12 +84,18 @@ HRESULT KFButton::Init(
 
 	ObjOriginalParam = ObjParam;
 
-	_2DPixelXmax = ScreenCoords.x / 2;
-	_2DPixelYmax = ScreenCoords.y / 2;
-
 	UpdateABSElementAll();
 
-	UpdateBodyPos ();
+	BodyBufferIndex = ResManager->Create_Flat_Obj_Buffers ( NO_CPU_ACCESS_BUFFER, 4, 6, ButtonInitData.OsnTexture );
+
+	XMFLOAT4 BodyPos = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+	ConstructBody ( BodyPos );
+
+	Body = new FlatObjectClass;
+	Body->Init ( D3DGC->ScreenWidth, D3DGC->ScreenHeight, BodyPos, ButtonInitData.OsnTexture, NO_FLIP, ResManager->Get_Flat_ObjectBuffers_ByIndex ( BodyBufferIndex ) );
+
+	Body->UpdateVertexPos ();
 
 	if ( ObjectType == COLOR_PICK )
 	{
@@ -90,27 +103,14 @@ HRESULT KFButton::Init(
 	}
 	else
 	{
-		Vertex_FlatObject* vertexes;
-		vertexes = new Vertex_FlatObject[4];
+		Vertex_FlatObject* BodyVertexes;
+		BodyVertexes = new Vertex_FlatObject[4];
+		
+		Body->GenerateVertexes (BodyVertexes, NO_FLIP, Body->Dummy);
 
-		vertexes[0].Position = XMFLOAT3 ( left, top, 0.0f );  // Top left.
-		vertexes[0].TexCoord = XMFLOAT4 ( 0.0f, 0.0f, 0.0f, 0.0f );
+		Body->Buffers->FlatObjectVB->Update (BodyVertexes);
 
-		vertexes[1].Position = XMFLOAT3 ( right, bottom, 0.0f );  // Bottom right.
-		vertexes[1].TexCoord = XMFLOAT4 ( 1.0f, 1.0f, 0.0f, 0.0f );
-
-		vertexes[2].Position = XMFLOAT3 ( left, bottom, 0.0f );  // Bottom left.
-		vertexes[2].TexCoord = XMFLOAT4 ( 0.0f, 1.0f, 0.0f, 0.0f );
-
-		vertexes[3].Position = XMFLOAT3 ( right, top, 0.0f );  // Top right.
-		vertexes[3].TexCoord = XMFLOAT4 ( 1.0f, 0.0f, 0.0f, 0.0f );
-
-
-		Buffers->FlatObjectVB->Update ( vertexes );
-		Buffers->IndexBs->Update ( ( Index_Type* ) FlatObjectIndices );
-		Buffers->RenderTexture = ButtonInitData.OsnTexture;
-
-		delete [] vertexes;
+		delete [] BodyVertexes;
 	}
 	return Result ;
 }
@@ -146,12 +146,6 @@ void KFButton::ClearButtonState()
 }
 
 
-KFButton::~KFButton()
-{
-
-}
-
-
 void KFButton::SetOsnTexture(ID3D11ShaderResourceView* Texture){
 
 	OsnButtontexture = Texture ;
@@ -163,7 +157,7 @@ void KFButton::ResetButtonParam() {
 
 	UpdateABSElementAll();
 
-	UpdateBodyPos ();
+	Body->UpdateVertexPos ();
 
 	if ( ObjectType == COLOR_PICK )
 	{
@@ -171,24 +165,14 @@ void KFButton::ResetButtonParam() {
 	}
 	else
 	{
-		Vertex_FlatObject* vertexes;
-		vertexes = new Vertex_FlatObject[4];
+		Vertex_FlatObject* BodyVertexes;
+		BodyVertexes = new Vertex_FlatObject[4];
 
-		vertexes[0].Position = XMFLOAT3 ( left, top, 0.0f );  // Top left.
-		vertexes[0].TexCoord = XMFLOAT4 ( 0.0f, 0.0f, 0.0f, 0.0f );
+		Body->GenerateVertexes ( BodyVertexes, NO_FLIP, Body->Dummy );
+	
+		Body->Buffers->FlatObjectVB->Update ( BodyVertexes );
 
-		vertexes[1].Position = XMFLOAT3 ( right, bottom, 0.0f );  // Bottom right.
-		vertexes[1].TexCoord = XMFLOAT4 ( 1.0f, 1.0f, 0.0f, 0.0f );
-
-		vertexes[2].Position = XMFLOAT3 ( left, bottom, 0.0f );  // Bottom left.
-		vertexes[2].TexCoord = XMFLOAT4 ( 0.0f, 1.0f, 0.0f, 0.0f );
-
-		vertexes[3].Position = XMFLOAT3 ( right, top, 0.0f );  // Top right.
-		vertexes[3].TexCoord = XMFLOAT4 ( 1.0f, 0.0f, 0.0f, 0.0f );
-		
-		Buffers->FlatObjectVB->Update ( vertexes );
-
-		delete [] vertexes;
+		delete [] BodyVertexes;
 	}
 }
 
@@ -253,10 +237,10 @@ bool KFButton::Frame( DXINPUTSTRUCT& InputClass, bool &ObjectBUSY)
 
 				if ( IsButonPressTexture != NULL || Checked )
 				{
-					Buffers->RenderTexture = IsButonPressTexture;	// нова€ попытка )
+					Body->Buffers->RenderTexture = IsButonPressTexture;	// нова€ попытка )
 				}
 				else
-					Buffers->RenderTexture = OsnButtontexture;	// нова€ попытка )
+					Body->Buffers->RenderTexture = OsnButtontexture;	// нова€ попытка )
 			}
 			else // ћышка не была нажата на объекте
 			{ 
@@ -341,14 +325,14 @@ bool KFButton::Frame( DXINPUTSTRUCT& InputClass, bool &ObjectBUSY)
 
 				if (IsMouseOnButtonTexture != NULL)
 				{
-					Buffers->RenderTexture = IsMouseOnButtonTexture;
+					Body->Buffers->RenderTexture = IsMouseOnButtonTexture;
 				}
 				else 
 				{
 					if ( Checked )
-						Buffers->RenderTexture = IsButonPressTexture;
+						Body->Buffers->RenderTexture = IsButonPressTexture;
 					else
-						Buffers->RenderTexture = OsnButtontexture;
+						Body->Buffers->RenderTexture = OsnButtontexture;
 				}
 			}	
 
@@ -363,11 +347,11 @@ bool KFButton::Frame( DXINPUTSTRUCT& InputClass, bool &ObjectBUSY)
 
 			if ( Checked )
 			{
-				Buffers->RenderTexture = IsButonPressTexture;
+				Body->Buffers->RenderTexture = IsButonPressTexture;
 			}
 			else
 			{
-				Buffers->RenderTexture = OsnButtontexture;
+				Body->Buffers->RenderTexture = OsnButtontexture;
 			}
 
 		}
@@ -377,12 +361,12 @@ bool KFButton::Frame( DXINPUTSTRUCT& InputClass, bool &ObjectBUSY)
 }
 
 
-void KFButton::UpdateBodyPos ()
+void KFButton::ConstructBody ( XMFLOAT4 &BobyPos )
 {
-	left = -_2DPixelXmax + (FormCoord.x + ObjParam.x);
-	right = left + ObjParam.z;
-	top = _2DPixelYmax - (FormCoord.y + ObjParam.y);
-	bottom = top - ObjParam.w;
+	BobyPos.x = FormCoord.x + ObjParam.x;
+	BobyPos.y = FormCoord.y + ObjParam.y;
+	BobyPos.z = ObjParam.z;
+	BobyPos.w = ObjParam.w;
 }
 
 
@@ -414,18 +398,18 @@ void KFButton::SetEnable ( bool Value )
 	if( Value )
 	{
 		Enabled = true;
-		Buffers->RenderTexture = OsnButtontexture;
+		Body->Buffers->RenderTexture = OsnButtontexture;
 	}
 	else
 	{
 		Enabled = false;
 		if( NotEnalbledTexture != nullptr )
 		{
-			Buffers->RenderTexture = NotEnalbledTexture;
+			Body->Buffers->RenderTexture = NotEnalbledTexture;
 		}
 		else
 		{
-			Buffers->RenderTexture = OsnButtontexture;
+			Body->Buffers->RenderTexture = OsnButtontexture;
 		}
 	}
 
@@ -441,9 +425,9 @@ void KFButton::SetButtonColor ( XMFLOAT4 _Color )
 
 		Colour = _Color;
 
-		GenerateVertexes ( vertexes, COLOR_BUTTON, Colour );
+		Body->GenerateVertexes ( vertexes, COLOR_BUTTON, Colour );
 
-		Buffers->FlatObjectVB->Update ( vertexes );
+		Body->Buffers->FlatObjectVB->Update ( vertexes );
 
 		delete [] vertexes;
 	}
@@ -475,9 +459,9 @@ void KFButton::SetButtonColorREF ( COLORREF Color )
 
 		Colour = RGBA.Fl4;
 
-		GenerateVertexes ( vertexes, COLOR_BUTTON, RGBA.Fl4 );
+		Body->GenerateVertexes ( vertexes, COLOR_BUTTON, RGBA.Fl4 );
 
-		Buffers->FlatObjectVB->Update ( vertexes );
+		Body->Buffers->FlatObjectVB->Update ( vertexes );
 
 		delete [] vertexes;
 	}

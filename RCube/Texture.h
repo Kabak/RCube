@@ -19,12 +19,19 @@ enum TextureTypes
 struct TextureData
 {
 	TextureData () : 
-		Type ( 2 ),
+		Type ( _2D ),
 		Format ( DXGI_FORMAT_R8G8B8A8_UNORM ),
 		Usage ( D3D11_USAGE_DEFAULT ),
 		MipMapLevels (1),
 		ArraySize (1),
-		ShaderResource (true)
+		Depth (0),
+		GenerateMipMaps (false),
+		ShaderResource	(true),
+		RenderTarget	(false),
+		Shared_KeyMutex (false),
+		TextureCube		(false),
+		DepthStensil	(false),
+		Unordered_Access(false)
 		{};
 	int Type;	// 1D 2D 3D
 	UINT Format;// DXGI_FORMAT

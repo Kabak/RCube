@@ -24,6 +24,10 @@
 // Кватернионы
 // https://gamedev.ru/code/articles/?id=4215
 
+// Как передать в шейдер данные в формате float 16 ?
+// Сжатие Float
+// https://gamedev.ru/code/forum/?id=246065
+
 // Outlined text
 // https://archive.codeplex.com/?p=outlinetext
 // https://www.codeproject.com/Articles/376597/Outline-Text-With-DirectWrite?msg=4797862#intro
@@ -53,6 +57,9 @@
 // https://gamedev.ru/community/irrlicht/articles/?id=3095
 // http://www.gamedev.ru/code/forum/?id=201239
 
+// Tanget Binormal
+// https://gamedev.ru/code/forum/?id=245932
+
 // Указатели на функцию
 // http://www.amse.ru/courses/cpp2/2011_04_11.html
 
@@ -79,8 +86,10 @@ http://martindevans.me/game-development/2015/02/27/Drawing-Stuff-On-Other-Stuff-
 https://msdn.microsoft.com/en-us/library/s3f49ktz.aspx?f=255&MSPPError=-2147217396
 
 // Нормали к поверхности
+// NormalMaping
 https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
 http://netlib.narod.ru/library/book0032/ch05_03.htm
+http://www.opengl-tutorial.org/ru/intermediate-tutorials/tutorial-13-normal-mapping/
 
 // <time.h> vs <chrono>
 http://www.cplusplus.com/forum/beginner/217912/
@@ -152,6 +161,8 @@ DIRECTX
 https://msdn.microsoft.com/en-us/library/windows/desktop/hh309466(v=vs.85).aspx
 Dx11 Core Interfaces
 https://msdn.microsoft.com/en-us/library/ff476154(v=vs.85).aspx
+DX11.3 Spec
+https://microsoft.github.io/DirectX-Specs/d3d/archive/D3D11_3_FunctionalSpec.htm
 Dx12 Core Interfaces
 https://msdn.microsoft.com/en-us/library/dn934203(v=vs.85).aspx
 Dx12 Samples

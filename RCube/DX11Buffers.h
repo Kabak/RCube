@@ -13,7 +13,7 @@
 static const wchar_t* DX11BuffersError = L"ResourceManager Error" ;
 
 // Buffers types
-enum
+enum CPU_ACCESS
 {
 	NO_CPU_ACCESS_BUFFER = 0,	// GPU Read / Write
 	CONST_BUFFER,				// Immutable

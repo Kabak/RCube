@@ -195,7 +195,7 @@ void StringsListClass::ScrollStringsList( bool ScrollDir )
 		if ( Last_Visible_Index == StringsNumber - 1 )
 		{
 			// Последняя строка видна полностью ?  Если нет, то скролим все видимые строки вверх.
-			int a = ResManager->GetPosY( SentencesResIndex[MaxVisibleIndex - 1] );
+			int a = ResManager->GetSentencePosY( SentencesResIndex[MaxVisibleIndex - 1] );
 			if ( a + StringsHeigh >= ObjParam_Y + ObjParam_W )
 				ScrollUp();
 		}
@@ -214,7 +214,7 @@ void StringsListClass::ScrollStringsList( bool ScrollDir )
 		if ( First_Visible_Index == 0 )
 		{
 			// Если позиция 1-го предложения выше окна скролинга, то можно скролить все строки вниз
-			if (ResManager->GetPosY( SentencesResIndex[0] ) < ObjParam_Y )
+			if (ResManager->GetSentencePosY( SentencesResIndex[0] ) < ObjParam_Y )
 				ScrollDown();
 		}
 		// Если вверху StringsList видно не первое предложение из общего списка, то можно скролить вниз
@@ -234,7 +234,7 @@ void StringsListClass::UpdateVisibleSentence( bool ScrollDir )
 	// Скролим вверх
 	if ( ScrollDir )
 	{
-		int a = ResManager->GetPosY( SentencesResIndex[0] ) + StringsHeigh;
+		int a = ResManager->GetSentencePosY( SentencesResIndex[0] ) + StringsHeigh;
 		// Первое предложение скрылось из виду сверху
 		if ( a <= ObjParam_Y )
 		{
@@ -248,7 +248,7 @@ void StringsListClass::UpdateVisibleSentence( bool ScrollDir )
 			TempIndex, 
 			Strings[ Last_Visible_Index + 1 ],
 			ObjParam_X,
-			ResManager->GetPosY( SentencesResIndex[LastIndex - 1] ) + StringsHeigh
+			ResManager->GetSentencePosY( SentencesResIndex[LastIndex - 1] ) + StringsHeigh
 			);
 
 			SentencesResIndex.emplace_back( TempIndex );
@@ -261,7 +261,7 @@ void StringsListClass::UpdateVisibleSentence( bool ScrollDir )
 	// Скролим вниз
 	else
 	{
-		int a = ResManager->GetPosY( SentencesResIndex[MaxVisibleIndex - 1] );
+		int a = ResManager->GetSentencePosY( SentencesResIndex[MaxVisibleIndex - 1] );
 		// Первое предложение скрылось из виду сверху
 		if ( a >= ObjParam_Y + ObjParam_W )
 		{
@@ -275,7 +275,7 @@ void StringsListClass::UpdateVisibleSentence( bool ScrollDir )
 				TempIndex,
 				Strings[First_Visible_Index - 1],
 				ObjParam_X,
-				ResManager->GetPosY( SentencesResIndex[0] ) - StringsHeigh
+				ResManager->GetSentencePosY( SentencesResIndex[0] ) - StringsHeigh
 				);
 
 			SentencesResIndex.emplace( SentencesResIndex.begin(), TempIndex );
@@ -314,7 +314,7 @@ void StringsListClass::UpdateVisibleSentance()
 		SentencesResIndex[i],
 			ResManager->GetSentenceText( SentencesResIndex[i] ),
 		ObjParam_X,
-		ResManager->GetPosY( SentencesResIndex[i] ) + Scroll_Y_Pos
+		ResManager->GetSentencePosY( SentencesResIndex[i] ) + Scroll_Y_Pos
 		);
 	++i;
 	}

@@ -26,7 +26,7 @@ float4 TexturePixelShader(PixelInputType input) : SV_TARGET
 	{
 		textureColor = shaderTexture.Sample ( FlatObject, input.tex );
 
-		// Animation
+		// Check is reqired for Animation
 		if ( input.FlatObjControl.w < 0.0f )
 		{
 			textureColor.a = length ( textureColor.rgb );

@@ -17,7 +17,7 @@
 
 class ResourceManager;
 
-class ScrollBarClass {
+class ScrollBarClass : public AboutMenuElement {
 
 private:
 
