@@ -153,10 +153,10 @@ bool StringsListClass::SetInitFrameData()
 	SENTENCE_INIT_DATA Data;
 	ZeroMemory( &Data, sizeof( SENTENCE_INIT_DATA ) );
 
-		Data.Colour = { 1.0f, 1.0f, 1.0f, 0.0f };	//	w = 0.0f  For correct render StringList Sentences
+		Data.Colour = { 1.0f, 1.0f, 1.0f, 1.0f };	//	w = 1.0f  For correct render StringList Sentences
 		Data.FontType   = FontIndex;
 		Data.HideType   = HIDE;
-		Data.ShowType   = SHOW;
+		Data.ShowType	= SHOW; //SHOW_GLOWING;//
 		Data.Level	    = SentencesIndex;
 		Data.MaxLength  = StringsMAXLength;
 		Data.Render	    = true;
@@ -322,10 +322,10 @@ void StringsListClass::UpdateVisibleSentance()
 }
 
 
-int StringsListClass::Frame( DXINPUTSTRUCT& InputClass, FPSTimers& fpstimers, bool &ObjectBUSY )
+bool StringsListClass::Frame( DXINPUTSTRUCT& InputClass, FPSTimers& fpstimers, int &BUSY_Object_Index )
 {
-	if ( ObjectBUSY && !StringsListPressed )
-		return 0;
+	if ( BUSY_Object_Index != -1 && BUSY_Object_Index != ObjectIndex )
+		return false;
 
 	if ( Enabled )
 	{
@@ -362,7 +362,7 @@ int StringsListClass::Frame( DXINPUTSTRUCT& InputClass, FPSTimers& fpstimers, bo
 
 	} // Enabled
 
-	return 0;
+	return true;
 }
 
 

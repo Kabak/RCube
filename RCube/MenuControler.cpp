@@ -13,7 +13,7 @@ MenuControllerClass::MenuControllerClass(){
 			  KeyPressed = false;
 			 TempKeyCode = -1;
    LastActiveButtonIndex = -1;
-		ObjectActiveBUSY = false;
+		BUSY_ObjectIndex = -1;
 	   KeyDefineExpected = false;
 }
 
@@ -67,6 +67,7 @@ HRESULT MenuControllerClass::Init(D3DGlobalContext* D3DGC,
 	// Позиция окна X , Позиция окна Y , Размер экрана ширина , Размер экрана высота 
 	XMFLOAT4 ScrCoords = McD3DGC->ScreenScale;
 
+	//	Global Menu Items Indexes by creation order
 	int ItemIndex = 0;
 /*
 	for (int c = 0; c < NumOfButtons; ++c )
@@ -192,7 +193,7 @@ for ( int c = 0; c < NumOfButtons; ++c )
 	ButtonInitData->_ObjParam.z *= McD3DGC->ScreenScale.z;
 	ButtonInitData->_ObjParam.w *= McD3DGC->ScreenScale.w;
 
-	++ItemIndex;
+//	++ItemIndex;
 }
 
 for ( int c = 0; c < NumOfScrollbars; ++c )
@@ -205,7 +206,7 @@ for ( int c = 0; c < NumOfScrollbars; ++c )
 	TempScrollBarData->ObjParam.z *= McD3DGC->ScreenScale.z;
 	TempScrollBarData->ObjParam.w *= McD3DGC->ScreenScale.w;
 
-	++ItemIndex;
+//	++ItemIndex;
 }
 
 for ( int c = 0; c < NumOfStringsList; ++c )
@@ -218,7 +219,7 @@ for ( int c = 0; c < NumOfStringsList; ++c )
 	TempStringsListData->ObjParam.z *= McD3DGC->ScreenScale.z;
 	TempStringsListData->ObjParam.w *= McD3DGC->ScreenScale.w;
 
-	++ItemIndex;
+//	++ItemIndex;
 }
 
 for ( int c = 0; c < NumOfColorPickers; ++c )
@@ -231,7 +232,7 @@ for ( int c = 0; c < NumOfColorPickers; ++c )
 	TempColorPickerData->ObjParam.z *= McD3DGC->ScreenScale.z;
 	TempColorPickerData->ObjParam.w *= McD3DGC->ScreenScale.w;
 
-	++ItemIndex;
+//	++ItemIndex;
 }
 
 
@@ -239,6 +240,7 @@ for ( int c = 0; c < NumOfColorPickers; ++c )
 
 // Buttons initialisation
 	KFButton* TempButton;
+	ItemIndex = 0;	// Menu Item Index Hierarchy
 	int c = 0;
 	while(c < NumOfButtons)
 	{
@@ -253,7 +255,7 @@ for ( int c = 0; c < NumOfColorPickers; ++c )
 
 		int SentenceIndex = -1;
 
-		// Если создатся объект Edit или Label, то Label можут быть NULL, но ButtonsData[c].Data->MaxLength обязательно должно быть больше 0 
+		// Если создаётся объект Edit или Label, то Label можут быть NULL, но ButtonsData[c].Data->MaxLength обязательно должно быть больше 0 
 		// чтобы Edit и Label корректно работал
 		if (( ButtonInitData->Type == LABEL || ButtonInitData->Type == EDIT ) && 
 		   (  ButtonInitData->Data != NULL ))
@@ -281,7 +283,7 @@ for ( int c = 0; c < NumOfColorPickers; ++c )
 		TempButton->SetIfMouseOnButtonTexture( ButtonInitData->IsMouseOnButtonTexture );
 		TempButton->SetIfButtonNotEnalbledTexture( ButtonInitData->IsNotEnalbledTexture );
 		TempButton->SetOsnTexture ( ButtonInitData->OsnTexture );
-			
+		TempButton->ObjectIndex = ItemIndex++;
 		++c ;
 	}
 
@@ -309,7 +311,7 @@ for ( int c = 0; c < NumOfColorPickers; ++c )
 			TempScrollBar->SetTravellerNotEnalbledTexture( TempScrollBarData->TravellerNotEnalbledTexture );
 			TempScrollBar->SetButtonsPressTexture( TempScrollBarData->ButtonPressTexture );
 			TempScrollBar->SetTravellerPressTexture( TempScrollBarData->TravellerPressTexture );
-			
+			TempScrollBar->ObjectIndex = ItemIndex++;
 			++c;
 	}
 
@@ -330,7 +332,7 @@ for ( int c = 0; c < NumOfColorPickers; ++c )
 			*TempStringsListData,
 			GlobalResourceManager
 		);
-		
+		TempStringsList->ObjectIndex = ItemIndex++;
 		++c;
 	}
 
@@ -352,7 +354,7 @@ for ( int c = 0; c < NumOfColorPickers; ++c )
 			*TempColorPickerData,
 			GlobalResourceManager
 			);
-
+		TempColorPicker->ObjectIndex = ItemIndex++;
 		++c;
 	}
 	return result;
@@ -382,6 +384,7 @@ void MenuControllerClass::UpdateObjectText ( KFButton* TempButton, char* Str )
 
 HRESULT MenuControllerClass::Frame( InputClass* InputClass, int UTF16_KeyCODE, FPSTimers &fpstimers)
 {
+
 	// Все происходит при условии, что конкретное меню сейчас имеет статус IsMenuActive
 	if ( IsMenuActive )
 	{
@@ -399,13 +402,14 @@ HRESULT MenuControllerClass::Frame( InputClass* InputClass, int UTF16_KeyCODE, F
 // Обработка всех кнопок на форме
 		int c = 0;
 		KFButton* TempButton;
-		
+		ButtonState State;
+
 		while (c < g_NumOfButtons)
 		{
 			TempButton = Buttons[c];
 
 				 // FRAME для каждого BUTTON
-			if ( TempButton->Frame( InputClass->DxInputStruct, ObjectActiveBUSY ))
+			if ( TempButton->Frame( InputClass->DxInputStruct, BUSY_ObjectIndex ))
 			{
 				if (LastActiveButtonIndex > -1 )
 				// Вырубаем курсор в предыдущем активном Edit, если он там включён
@@ -414,8 +418,32 @@ HRESULT MenuControllerClass::Frame( InputClass* InputClass, int UTF16_KeyCODE, F
 				ChangeActiveEdit( c );
 				LastActiveButtonIndex = c;
 			}
+
+
+
+/*
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			// Checking if About strings should be displayed
+			TempButton->GetButtonState ( State );
+			if ( State.IsMouseOnButton )
+				// If texture with text does not exist
+				if ( TempButton->TextureIndex != -1 )
+				{
+				// display texture with About message
+				}
+				else
+				{
+
+				// Create texture , store it index , display it
+				}
+
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+*/
+
+
+
 			// Если текущий Edit активен, то рисуем в нём курсор
-			// Если объект Label активен, то ждём в нажатия клавиши
+			// Если объект Label активен, то ждём в нём нажатия клавиши
 			if ( TempButton->ActiveAsEdit )
 				// Какой тип элемента стал активным - была нажата кнопка мыши на Edit или Label
 				switch ( TempButton->ObjectType )
@@ -603,7 +631,7 @@ HRESULT MenuControllerClass::Frame( InputClass* InputClass, int UTF16_KeyCODE, F
 		c = 0;
 		while (c < g_NumOfScrollBars)
 		{
-			ScrollBars[c]->Frame( InputClass->DxInputStruct, fpstimers, ObjectActiveBUSY );
+			ScrollBars[c]->Frame( InputClass->DxInputStruct, fpstimers, BUSY_ObjectIndex );
 			++c;
 		}
 
@@ -611,7 +639,7 @@ HRESULT MenuControllerClass::Frame( InputClass* InputClass, int UTF16_KeyCODE, F
 		c = 0;
 		while ( c < g_NumOfStringsLists )
 		{
-			StringsList[c]->Frame( InputClass->DxInputStruct, fpstimers, ObjectActiveBUSY );
+			StringsList[c]->Frame( InputClass->DxInputStruct, fpstimers, BUSY_ObjectIndex );
 			++c;
 		}
 
@@ -621,7 +649,7 @@ HRESULT MenuControllerClass::Frame( InputClass* InputClass, int UTF16_KeyCODE, F
 		{
 			ColorPickerClass *Picker = ColorPickers[c];
 
-			Picker->Frame ( InputClass->DxInputStruct, fpstimers, ObjectActiveBUSY );
+			Picker->Frame ( InputClass->DxInputStruct, fpstimers, BUSY_ObjectIndex );
 			++c;
 		}
 	}

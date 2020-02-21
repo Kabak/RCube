@@ -6,9 +6,9 @@ AboutMenuElement::AboutMenuElement ()
 { 
 	LabelText		= nullptr; 
 	FontIndex		= 0; 
-	CurrentLength	= 0;
 	MaxLength		= 0;
 	Show			= true;
+	TextureIndex	= -1;
 };
 
 
@@ -20,23 +20,18 @@ AboutMenuElement::~AboutMenuElement ()
 
 void AboutMenuElement::SetText (char* Text)
 {
-	size_t StrLength = strlen (Text);
+	StrLength = strlen (Text);
 
-	if ( StrLength > MaxLength )
+	if ( StrLength >= MaxLength )
 	{
-		MaxLength = CurrentLength = StrLength;
+		MaxLength = StrLength + 1;
 
-		RCUBE_ARR_DELETE ( LabelText );
+		delete [] LabelText;
 
-		LabelText = new char[StrLength];
-
-		strcpy_s ( LabelText, StrLength, Text);
+		LabelText = new char[ MaxLength ];
 	}
-	else
-	{
-		strcpy_s ( LabelText, StrLength, Text);
-		CurrentLength = StrLength;
-	}
+
+	strcpy_s ( LabelText, StrLength, Text);
 }
 
 

@@ -111,12 +111,12 @@ HRESULT ColorPickerClass::Init ( D3DGlobalContext* D3DGC,
 }
 
 
-int ColorPickerClass::Frame ( DXINPUTSTRUCT& InputClass, FPSTimers& fpstimers, bool &ObjectBUSY )
+bool ColorPickerClass::Frame ( DXINPUTSTRUCT& InputClass, FPSTimers& fpstimers, int &BUSY_Object_Index )
 {
 	// Проверка, была ли нажата мышка и не отпущена именно на этом объекте
 	// Если не была нажата вовсе или нажата на этом объекте, то выполняем обработку этого объекта
-	if ( ObjectBUSY && !PanthonPressed && !ColorPickerPressed && !AlphaPickerPressed )
-		return 0;
+	if ( BUSY_Object_Index != -1 && BUSY_Object_Index != ObjectIndex )
+		return false;
 
 	if ( Enabled )
 	{
@@ -129,20 +129,20 @@ int ColorPickerClass::Frame ( DXINPUTSTRUCT& InputClass, FPSTimers& fpstimers, b
 			{
 				PanthonClickToValue ( InputClass.MousePos );
 				PanthonPressed = true;
-				ObjectBUSY = true;
+				BUSY_Object_Index = ObjectIndex;
 			}
 			else
 			{
 				PanthonPressed = false;
-				ObjectBUSY = false;
+				BUSY_Object_Index = -1;
 			}
 
 		}
 		// If mouse with pressed button moved outside ColorPicker body
-		else if ( PanthonPressed == true )
+		else if ( PanthonPressed == true && BUSY_Object_Index == ObjectIndex && !InputClass.m_mouseState.rgbButtons [0] )
 		{
 			PanthonPressed = false;
-			ObjectBUSY = false;
+			BUSY_Object_Index = -1;
 		}
 
 		//  If mouse was pressed on ColorPicker boby
@@ -154,18 +154,18 @@ int ColorPickerClass::Frame ( DXINPUTSTRUCT& InputClass, FPSTimers& fpstimers, b
 			{
 				ColorPickerClickToValue ( InputClass.MousePos );
 				ColorPickerPressed = true;
-				ObjectBUSY = true;
+				BUSY_Object_Index = ObjectIndex;
 			}
 			else
 			{
 				ColorPickerPressed = false;
-				ObjectBUSY = false;
+				BUSY_Object_Index = -1;
 			}
 		}
-		else if ( ColorPickerPressed == true )
+		else if ( ColorPickerPressed == true && BUSY_Object_Index == ObjectIndex && !InputClass.m_mouseState.rgbButtons [0] )
 		{
 			ColorPickerPressed = false;
-			ObjectBUSY = false;
+			BUSY_Object_Index = -1;
 		}
 		//  If mouse was pressed on AlphaPicker boby
 		if ( ( ( InputClass.MousePos.x > AlphaPickerABSoluteX && InputClass.MousePos.x < AlphaPickerABSoluteX + AlphaPickerABSolute_Width ) &&
@@ -176,18 +176,18 @@ int ColorPickerClass::Frame ( DXINPUTSTRUCT& InputClass, FPSTimers& fpstimers, b
 			{
 				AlphaPickerClickToValue ( InputClass.MousePos );
 				AlphaPickerPressed = true;
-				ObjectBUSY = true;
+				BUSY_Object_Index = ObjectIndex;
 			}
 			else
 			{
 				AlphaPickerPressed = false;
-				ObjectBUSY = false;
+				BUSY_Object_Index = -1;
 			}
 		}
-		else if ( AlphaPickerPressed == true )
+		else if ( AlphaPickerPressed == true && BUSY_Object_Index == ObjectIndex && !InputClass.m_mouseState.rgbButtons [0] )
 		{
 			AlphaPickerPressed = false;
-			ObjectBUSY = false;
+			BUSY_Object_Index = -1;
 		}
 
 	}
@@ -197,7 +197,7 @@ int ColorPickerClass::Frame ( DXINPUTSTRUCT& InputClass, FPSTimers& fpstimers, b
 
 	}
 
-	return 0;
+	return true;
 }
 
 

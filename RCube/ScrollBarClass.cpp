@@ -22,6 +22,7 @@ NotEnalbledTravellerTexture = nullptr;
 					   Body = nullptr;
 			  ButtonPressed = false;
 		   TravellerPressed = false;
+				BodyPressed = false;
 				 UpSideDown = false;
 				    Changed = false;
 				  TimerStop = false;
@@ -468,11 +469,11 @@ void ScrollBarClass::BodyClickToValue( POINT &Position )
 }
 
 
-bool ScrollBarClass::Frame( DXINPUTSTRUCT& InputClass, FPSTimers& fpstimers, bool &ObjectBUSY )
+bool ScrollBarClass::Frame( DXINPUTSTRUCT& InputClass, FPSTimers& fpstimers, int &BUSY_Object_Index )
 {
 	// Проверка, была ли нажата мышка и не отпущена именно на этом объекте
 	// Если не была нажата вовсе или нажата на этом объекте, то выполняем обработку этого объекта
-	if( ObjectBUSY && !ButtonPressed && !TravellerPressed && !BodyPressed )
+	if( BUSY_Object_Index != -1 && BUSY_Object_Index != ObjectIndex )
 		return false;
 
 	if ( Enabled )
@@ -497,8 +498,8 @@ bool ScrollBarClass::Frame( DXINPUTSTRUCT& InputClass, FPSTimers& fpstimers, boo
 		// если курсор мышки ушёл с тела ScrollBox
 		if ( !ButtonPressed && InputClass.m_mouseState.rgbButtons[0] && TravellerPressed )
 		{
-			if ( TravellerPreseed( InputClass ))
-				ObjectBUSY = true;
+			if ( TravellerPreseed ( InputClass ) )
+				BUSY_Object_Index = ObjectIndex;
 
 			return false;
 		}
@@ -507,7 +508,7 @@ bool ScrollBarClass::Frame( DXINPUTSTRUCT& InputClass, FPSTimers& fpstimers, boo
 			TravellerPressed = false;
 			BodyPressed = false;
 //			ButtonPressed = false;
-			ObjectBUSY = false;
+			BUSY_Object_Index = -1;
 		}
 
 		// Мышка на ползунке ?
@@ -515,9 +516,9 @@ bool ScrollBarClass::Frame( DXINPUTSTRUCT& InputClass, FPSTimers& fpstimers, boo
 			( InputClass.MousePos.y > TravelABSoluteY && InputClass.MousePos.y < TravelABSoluteY + TravelABSolute_Height ))
 		{
 			if ( TravellerPreseed( InputClass ) )
-				ObjectBUSY = true;
+				BUSY_Object_Index = ObjectIndex;
 			else
-				ObjectBUSY = false;
+				BUSY_Object_Index = -1;
 				
 		}
 		// Мышка НЕ на ползунке
@@ -536,12 +537,12 @@ bool ScrollBarClass::Frame( DXINPUTSTRUCT& InputClass, FPSTimers& fpstimers, boo
 					BodyClickToValue( InputClass.MousePos );
 					BodyPressed = true;
 					    Changed = true;
-					ObjectBUSY = true;
+			        BUSY_Object_Index = ObjectIndex;
 				}
 				else
 				{
 					BodyPressed = false;
-					ObjectBUSY = false;
+					BUSY_Object_Index = -1;
 				}
 			}
 		}
@@ -561,7 +562,7 @@ bool ScrollBarClass::Frame( DXINPUTSTRUCT& InputClass, FPSTimers& fpstimers, boo
 					ChangeTravelerPositionByValue( CurrentValue );
 					ButtonPressed = true;
 					Changed = true;
-					ObjectBUSY = true;
+					BUSY_Object_Index = ObjectIndex;
 				}
 			}
 			else
@@ -572,7 +573,7 @@ bool ScrollBarClass::Frame( DXINPUTSTRUCT& InputClass, FPSTimers& fpstimers, boo
 					MinButton->SetObjectTexture( ButtonsTexture );
 				
 				ButtonPressed = false;
-				ObjectBUSY = false;
+				BUSY_Object_Index = -1;
 				TimerStop = false;
 				Time = 0.0f;
 			}
@@ -596,7 +597,7 @@ bool ScrollBarClass::Frame( DXINPUTSTRUCT& InputClass, FPSTimers& fpstimers, boo
 					ChangeTravelerPositionByValue( CurrentValue );
 					ButtonPressed = true;
 					Changed = true;
-					ObjectBUSY = true;
+					BUSY_Object_Index = ObjectIndex;
 				}
 			}
 			else
@@ -607,7 +608,7 @@ bool ScrollBarClass::Frame( DXINPUTSTRUCT& InputClass, FPSTimers& fpstimers, boo
 					MaxButton->SetObjectTexture( ButtonsTexture );
 				
 				ButtonPressed = false;
-				ObjectBUSY = false;
+				BUSY_Object_Index = -1;
 				TimerStop = false;
 				Time = 0.0f;
 			}

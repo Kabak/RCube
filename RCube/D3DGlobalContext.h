@@ -7,7 +7,6 @@
 #ifdef RCube_DX11
 #include <d3d11.h>
 #include "DX11Buffers.h"
-#include "AboutMenuElement.h"
 #endif //RCube_DX11
 
 #include <d2d1.h>
@@ -181,7 +180,8 @@ ID3D11UnorderedAccessView*BackBuffer_CopyResolveTextureUAV; // Невозможно создат
 		INGAME_TEXT = 0,
 		HUD			= 1,
 		MENU		= 2,
-		STRINGLIST1 = 3
+		STRINGLIST1 = 3,
+		ABOUTLIST	= 4
 	};
 
 	//  +++++++++++++++++++++++++++    MENU    +++++++++++++++++++++++++++++++++++++++++++++

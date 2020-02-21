@@ -8,6 +8,7 @@
 #include "FPSTimers.h"
 #include "D3DGlobalContext.h"
 #include <vector>
+#include "AboutMenuElement.h"
 
 class ResourceManager;
 
@@ -39,6 +40,8 @@ public:
 	int StringsNumber;		// Количество строк в StringList
 
 	int MaxVisibleIndex;	// Сколько строк рисовать из общего списка
+	
+	int ObjectIndex; // This object Index in Menu hierarchy
 
 	FlatObjectClass* StringListObj;
 
@@ -57,7 +60,7 @@ public:
 	void UpdateBodyPos();	// Calkulate body - vertex position on the screen
 
 	// Возвращает номер элемента с которым были изменения
-	int Frame( DXINPUTSTRUCT& InputClass, FPSTimers& fpstimers, bool &ObjectBUSY );
+	bool Frame( DXINPUTSTRUCT& InputClass, FPSTimers& fpstimers, int &BUSY_Object_Index );
 
 	// Сдвигаем все строки вверх
 	void ScrollUp();
@@ -78,7 +81,7 @@ private:
 
 	vector <char*> Strings;	// Массив строк подлежащих отрисовке
 
-vector <int> SentencesResIndex;// Список индексов предложений зарезервированных для нашего StringsList
+	vector <int> SentencesResIndex;// Список индексов предложений зарезервированных для нашего StringsList
 
 	int FontIndex;				// номер шрифта которым рисуется текст
 	int FontHeightInPixel;		// Размер текстуры шрифта в пикселях ( для качественного написания любого символа )

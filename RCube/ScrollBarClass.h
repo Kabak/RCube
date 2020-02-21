@@ -14,10 +14,12 @@
 #include <dinput.h>
 #include "DX11Buffers.h"
 #include "D3DGlobalContext.h"
+#include "AboutMenuElement.h"
 
 class ResourceManager;
 
-class ScrollBarClass : public AboutMenuElement {
+class ScrollBarClass : public AboutMenuElement 
+{
 
 private:
 
@@ -93,6 +95,7 @@ public:
 
 	bool Changed;	// If any element was chenged last engine frame
 
+	int ObjectIndex; // This object Index in Menu hierarchy
 	// Кнопки
 	FlatObjectClass *MinButton;
 	FlatObjectClass *MaxButton;
@@ -155,7 +158,7 @@ public:
 
 
 	// Возвращает номер элемента с которым были изменения
-	bool Frame( DXINPUTSTRUCT& InputClass, FPSTimers& fpstimers, bool &ObjectBUSY );
+	bool Frame( DXINPUTSTRUCT& InputClass, FPSTimers& fpstimers, int &BUSY_Object_Index );
 
 	void SetMouseOnButtonTexture(ID3D11ShaderResourceView * Texture);
 	void SetButtonsPressTexture(ID3D11ShaderResourceView * Texture);

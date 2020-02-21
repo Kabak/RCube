@@ -4,11 +4,12 @@
 ResourceManager::ResourceManager()
 {
 	RCube_Sentences.reserve ( 30 );
-	ComeputeShaderNames.reserve(2);
+	ComputeShaderNames.reserve ( 2 );
 	RCube_Font.reserve ( 10 );
 	UnusedSentenceIndex.reserve ( 10 );
 	UnusedFlatObjBuffersIndex.reserve ( 10 );
 	UnusedTexturesIndex.reserve ( 10 );
+	Strings_List.reserve ( 30 );
 }
 
 ResourceManager::~ResourceManager()
@@ -31,7 +32,7 @@ void ResourceManager::ShutDown()
 		++c;
 	}
 	CubeMaps.clear ();
-	
+
 // PARTICLE SYSTEMS
 /*
 	c = 0;
@@ -97,7 +98,7 @@ void ResourceManager::ShutDown()
 	RCUBE_VECTOR_RELEASE ( BlobsArr );
 	
 // COMPUTE Shaders
-	RCUBE_VECTOR_RELEASE ( ComeputeShaderArr );
+	RCUBE_VECTOR_RELEASE ( ComputeShaderArr );
 
 // GEOMETRY Shaders
 	RCUBE_VECTOR_RELEASE ( GeomShaderArr );
@@ -109,7 +110,7 @@ void ResourceManager::ShutDown()
 	RCUBE_VECTOR_RELEASE ( DomainShderArr );
 
 // Compute Shaders Names
-	RCUBE_VECTOR_ARR_DELETE ( ComeputeShaderNames );
+	RCUBE_VECTOR_ARR_DELETE ( ComputeShaderNames );
 
 // LAYOUTS
 	RCUBE_VECTOR_RELEASE ( Layouts );
@@ -144,6 +145,8 @@ void ResourceManager::RCUBE_ErrorMessageShow ( WCHAR* Prefix, WCHAR* Middle, WCH
 	size_t Length = PrefixLenght + PostfixLenght + MiddleLenght + sizeof(WCHAR);
 
 	wchar_t *Message = new wchar_t [ Length ];
+
+	Message [ 0 ] = NULL;
 
 	wcscat_s (Message, Length, Prefix);
 	wcscat_s (Message, Length, Middle);
@@ -450,7 +453,7 @@ HRESULT ResourceManager::InitShaders( WCHAR * kafFilename) {
 				return hr;
 			}
 
-			ComeputeShaderArr.push_back( m_ComputeShader );
+			ComputeShaderArr.push_back( m_ComputeShader );
 
 			++CSCounter;
 		}
@@ -496,7 +499,7 @@ HRESULT ResourceManager::InitShaders( WCHAR * kafFilename) {
 	
 		if (TempName[SymbolCount - 2] == 'c' || TempName[SymbolCount + 1] == 'C')
 		{
-			ComeputeShaderNames.push_back(StoreShaderName(TempName));
+			ComputeShaderNames.push_back(StoreShaderName(TempName));
 			++CSCounter;
 		}
 
@@ -621,7 +624,7 @@ wchar_t * ResourceManager::StoreShaderName(wchar_t* Name)
 int ResourceManager::GetShaderIndexByName(wchar_t* Name)
 {
 	int Bunchsize = (int)BunchArr.size();
-	int CSsize = (int)ComeputeShaderNames.size();
+	int CSsize = (int)ComputeShaderNames.size();
 
 	for (int i = 0; i < Bunchsize; ++i)
 	{
@@ -631,7 +634,7 @@ int ResourceManager::GetShaderIndexByName(wchar_t* Name)
 
 	for (int i = 0; i < CSsize; ++i)
 	{
-		if ( !wcscmp(Name, ComeputeShaderNames[i]) )
+		if ( !wcscmp(Name, ComputeShaderNames[i]) )
 			return i;
 	}
 
@@ -839,9 +842,9 @@ int ResourceManager::InitOneShader( WCHAR * CSOFileName) {
 			return -1;
 		}
 
-		ComeputeShaderArr.push_back(m_ComShader);
+		ComputeShaderArr.push_back(m_ComShader);
 
-		IndexShader = (int)ComeputeShaderArr.size();
+		IndexShader = (int)ComputeShaderArr.size();
 
 
 	}
@@ -1083,10 +1086,10 @@ void  ResourceManager::Init(D3DGlobalContext * g_D3DGC, TimerClass* _Timer, Phys
 //	active_hwnd = Local_D3DGC->hwnd;
 }
 
-void ResourceManager::SetActiveComeputeShader(int ShaderIndex) 
+void ResourceManager::SetActiveComputeShader(int ShaderIndex) 
 {
 
-	Local_D3DGC->DX_deviceContext->CSSetShader(ComeputeShaderArr[ShaderIndex] , NULL, 0);
+	Local_D3DGC->DX_deviceContext->CSSetShader(ComputeShaderArr[ShaderIndex] , NULL, 0);
 
 }
 
@@ -1105,10 +1108,10 @@ void ResourceManager::SetNullAllShaders() {
 
 ID3D11ComputeShader* ResourceManager::GetComputeShader(int ShaderIndex)
 {
-	if (ShaderIndex > (int)ComeputeShaderArr.size())
+	if (ShaderIndex > (int)ComputeShaderArr.size())
 		return NULL;
 	
-	return ComeputeShaderArr[ShaderIndex];
+	return ComputeShaderArr[ShaderIndex];
 
 }
 
@@ -1432,6 +1435,7 @@ bool ResourceManager::SaveTextureToFile ( int Index, WCHAR* Name )
 	return true;
 }
 
+
 void  ResourceManager::BuildSentanceVertexArray ( BuildSentanceData* BuildData)
 //void ResourceManager::BuildSentanceVertexArray ( FontClass* Font, Vertex_FlatObject* vertices, char* sentence, float& drawX, float& drawY, float& RenderFontSize, XMVECTOR& Colour )
 {
@@ -1479,7 +1483,7 @@ void  ResourceManager::BuildSentanceVertexArray ( BuildSentanceData* BuildData)
 			float DXSS = BuildData->drawX + Source->Symbol_Width;
 			// First triangle in quad.
 			BuildData->vertexes->Position = XMFLOAT3 ( BuildData->drawX, BuildData->drawY, 0.0f );  // Top left.
-			BuildData->vertexes->TexCoord = XMFLOAT4 ( Source->Start, 0.0f, 0.0f, BuildData->Colour.w );
+			BuildData->vertexes->TexCoord = XMFLOAT4 ( Source->Start, 0.0f, 0.0f, BuildData->Colour.w ); // Colour.w - GLOW Sentence
 			++BuildData->vertexes;
 
 			BuildData->vertexes->Position = XMFLOAT3 ( ( BuildData->drawX + Source->Symbol_Width), DYRFS, 0.0f );  // Bottom right.
@@ -1682,6 +1686,25 @@ void ResourceManager::DeleteAllSentences ()
 }
 
 
+void ResourceManager::DeleteGroupSentences ( int GroupOrLevelIndex )
+{
+	int i = 0;
+	int j = (int)RCube_Sentences.size ();
+
+	if (j > 0)
+		do
+		{
+			if ( RCube_Sentences[i]->Level == GroupOrLevelIndex )
+			{
+				Delete_Flat_ObjectBuffers ( RCube_Sentences[i]->VertexBufferIndex );
+				UnusedSentenceIndex.push_back ( i );
+				delete RCube_Sentences[i];
+			}
+			++i;
+		} while (i < j);
+}
+
+
 void ResourceManager::GetSentencePos (int SentenceNumber, RCube_XY_POS* XY_Position)
 {
 	XY_Position->X = RCube_Sentences[SentenceNumber]->PosX;
@@ -1736,6 +1759,17 @@ int ResourceManager::GetFontHeightInPixels ( int FontNumber )
 		return -1;
 }
 
+
+int  ResourceManager::GetFontWidthInPixels ( int FontNumber )
+{
+	int i = (int)RCube_Font.size ();
+	if (FontNumber < i)
+	{
+		return (RCube_Font[FontNumber]->FontWidthInPixel);
+	}
+	else
+		return -1;
+}
 
 
 int ResourceManager::Create_3D_Obj_Mesh_Buffers( int CPUAccess, UINT InstanceAmount, UINT IndexAmount = 0 )
@@ -3631,6 +3665,20 @@ int ResourceManager::CreateCopy2DTexture ( int CopiedTextureIndex )
 }
 
 
+int Create2DTexture_From_2DTextureRegion ( int SourceTextureIndex, TextureRegion NewTextureDimension )
+{
+
+	return ( 1 );
+}
+
+// BackBuffer_ProxyTextureSRV
+int Create2DTexture_From_2DTextureRegion ( ID3D11ShaderResourceView * Texture, TextureRegion NewTextureDimension )
+{
+
+	return ( 1 );
+}
+
+
 COLORREF ResourceManager::GetScreenPixelColor ( POINT Position )
 {
 		COLORREF Color;
@@ -3745,4 +3793,126 @@ END:
 		RCUBE_RELEASE ( Local_D3DGC->ScreenShootTexture );
 
 		return Color;
+}
+
+
+void ResourceManager::Split_Sentence ( AboutMenuElement *AboutElement, vector <char*> *Strings_List, bool Speed_beauty )
+{
+	char* TempString;
+
+	Strings_List->clear ();
+
+	int MaxLengthInPixels = (int) AboutElement->ObjParam.z;
+
+	TempString = AboutElement->GetText ();
+
+	int SymbolWidth = GetFontWidthInPixels ( AboutElement->FontIndex );
+
+	int MaxCharAmount = MaxLengthInPixels / SymbolWidth; // Calk max char in string to fit in pixels
+
+	// If drawing string longer then drawing box 
+	if ( AboutElement->StrLength <= MaxCharAmount )
+	{
+		Strings_List->push_back ( TempString );
+	}
+	else 
+	{
+		// String should be split into parts
+		SplitString ( TempString, Strings_List, MaxCharAmount );
+	}
+}
+
+int ResourceManager::CheckStringInBounds (char *TempString, int &MaxCharAmount, int &SymbolWidth, int &MaxLengthInPixels )
+{
+	int Length = (int)strlen ( TempString );
+
+	int StrLengthInPixels = Length * SymbolWidth;
+
+
+	return ( MaxLengthInPixels - StrLengthInPixels );
+
+}
+
+
+int ResourceManager::CheckMaxSymbolWord ( char* String )
+{
+	int Length = (int)strlen ( String );
+
+	int MaxLen = 0;
+
+	const char *Pointer = &String [0];
+
+	for( int c = 0, counter = 0; c <= Length ; ++c )
+	{
+		// Checking for spaces or EOS
+		if ( *Pointer == 0x20 || *Pointer == '	' || c == Length )
+		{
+			counter > MaxLen ? MaxLen = counter : MaxLen;
+			counter = 0;
+		}
+		else
+		{
+			++counter;
+		}
+
+		++Pointer;
+	}
+
+	return ( MaxLen );
+}
+
+
+void ResourceManager::SplitString ( char* String, vector< char* > *StringsList, int Size )
+{
+	int MaxLength = CheckMaxSymbolWord ( String );
+
+	if ( MaxLength > Size )
+	{
+		StringsList->push_back ( ErrorString );
+		return;
+	}
+
+	char* Pointer = String;				// Pointer to the next substring first symbol
+	char* PointerEnd = nullptr;			// Pointer to the end of the string that is ready to push into array 
+	char* PointerToSubstring = Pointer;	// Pointer to string that is ready to push into array
+
+	int Length = (int)strlen ( String );
+
+	for ( int c = 0, counter = 0, counter2 = 0; c <= Length; ++c )
+	{
+
+		++counter2;	// Number of synbols in checking word
+
+					//  c == Length - required, cause the last word in the big sentence was taken in account
+		if ( *Pointer == 0x20 || *Pointer == '	' || c == Length )
+		{
+			PointerEnd = Pointer;
+			counter2 = 0;
+		}
+
+
+		if ( counter > Size )
+		{
+			*PointerEnd = NULL;// '_';
+							   // Storing new substring
+			StringsList->push_back ( PointerToSubstring );
+
+			PointerToSubstring = PointerEnd + 1;
+			counter = counter2;
+		}
+
+		++counter;
+		++Pointer;
+
+		// Storing last substring from big sentence
+		if ( c == Length && PointerToSubstring < Pointer )
+			StringsList->push_back ( PointerToSubstring );
+	}
+}
+
+
+int ResourceManager::CreateSentencesGroup ( AboutMenuElement *AboutElement, vector <char*> *Strings_List )
+{
+
+	return ( 1 );
 }

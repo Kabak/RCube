@@ -694,7 +694,7 @@ bool GraphicsClass::Initialize(HWND hwnd , XMFLOAT4& _SCR_SCALE, int& WindowPosX
 	Strings.push_back( "!!!!!!!!!!!!!!!!!" );
 
 	// Резервируем 3-й Level в списке SENTENCE_INIT_DATA int Level глобальных номеров предложений
-	StringsList1->FontIndex = 0;
+	StringsList1->FontIndex = 5;
 	StringsList1->ObjParam = {20.0f + x, 10.0f, 200, 150 };
 	StringsList1->SentencesIndex = STRINGLIST1;
 	StringsList1->Strings = Strings;
@@ -1930,7 +1930,7 @@ bool GraphicsClass::Render(int& mouseX, int& mouseY )
 	sprintf_s( Str, 50, "Active Lights = %d", m_D3D->mActiveLights );
 	MyManager->UpdateSentence( 11, Str);
 
-	sprintf_s( Str, 50, "Visible Lights = %d", m_D3D->mVisibleLights );
+	sprintf_s( Str, 50, "BUSY Object Index = %d", Hud->BUSY_ObjectIndex ); //Visible Lights = %d", m_D3D->mVisibleLights 
 	MyManager->UpdateSentence( 12, Str);
 
 	angel = Hud->GetScrollBarValue(8);

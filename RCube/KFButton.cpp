@@ -176,11 +176,11 @@ void KFButton::ResetButtonParam() {
 	}
 }
 
-bool KFButton::Frame( DXINPUTSTRUCT& InputClass, bool &ObjectBUSY)
+bool KFButton::Frame( DXINPUTSTRUCT& InputClass, int &BUSY_Object_Index )
 {
 	// Проверка, была ли нажата мышка и не отпущена именно на этом объекте
 	// Если не была нажата вовсе или нажата на этом объекте, то выполняем обработку этого объекта
-	if ( ObjectBUSY && NeedReleaseOnObject == -1 )
+	if ( BUSY_Object_Index != -1 && BUSY_Object_Index != ObjectIndex  )
 		return false;
 
 	bool ActiveEditChanged = false;
@@ -206,31 +206,33 @@ bool KFButton::Frame( DXINPUTSTRUCT& InputClass, bool &ObjectBUSY)
 			if ( InputClass.m_mouseState.rgbButtons[0] )  // Мышка была нажата на объекте
 			{
 				
+
+
 				switch ( ObjectType )
 				{
 					case BUTTON:
 								NeedReleaseOnObject = BUTTON;
-								ObjectBUSY = true;
+								BUSY_Object_Index = ObjectIndex;
 								break;
 
 					// CheckBox Если кнопка с фиксацией
 					case CHECKBOX:
 								NeedReleaseOnObject = CHECKBOX;
-								ObjectBUSY = true;
+								BUSY_Object_Index = ObjectIndex;
 								break;
 					// Label
 					case LABEL:
 								NeedReleaseOnObject = LABEL;
-								ObjectBUSY = true;
+								BUSY_Object_Index = ObjectIndex;
 								break;
 					// Edit
 					case EDIT:
 								NeedReleaseOnObject = EDIT;
-								ObjectBUSY = true;
+								BUSY_Object_Index = ObjectIndex;
 								break;
 					case COLOR_PICK:
 								NeedReleaseOnObject = COLOR_PICK;
-								ObjectBUSY = true;
+								BUSY_Object_Index = ObjectIndex;
 								break;
 					default:;				
 				}
@@ -251,7 +253,7 @@ bool KFButton::Frame( DXINPUTSTRUCT& InputClass, bool &ObjectBUSY)
 						if (NeedReleaseOnObject == BUTTON )
 						{
 							NeedReleaseOnObject = -1;
-							ObjectBUSY = false;
+							BUSY_Object_Index = -1;
 							g_State.IsPress = true; // Если без фиксации					
 						}
 						break;
@@ -261,29 +263,21 @@ bool KFButton::Frame( DXINPUTSTRUCT& InputClass, bool &ObjectBUSY)
 						if ( NeedReleaseOnObject == CHECKBOX )
 						{
 							NeedReleaseOnObject = -1;
+							BUSY_Object_Index = -1;
+							g_State.IsPress = true;
+							Changed = true;
 
-							if (Checked)
-							{
-								Checked = false;
-								ObjectBUSY = false;
-								g_State.IsPress = true;
-								Changed = true;
-							}
-							else
-							{
-								Checked = true;
-								ObjectBUSY = false;
-								g_State.IsPress = true;
-								Changed = true;
-							}
+							Checked ? Checked = false :	Checked = true;
 						}
 						break;
+
 					// Label
 					case LABEL:
 						if (NeedReleaseOnObject == LABEL )
 						{
 							NeedReleaseOnObject = -1;
-							ObjectBUSY = false;
+							BUSY_Object_Index = -1;
+
 							if ( WaitingForKeyPress )
 							{
 								ActiveAsEdit = true;
@@ -291,33 +285,27 @@ bool KFButton::Frame( DXINPUTSTRUCT& InputClass, bool &ObjectBUSY)
 							}
 						}
 						break;
+
 					// Edit
 					case EDIT:
 						if (NeedReleaseOnObject == EDIT )
 						{
 							NeedReleaseOnObject = -1;
-							ObjectBUSY = false;
+							BUSY_Object_Index = -1;
 							ActiveAsEdit = true;
 							ActiveEditChanged = true;
 						}
+
 					// COLOR
 					case COLOR_PICK:
 					if ( NeedReleaseOnObject == COLOR_PICK )
 					{
-						if ( SetColour )
-						{
-							SetColour = false;
-							NeedReleaseOnObject = -1;
-							ObjectBUSY = false;
-							g_State.IsPress = true;
-						}
-						else
-						{
-							SetColour = true;
-							NeedReleaseOnObject = -1;
-							ObjectBUSY = false;
-							g_State.IsPress = true;
-						}
+						NeedReleaseOnObject = -1;
+						BUSY_Object_Index = -1;
+						g_State.IsPress = true;
+
+						SetColour ? SetColour = false : SetColour = true;
+
 					}
 
 				default:;
@@ -341,9 +329,13 @@ bool KFButton::Frame( DXINPUTSTRUCT& InputClass, bool &ObjectBUSY)
 		}
 		else
 		{
-			// Сбрасываем нажатие на объект, если мкнопку мыши отпустили сместив мышку с объекта
-			NeedReleaseOnObject = -1;
-			ObjectBUSY = false;
+			// Сбрасываем нажатие на объект, если кнопку мыши отпустили сместив мышку с объекта
+			if ( BUSY_Object_Index == ObjectIndex && !InputClass.m_mouseState.rgbButtons [0] )
+			{
+				NeedReleaseOnObject = -1;
+				BUSY_Object_Index = -1;
+			}
+
 
 			if ( Checked )
 			{

@@ -22,8 +22,10 @@ public:
 
 	float FontSize;			// размер шрифта
 	int FontHeightInPixel;// Высота шрифта в пикселях  ( нужно для StringList и т.д. )
+	int FontWidthInPixel;// Высота шрифта в пикселях  ( нужно для StringList и т.д. )
 
 	int GetFontHeightInPixels ();
+	int GetFontWidthInPixels ();
 
 	int FontTextureIndex;	// Номер текстуры символов шрифта в массиве текстур
 

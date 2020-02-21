@@ -94,6 +94,8 @@ public:
 	// Горизонтальный или вертикальный скролбар
 	bool Horizontal;
 
+	int ObjectIndex; // This object Index in Menu hierarchy
+
 //	 int Style;	// enum COLOR_PICKER_STYLE
 
 	// Абсолютные координаты для проверки нахождения мыши на объекте
@@ -134,7 +136,7 @@ public:
    }
 
    // Возвращает номер элемента с которым были изменения
-   int Frame ( DXINPUTSTRUCT& InputClass, FPSTimers& fpstimers, bool &ObjectBUSY );
+   bool Frame ( DXINPUTSTRUCT& InputClass, FPSTimers& fpstimers, int &BUSY_Object_Index );
 
    // Обновление данных и РАЗМЕРА и ПОЗИЦИИ для чувствительности нажатия на элемент
    void UpdateABSElementAll ();

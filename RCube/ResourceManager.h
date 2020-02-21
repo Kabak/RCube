@@ -36,6 +36,8 @@ class ResourceManager{
 
 private:
 
+	char* ErrorString = "Can't split string";
+
 	template <class BufferType, class UnusedBuffer, class VarType >
 	int GetNewBufferIndex ( BufferType& Buffer, UnusedBuffer& IndBuf, VarType* Obj )
 	{
@@ -105,8 +107,8 @@ public:
 	vector< ID3D10Blob* >				BlobsArr;
 	vector< KFShadersBunch >			BunchArr;			// массив связок шейдеров
 
-	vector< ID3D11ComputeShader* >		ComeputeShaderArr;	// массив где храняться все вычислительные шейдры
-	vector<wchar_t*>					ComeputeShaderNames;// отдельный массив имён ComeputeShader
+	vector< ID3D11ComputeShader* >		ComputeShaderArr;	// массив где храняться все вычислительные шейдры
+	vector<wchar_t*>					ComputeShaderNames;// отдельный массив имён ComputeShader
 
 // Layouts
 	vector< ID3D11InputLayout* >		Layouts;			// Все Layout для шейдеров в системе
@@ -131,6 +133,8 @@ public:
 	vector <UINT>						UnusedSentenceIndex;// Массив свободных индексов предложений
 	int									TextShaderIndex;	// Номер шейдера для текста в списке шейдеров 
 	int									Temp_Font_StyleShaderIndex;// Номер шейлера для Bit_map Мышки 
+
+	vector <char*>						Strings_List;		// Массив строк подлежащих отрисовке
 
 // 3D Models
 // Список 3D объектов на сцене
@@ -314,6 +318,18 @@ public :
 	// Вытирает все предложения
 	void DeleteAllSentences ();
 
+	void DeleteGroupSentences ( int GroupOrLevelIndex ); // Delete Level / Group of Sentences
+
+	void Split_Sentence ( AboutMenuElement *AboutElement, int SymbolsInString, vector <char*> *Strings_List, bool Speed_beauty );	// Make strings from one string
+	void Split_Sentence ( AboutMenuElement *AboutElement, vector <char*> *Strings_List, bool Speed_beauty );	// Make strings from one string
+	 
+	void SplitString ( char* String, vector< char* > *StringsList, int Size );
+
+	int CreateSentencesGroup ( AboutMenuElement *AboutElement, vector <char*> *Strings_List ); // Groupe Sentences  ( for example : About messages )   Return Group Index
+	
+	int CheckStringInBounds ( char *TempString,int &MaxCharAmount, int &SymbolWidth,int &MaxLengthInPixels ); // Check string fitting by width
+	int CheckMaxSymbolWord ( char* String );
+
 	// Обновляет текст и позицию предложения на экране
 	void UpdateSentence ( int SentenceNumber, char* text, int positionX, int positionY );// , float RenderFontSize = 36.0f );
 	void UpdateSentence (int SentenceNumber, char* text);
@@ -325,6 +341,7 @@ public :
 
 	// Получить высоту текстуры шрифта в пикселях
 	int GetFontHeightInPixels ( int FontNumber );
+	int GetFontWidthInPixels ( int FontNumber );
 
 	int GetSentencePosX ( int SentenceNumber );
 	int GetSentencePosY ( int SentenceNumber );
@@ -350,6 +367,9 @@ public :
 	int CreateTexture ( TextureData& _Data ); // Создание текстуры
 
 	int Create2DTexture ( UINT Width, UINT Height ); // Create 2D texture + ShaderResource
+
+	int Create2DTexture_From_2DTextureRegion ( int SourceTextureIndex, TextureRegion NewTextureDimension );
+	int Create2DTexture_From_2DTextureRegion ( ID3D11ShaderResourceView * Texture, TextureRegion NewTextureDimension );
 
 	int CreateCopy2DTexture ( int CopiedTextureIndex ); // Copy 2D Texture
 
@@ -395,7 +415,7 @@ public :
 	HRESULT InitShaders( WCHAR * kafFilename);		// Создание шейдеров из KAF файла
 		
 	void SetActiveShadersInProgramm(int ShadersIndex);// Установка шейдеров для последующей отрисовки объектов
-	void SetActiveComeputeShader(int ShaderIndex);	// Установка шейдеров для расчётов
+	void SetActiveComputeShader(int ShaderIndex);	// Установка шейдеров для расчётов
 
 	ID3D11ComputeShader* GetComputeShader( int ShaderIndex );
 	ID3D11VertexShader*  GetVertexShader ( int ShaderIndex );

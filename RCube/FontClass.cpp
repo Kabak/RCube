@@ -9,6 +9,7 @@ FontClass::FontClass ( UINT _SymbolAmount, float _FontSize, WCHAR* SymbolsStr )
 //	RealAmontInString = SymbolAmount * 2; // включа€ пробелы после каждой буквы
 	FontSize = _FontSize;
 	FontHeightInPixel = 0;
+	FontWidthInPixel = 0;
 
 	// ќбъ€вл€ем массив данных каждого символа формируемый при сканировании текстуры
 	Symbols = new _Symbol_Dim[SymbolAmount];
@@ -28,4 +29,10 @@ FontClass::~FontClass ()
 int FontClass::GetFontHeightInPixels ()
 {
 	return FontHeightInPixel;
+}
+
+
+int FontClass::GetFontWidthInPixels ()
+{
+	return FontWidthInPixel;
 }

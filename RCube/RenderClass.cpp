@@ -122,14 +122,18 @@ void RenderClass::RenderMenu (int Index)
 			Local_D3DGC->DX_deviceContext->ClearRenderTargetView ( Local_D3DGC->BackBuffer_ProxyTextureRTV, Local_D3DGC->ZeroColor );
 			Local_D3DGC->DX_deviceContext->OMSetRenderTargets ( 1, &Local_D3DGC->BackBuffer_ProxyTextureRTV, NULL );
 			// Рисуем строки в текстуру для скролинга
+			// Required TEXT Shader
+			ResManager->SetActiveShadersInProgramm( ResManager->TextShaderIndex );
 			RenderText ( Strings->SentencesIndex );
 
 			// Сохраняем в файл для визуальной отладки
 			//	Local_D3D->SaveTextureToPNG( Local_D3DGC->BackBuffer_ProxyTextureSRV );
 
 			Local_D3DGC->DX_deviceContext->OMSetRenderTargets ( 1, &Local_D3DGC->BackBuffer_RTV, Local_D3DGC->m_depthStencilView );
-
+			
 			FlatObject = ResManager->Get_Flat_ObjectBuffers_ByIndex ( Strings->StringListObj->Buffers->ThisBufferIndex );
+			// Required FlatObject Shader
+			ResManager->SetActiveShadersInProgramm ( TempMenu->ShaderForDraw );
 			RenderFlatObject ( FlatObject );
 			++c;
 		}
@@ -798,6 +802,7 @@ FontClass* RenderClass::Create_RCube_Font ( RCube_Font_Style* FOTData1, WCHAR* S
 	CorrectSymbolsDim ( FOTData1->OutlineWidth, FTextureWidth, SymbolsNumber, NewFont->Symbols );
 
 	NewFont->FontHeightInPixel = FTextureHeight;	// Сохраняем максимальную высоту символа в шрифте
+	NewFont->FontWidthInPixel  = FTextureWidth;		// Remember max symbol length in pixels
 
 	TextureData NewTexture;
 

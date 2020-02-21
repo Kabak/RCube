@@ -15,6 +15,14 @@ enum TextureTypes
 	_3D
 };
 
+struct TextureRegion
+{
+	UINT x;	// Start X position
+	UINT y; // Start Y position
+	UINT Width;
+	UINT Height;
+};
+
 
 struct TextureData
 {

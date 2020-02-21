@@ -12,7 +12,8 @@
 #include "FlatObjectClass.h"
 #include "D3DGlobalContext.h"
 #include "DX11Buffers.h"
-				
+#include "AboutMenuElement.h"
+
 class ResourceManager;
 
 struct ButtonState{
@@ -22,7 +23,8 @@ struct ButtonState{
 	bool    IsMouseOnButton;// Mouse was on button body last engine Frame
 };
 
-class KFButton : public AboutMenuElement{
+class KFButton : public AboutMenuElement
+{
 
 private :
 		      ResourceManager* ResManager;
@@ -66,6 +68,8 @@ public :
 	bool SetColour;		// = true If Button is COLOR type and was pressed for colorpicking.  If pressed once again Setcolour = false
 
 	int ObjectType;		// Тип объекта которым будет работать созданный объект BUTTON = 0, CHECKBOX = 1, LABEL = 2, EDIT = 3, COLOR = 4
+
+	int ObjectIndex; // This object Index in Menu hierarchy
 
 	int EditType;		// ANYSYMBOL = 1, AS_INTEGER = 2, AS_FLOAT = 3
 
@@ -122,7 +126,7 @@ public :
 	// и был активен для ввода с клавиатуры только один Edit на форме.
 	// Если активный Edit не менялся то возвращается false
 	// ObjectBUSY - для отслеживания нажата ли мышка на каком-либо объекте в конкретном меню
-	bool Frame( DXINPUTSTRUCT& InputClass, bool &ObjectBUSY);
+	bool Frame( DXINPUTSTRUCT& InputClass, int &BUSY_Object_Index );
 
 	void SetIfButtonPressTexture(ID3D11ShaderResourceView* Texture);
 
